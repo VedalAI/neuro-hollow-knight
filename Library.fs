@@ -364,7 +364,7 @@ module Context =
             // 6.5-7.5 = SE
             // (add 8.5 to (8) account for atan2 returning negative values and (0.5) round)
             // (could add 8 and use round instead but thats one more function call wow so slow)
-            enum<Dir> ((int (angle * float32 (4. / Math.PI) + 8.5f)) % 8) }
+            enum<Dir> (int (angle * float32 (4. / Math.PI) + 8.5f) % 8) }
 
     let pointsOfInterest playerPos (area: UnityEngine.GameObject) =
         let pd = PlayerData.instance
@@ -537,12 +537,6 @@ type Game(plugin: MainClass) =
             this.Context true $"Exception while handling player input: {exc}"
 
     member this.LateUpdate() =
-        PlayerData.instance
-        |> Option.ofObj
-        |> Option.iter (fun pd ->
-            pd.hasPinBench <- true
-            pd.mapAllRooms <- true)
-
         HutongGames.PlayMaker.FsmLog.LoggingEnabled <- true
 
 and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass() =
