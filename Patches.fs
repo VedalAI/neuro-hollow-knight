@@ -65,6 +65,35 @@ type IsGameplaySceneAction(act: Actions.CallMethodProper) =
 [<HarmonyPatch>]
 type public Patches() =
     static let mutable fsmInitialized = false
+    static let mutable lastNames = []
+    // names that are reserved for specific entities
+    // (so labels aren't transient but have some persistence)
+    static let mutable reservedNames: ((string * int) * UnityEngine.GameObject) list = []
+
+    static let labelTargets (targets: UnityEngine.GameObject list) =
+        targets
+        |> List.mapFold
+            (fun state target ->
+                // if target has a reserved name, use that
+                // otherwise, find the first non-reserved name and use that
+                // (map is probably more overhead than savings but whatever)
+                match reservedNames |> List.tryFind (snd >> (=) target) with
+                | Some((name, count), _) -> ((if count = 0 then name else $"{name} ({count + 1})"), target), state
+                | None ->
+                    let name = target.name
+
+                    let rec findUnusedName count =
+                        if reservedNames |> List.exists (fst >> (=) (name, count)) then
+                            findUnusedName (count + 1)
+                        else
+                            reservedNames <- ((name, count), target) :: reservedNames
+
+                            ((if count = 0 then name else $"{name} ({count + 1})"), target),
+                            Map.add name (count + 1) state
+
+                    findUnusedName (Map.tryFind name state |> Option.defaultValue 0))
+            Map.empty
+        |> fst
 
     [<HarmonyPatch(typeof<CheatManager>, "IsCheatsEnabled", MethodType.Getter)>]
     [<HarmonyPostfix>]
@@ -163,6 +192,72 @@ type public Patches() =
         //absMainClass.Instance.Logger.LogInfo "a"
         //entry.DebugLog()
         ()
+
+    [<HarmonyPatch(typeof<GrimmEnemyRange>, nameof (Unchecked.defaultof<GrimmEnemyRange>.GetTarget))>]
+    [<HarmonyPostfix>]
+    static member public GrimmTarget(__instance: GrimmEnemyRange, __result: UnityEngine.GameObject byref) =
+        let g = MainClass.Instance.Game
+        let oldTarget = __result
+
+        match g.Targets with
+        | "player" :: t ->
+            g.Targets <- t
+            __result <- HeroController.instance.gameObject
+        | t ->
+            // somehow, null checks aren't enough, i have to try-catch it...
+            // maybe because of activeSelf's behavior or whatever
+
+            reservedNames <-
+                reservedNames
+                |> List.filter (fun (_, x) ->
+                    try
+                        x.activeSelf
+                    with :? System.NullReferenceException ->
+                        false)
+
+            let targets =
+                __instance.enemyList
+                |> Seq.filter (fun x ->
+                    UnityEngine.Physics2D.Linecast(__instance.transform.position, x.transform.position, 256)
+                    |> UnityEngine.RaycastHit2D.op_Implicit
+                    |> not)
+                |> Seq.sortBy (fun x -> (__instance.transform.position - x.transform.position).sqrMagnitude)
+                |> List.ofSeq
+                |> labelTargets
+
+            let rec selectTarget t =
+                match t with
+                | [] ->
+                    g.Targets <- []
+                    null
+                | x :: xs ->
+                    targets
+                    |> List.tryFind (fst >> (=) x)
+                    |> Option.map (fun x ->
+                        g.Targets <- xs
+                        snd x)
+                    |> Option.defaultWith (fun () -> selectTarget xs)
+
+            __result <- selectTarget t
+
+            let names = "player" :: (targets |> List.map fst |> List.sort)
+
+            // if targetable enemies are different now, tell neuro
+            // (should probably also set allowed strings for the action)
+            if names <> lastNames then
+                let act = g.Action SetTargets
+
+                act.MutateProp "targets" (fun x ->
+                    let x = x :?> NeuroFSharp.StringSchema
+                    x.Enum <- Some(names |> Array.ofList))
+
+                g.RegisterActions [ act ]
+
+                g.Context
+                    true
+                    $"Targetable entities: {g.Serialize names}. Numbers in () are used to distinguish duplicate names. Your targets, in order of priority: {g.Serialize g.Targets}. Use the `set_targets` action to change the target list."
+
+            lastNames <- names
 
 (*[<HarmonyPatch(typeof<NewsItemObject>, nameof Unchecked.defaultof<NewsItemObject>.SetNewsItem)>]
     [<HarmonyPatch(typeof<CPlayerInfoSteam>, nameof Unchecked.defaultof<CPlayerInfoSteam>.GetDiseaseUnlocked)>]

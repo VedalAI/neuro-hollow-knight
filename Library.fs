@@ -14,7 +14,8 @@ type Actions =
     | [<Action("map", "Show a list of points of interest, in the same area or globally.")>] ShowMap of local: bool
     | [<Action("set_waypoint", "Store the current position as a waypoint on the map")>] SetWaypoint of name: string
     | [<Action("delete_waypoint", "Delete a named waypoint")>] DeleteWaypoint of name: string
-    | [<Action("shoot", "Shoot a target")>] ShootTarget of autoshoot: bool
+    | [<Action("set_targets", "Set the target priority list. Unlisted targets will not be shot. Enemies or the player can be shot.")>] SetTargets of
+        targets: string list
 
 type Dir =
     // circle (atan2) start at E and goes towards N
@@ -453,8 +454,14 @@ module Native =
 type Game(plugin: MainClass) =
     inherit Game<Actions>()
 
+    let mutable targets: string list = []
+
+    member _.Targets
+        with get () = targets
+        and set x = targets <- x
+
     override this.ReregisterActions() =
-        this.RegisterActions [ ShowMap; SetWaypoint; DeleteWaypoint; ShootTarget ]
+        this.RegisterActions [ ShowMap; SetWaypoint; DeleteWaypoint; SetTargets ]
 
     override _.Name = "Hollow Knight"
 
@@ -504,9 +511,18 @@ type Game(plugin: MainClass) =
         | DeleteWaypoint name ->
             // todo
             Context.checkMap () |> Result.map (fun () -> None)
-        | ShootTarget name ->
-            // todo
-            Ok None
+        | SetTargets t ->
+            targets <- t
+            if t |> List.contains "player" then
+                let occCount = t |> List.filter ((=) "player") |> List.length
+                let s = if occCount = 1 then "" else "s"
+
+                Ok(
+                    Some
+                        $"Successfully set the target list. The player will be shot {occCount} time{s} (once for each occurence in the list), listing them multiple times is allowed."
+                )
+            else
+                Ok None
 
     override _.LogError error =
         let fff = "fff"
