@@ -71,6 +71,17 @@ type public Patches() =
     static let mutable reservedNames: ((string * int) * UnityEngine.GameObject) list = []
 
     static let labelTargets (targets: UnityEngine.GameObject list) =
+        reservedNames <-
+            reservedNames
+            |> List.filter (fun (_, x) ->
+                // somehow, null checks aren't enough, i have to try-catch it
+                try
+                    // NPE here even with x <> null... maybe activeSelf property's native code is somehow returning null...?
+                    // ...or accesses something null or whatever
+                    x.activeSelf
+                with :? System.NullReferenceException ->
+                    false)
+
         targets
         |> List.mapFold
             (fun state target ->
@@ -197,67 +208,51 @@ type public Patches() =
     [<HarmonyPostfix>]
     static member public GrimmTarget(__instance: GrimmEnemyRange, __result: UnityEngine.GameObject byref) =
         let g = MainClass.Instance.Game
-        let oldTarget = __result
 
-        match g.Targets with
-        | "player" :: t ->
-            g.Targets <- t
-            __result <- HeroController.instance.gameObject
-        | t ->
-            // somehow, null checks aren't enough, i have to try-catch it...
-            // maybe because of activeSelf's behavior or whatever
+        let targets =
+            __instance.enemyList
+            |> Seq.filter (fun x ->
+                UnityEngine.Physics2D.Linecast(__instance.transform.position, x.transform.position, 256)
+                |> UnityEngine.RaycastHit2D.op_Implicit
+                |> not)
+            |> Seq.sortBy (_.transform.position >> (-) __instance.transform.position >> _.sqrMagnitude)
+            |> List.ofSeq
+            |> labelTargets
 
-            reservedNames <-
-                reservedNames
-                |> List.filter (fun (_, x) ->
-                    try
-                        x.activeSelf
-                    with :? System.NullReferenceException ->
-                        false)
+        let rec selectTarget t =
+            match t with
+            | [] ->
+                g.Targets <- t
+                null
+            | "Player" :: xs ->
+                g.Targets <- xs
+                HeroController.instance.gameObject
+            | x :: xs ->
+                match List.tryFind (fst >> (=) x) targets with
+                | Some x ->
+                    g.Targets <- t
+                    snd x
+                | None -> selectTarget xs
 
-            let targets =
-                __instance.enemyList
-                |> Seq.filter (fun x ->
-                    UnityEngine.Physics2D.Linecast(__instance.transform.position, x.transform.position, 256)
-                    |> UnityEngine.RaycastHit2D.op_Implicit
-                    |> not)
-                |> Seq.sortBy (fun x -> (__instance.transform.position - x.transform.position).sqrMagnitude)
-                |> List.ofSeq
-                |> labelTargets
+        __result <- selectTarget g.Targets
 
-            let rec selectTarget t =
-                match t with
-                | [] ->
-                    g.Targets <- []
-                    null
-                | x :: xs ->
-                    targets
-                    |> List.tryFind (fst >> (=) x)
-                    |> Option.map (fun x ->
-                        g.Targets <- xs
-                        snd x)
-                    |> Option.defaultWith (fun () -> selectTarget xs)
+        let names = "Player" :: List.sort (List.map fst targets)
 
-            __result <- selectTarget t
+        // if targetable enemies are different now, tell neuro
+        if names <> lastNames then
+            let act = g.Action SetTargets
 
-            let names = "player" :: (targets |> List.map fst |> List.sort)
+            act.MutateProp "targets" (fun x ->
+                let x = x :?> NeuroFSharp.StringSchema
+                x.Enum <- Some(names |> Array.ofList))
 
-            // if targetable enemies are different now, tell neuro
-            // (should probably also set allowed strings for the action)
-            if names <> lastNames then
-                let act = g.Action SetTargets
+            g.RegisterActions [ act ]
 
-                act.MutateProp "targets" (fun x ->
-                    let x = x :?> NeuroFSharp.StringSchema
-                    x.Enum <- Some(names |> Array.ofList))
+            g.Context
+                true
+                $"Targetable entities: {g.Serialize names}. Numbers in () are used to distinguish duplicate names. Your targets, in order of priority: {g.Serialize g.Targets}. Use the `set_targets` action to change the target list."
 
-                g.RegisterActions [ act ]
-
-                g.Context
-                    true
-                    $"Targetable entities: {g.Serialize names}. Numbers in () are used to distinguish duplicate names. Your targets, in order of priority: {g.Serialize g.Targets}. Use the `set_targets` action to change the target list."
-
-            lastNames <- names
+        lastNames <- names
 
 (*[<HarmonyPatch(typeof<NewsItemObject>, nameof Unchecked.defaultof<NewsItemObject>.SetNewsItem)>]
     [<HarmonyPatch(typeof<CPlayerInfoSteam>, nameof Unchecked.defaultof<CPlayerInfoSteam>.GetDiseaseUnlocked)>]

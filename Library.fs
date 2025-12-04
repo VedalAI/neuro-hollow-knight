@@ -14,7 +14,7 @@ type Actions =
     | [<Action("map", "Show a list of points of interest, in the same area or globally.")>] ShowMap of local: bool
     | [<Action("set_waypoint", "Store the current position as a waypoint on the map")>] SetWaypoint of name: string
     | [<Action("delete_waypoint", "Delete a named waypoint")>] DeleteWaypoint of name: string
-    | [<Action("set_targets", "Set the target priority list. Unlisted targets will not be shot. Enemies or the player can be shot.")>] SetTargets of
+    | [<Action("set_targets", "Set the target priority list. Unlisted targets will not be shot.")>] SetTargets of
         targets: string list
 
 type Dir =
@@ -513,8 +513,8 @@ type Game(plugin: MainClass) =
             Context.checkMap () |> Result.map (fun () -> None)
         | SetTargets t ->
             targets <- t
-            if t |> List.contains "player" then
-                let occCount = t |> List.filter ((=) "player") |> List.length
+            if t |> List.contains "Player" then
+                let occCount = t |> List.filter ((=) "Player") |> List.length
                 let s = if occCount = 1 then "" else "s"
 
                 Ok(
