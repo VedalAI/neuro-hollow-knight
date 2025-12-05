@@ -70,6 +70,15 @@ type public Patches() =
     // (so labels aren't transient but have some persistence)
     static let mutable reservedNames: ((string * int) * UnityEngine.GameObject) list = []
 
+    static let neuroSaveSlotPath (slotIndex: int) =
+        System.IO.Path.Combine(
+            UnityEngine.Application.persistentDataPath,
+            if slotIndex = 0 then
+                "neuro.dat"
+            else
+                $"neuro{slotIndex}.dat"
+        )
+
     static let labelTargets (targets: UnityEngine.GameObject list) =
         reservedNames <-
             reservedNames
@@ -204,6 +213,82 @@ type public Patches() =
         //entry.DebugLog()
         ()
 
+    [<HarmonyPatch(typeof<GameManager>, nameof (Unchecked.defaultof<GameManager>.ClearSaveFile))>]
+    [<HarmonyPrefix>]
+    static member public ClearNeuroData(saveSlot: int, callback: System.Action<bool> byref) =
+        let path = neuroSaveSlotPath saveSlot
+
+        let cb = callback
+
+        callback <-
+            System.Action<bool>(fun success ->
+                if success then
+                    try
+                        System.IO.File.Delete path
+                    with _ ->
+                        ()
+
+                if cb <> null then
+                    cb.Invoke success)
+
+    [<HarmonyPatch(typeof<GameManager>, nameof (Unchecked.defaultof<GameManager>.LoadGame))>]
+    [<HarmonyPrefix>]
+    static member public LoadNeuroData(saveSlot: int, callback: System.Action<bool> byref) =
+        let path = neuroSaveSlotPath saveSlot
+
+        let slotData =
+            try
+                System.IO.File.ReadAllText path
+            with exc ->
+                UnityEngine.Debug.LogException exc
+                ""
+
+        let cb = callback
+
+        callback <-
+            System.Action<bool>(fun success ->
+                if success then
+                    MainClass.Instance.Game.LoadData slotData
+
+                if cb <> null then
+                    cb.Invoke success)
+
+    [<HarmonyPatch(typeof<GameManager>,
+                   nameof (Unchecked.defaultof<GameManager>.SaveGame),
+                   [| typeof<int>; typeof<System.Action<bool>> |])>]
+    [<HarmonyPrefix>]
+    static member public SaveNeuroData(__instance: GameManager, saveSlot: int, callback: System.Action<bool> byref) =
+        if not __instance.gameConfig.disableSaveGame then
+            let cb = callback
+            let path = neuroSaveSlotPath saveSlot
+            let pathTmp = path + ".new"
+            let pathBak = path + ".bak"
+
+            let wroteNeuroData =
+                try
+                    let data = MainClass.Instance.Game.SaveData()
+                    System.IO.File.WriteAllText(pathTmp, data)
+                    true
+                with exc ->
+                    UnityEngine.Debug.LogException exc
+                    false
+
+            callback <-
+                System.Action<bool>(fun success ->
+                    if wroteNeuroData && success then
+                        try
+                            if System.IO.File.Exists path then
+                                System.IO.File.Replace(pathTmp, path, pathBak)
+                            else
+                                System.IO.File.Move(pathTmp, path)
+                        with exc ->
+                            UnityEngine.Debug.LogException exc
+
+                    if cb <> null then
+                        cb.Invoke success)
+
+            ()
+
     [<HarmonyPatch(typeof<GrimmEnemyRange>, nameof (Unchecked.defaultof<GrimmEnemyRange>.GetTarget))>]
     [<HarmonyPostfix>]
     static member public GrimmTarget(__instance: GrimmEnemyRange, __result: UnityEngine.GameObject byref) =
@@ -243,7 +328,8 @@ type public Patches() =
             let act = g.Action SetTargets
 
             act.MutateProp "targets" (fun x ->
-                let x = x :?> NeuroFSharp.StringSchema
+                let x = x :?> NeuroFSharp.ArraySchema
+                let x = x.Items :?> NeuroFSharp.StringSchema
                 x.Enum <- Some(names |> Array.ofList))
 
             g.RegisterActions [ act ]

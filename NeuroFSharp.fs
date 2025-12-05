@@ -90,6 +90,7 @@ type internal TypeInfo' =
     | Record of Property array * Attribute array
     | List of TypeInfo
     | Array of TypeInfo
+    | StringMap of TypeInfo
     | Union of Case array * Attribute array
     | Enum of (string * obj) array * Attribute array
     | Option of TypeInfo
@@ -550,6 +551,7 @@ module internal TypeInfo =
         | TypeInfo'.Array x
         | List x -> ArraySchema(schema x)
         | Serializable -> raise (Exception "can't generate a schema for arbitrary types")
+        | StringMap _ -> raise (Exception "map schema not supported")
         | Record(x, _) ->
             let mutable ret = ObjectSchema(x |> Array.map (fun x -> x.propName, schema x.ty))
 
@@ -600,6 +602,14 @@ module internal TypeInfo =
         | ty when ty.IsGenericType && ty.GetGenericTypeDefinition() = typedefof<list<_>> ->
             let ty' = ty.GetGenericArguments().[0]
             List(fromSystemType ty')
+        | ty when ty.IsGenericType && ty.GetGenericTypeDefinition() = typedefof<Map<_, _>> ->
+            let ty0 = ty.GetGenericArguments().[0]
+            let ty1 = ty.GetGenericArguments().[1]
+
+            if ty0 <> typeof<string> then
+                raise (Exception "only strings are supported as map keys")
+
+            StringMap(fromSystemType ty1)
         | ty when ty.IsArray ->
             let ty' = ty.GetElementType()
             TypeInfo'.Array(fromSystemType ty')
@@ -670,6 +680,23 @@ module internal TypeInfo =
 
             let x = list.Cast<Object>() |> Seq.map (serialize info) |> Array.ofSeq
             x |> JsonValue.Array
+        | StringMap info ->
+            let kvs = obj :?> IEnumerable
+            let x = kvs.Cast<Object>() |> Array.ofSeq
+
+            if Array.isEmpty x then
+                JsonValue.Record [||]
+            else
+                let ty = x[0].GetType()
+                let kf = ty.GetField "key"
+                let vf = ty.GetField "value"
+
+                x
+                |> Array.map (fun kv ->
+                    let k = kf.GetValue obj :?> string
+                    let v = kf.GetValue obj
+                    k, serialize info v)
+                |> JsonValue.Record
         | Record(info, _attrs) ->
             info
             |> Seq.ofArray
@@ -810,6 +837,23 @@ module internal TypeInfo =
                                 i + 1, ret)))
                     (Ok((0, arr)))
                 |> Result.map (fun x -> snd x :> obj)
+            | StringMap info, JsonValue.Record y ->
+                let mapType = typedefof<Map<_, _>>.MakeGenericType [| typeof<string>; fst info |]
+
+                let empty =
+                    mapType.GetProperty("Empty", BindingFlags.NonPublic ||| BindingFlags.Static).GetValue null
+
+                let add = mapType.GetMethod "Add"
+
+                y
+                |> Array.fold
+                    (fun state (k, v) ->
+                        state
+                        |> Result.bind (fun ret ->
+                            deserialize (Prop k :: path) info v
+                            |> Result.map (fun x -> add.Invoke(ret, [| k; x |]))))
+                    (Ok empty)
+
             | Union(info, _), JsonValue.String name ->
                 match info |> Array.tryFind (_.caseName >> (=) name) with
                 | Some x when x.props.Length = 0 -> Ok(FSharpValue.MakeUnion(x.info, Array.empty))
@@ -881,6 +925,7 @@ module internal TypeInfo =
             | List _, _ -> Error(DeserError.unexpected obj "list" path)
             | TypeInfo'.Array _, _ -> Error(DeserError.unexpected obj "list" path)
             | Record _, _ -> Error(DeserError.unexpected obj "object" path)
+            | StringMap info, _ -> Error(DeserError.unexpected obj "object" path)
             | Union _, _ -> Error(DeserError.unexpected obj "object" path)
             | Serializable, _ -> Error(DeserError.unexpected obj "serializable" path)
         with exc ->

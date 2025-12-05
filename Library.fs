@@ -32,7 +32,9 @@ type Waypoint =
     { name: string
       distanceMeters: int
       asimuth: int
-      direction: Dir }
+      direction: Dir
+      [<SkipSerializingIfEquals true>]
+      userCreated: bool }
 
 type CurrentAreaMap =
     { currentAreaName: string
@@ -191,7 +193,7 @@ module Context =
             | "GODS_GLORY" -> Error(Some "You are in an uncharted territory!")
             | _ -> Ok())
 
-    let mappedAreas () =
+    let mappedAreas forceInclude =
         let pd = PlayerData.instance
         let map = map ()
 
@@ -209,8 +211,7 @@ module Context =
            map.areaKingdomsEdge, pd.mapOutskirts, "OUTSKIRTS"
            map.areaRestingGrounds, pd.mapRestingGrounds, "RESTING_GROUNDS"
            map.areaAncientBasin, pd.mapAbyss, "ABYSS" |]
-        |> Array.filter (fun (x, mapped, y) -> mapped)
-        |> Array.map (fun (x, _, y) -> x, y)
+        |> Array.filter (fun (x, mapped, y) -> mapped || forceInclude x y)
 
     let zoneScene () =
         let map = map ()
@@ -220,11 +221,9 @@ module Context =
         else
             GameManager.instance.GetCurrentMapZone(), GameManager.instance.GetSceneNameString()
 
-    let mapArea () =
+    let areaFromZone zone =
         let map = map ()
         let pd = PlayerData.instance
-
-        let zone, scene = zoneScene ()
 
         match zone with
         | "ABYSS" -> map.areaAncientBasin, pd.mapAbyss
@@ -254,7 +253,16 @@ module Context =
         | "GODSEEKER_WASTE" -> map.areaWaterways, pd.mapWaterways
         | _ -> null, false
 
-    let playerPos (curArea: UnityEngine.GameObject) (curScene: UnityEngine.GameObject) =
+    let mapArea = zoneScene >> fst >> areaFromZone
+
+    let playerPos () =
+        let zone, sceneName = zoneScene ()
+        let area, mapped = mapArea ()
+
+        let scene =
+            Seq.init area.transform.childCount (area.transform.GetChild >> _.gameObject)
+            |> Seq.find (_.name >> (=) sceneName)
+
         let map = map ()
         let hero = HeroController.instance
 
@@ -279,16 +287,16 @@ module Context =
                 :?> float32
 
         let sceneSpriteSize =
-            curScene.GetComponent<UnityEngine.SpriteRenderer>().sprite.bounds.size
+            scene.GetComponent<UnityEngine.SpriteRenderer>().sprite.bounds.size
 
         let px =
-            curArea.transform.localPosition.x
-            + curScene.transform.localPosition.x
+            area.transform.localPosition.x
+            + scene.transform.localPosition.x
             + ((tx + ox) / sw - 0.5f) * sceneSpriteSize.x
 
         let py =
-            curArea.transform.localPosition.y
-            + curScene.transform.localPosition.y
+            area.transform.localPosition.y
+            + scene.transform.localPosition.y
             + ((ty + oy) / sh - 0.5f) * sceneSpriteSize.y
 
         // for better printing by bepinex
@@ -296,10 +304,10 @@ module Context =
             "calculated player pos: %f/%f from area %f/%f scene %f/%f hero %f/%f origin %f/%f scene %f/%f sprite size %f/%f\nactual compass pos: %f/%f"
             px
             py
-            curArea.transform.localPosition.x
-            curArea.transform.localPosition.y
-            curScene.transform.localPosition.x
-            curScene.transform.localPosition.y
+            area.transform.localPosition.x
+            area.transform.localPosition.y
+            scene.transform.localPosition.x
+            scene.transform.localPosition.y
             tx
             ty
             ox
@@ -313,6 +321,28 @@ module Context =
         |> printf "%s"
 
         px, py
+
+    let customWaypoint (userCreated: bool) (px, py) name (x, y) =
+        let dx = x - px
+        let dy = y - py
+        let dist = sqrt (dx * dx + dy * dy)
+
+        let angle = atan2 dy dx
+
+        { name = name
+          distanceMeters = int (dist * 10.0f)
+          // start with e-n-w-s, negate to e-s-w-n, shift by 90 to n-e-s-w
+          asimuth = int (round (450.0f - angle * float32 (180. / Math.PI))) % 360
+          direction =
+            // separate circle into 8 sectors
+            // 7.5-0.5 = E
+            // 0.5-1.5 = NE
+            // ...
+            // 6.5-7.5 = SE
+            // (add 8.5 to (8) account for atan2 returning negative values and (0.5) round)
+            // (could add 8 and use round instead but thats one more function call wow so slow)
+            enum<Dir> (int (angle * float32 (4. / Math.PI) + 8.5f) % 8)
+          userCreated = userCreated }
 
     let waypoint
         (px, py)
@@ -331,41 +361,7 @@ module Context =
             + scene.transform.localPosition.y
             + object.transform.localPosition.y
 
-        let dx = x - px
-        let dy = y - py
-        let dist = sqrt (dx * dx + dy * dy)
-
-        let angle = atan2 dy dx
-
-        sprintf
-            "calculated pin pos %f/%f distance %f/%f angle %f from area %f/%f scene %f/%f pin %f/%f"
-            x
-            y
-            dx
-            dy
-            (angle * float32 (180. / Math.PI))
-            area.transform.localPosition.x
-            area.transform.localPosition.y
-            scene.transform.localPosition.x
-            scene.transform.localPosition.x
-            object.transform.localPosition.y
-            object.transform.localPosition.y
-        |> printf "%s"
-
-
-        { name = name
-          distanceMeters = int (dist * 10.0f)
-          // start with e-n-w-s, negate to e-s-w-n, shift by 90 to n-e-s-w
-          asimuth = int (round (450.0f - angle * float32 (180. / Math.PI))) % 360
-          direction =
-            // separate circle into 8 sectors
-            // 7.5-0.5 = E
-            // 0.5-1.5 = NE
-            // ...
-            // 6.5-7.5 = SE
-            // (add 8.5 to (8) account for atan2 returning negative values and (0.5) round)
-            // (could add 8 and use round instead but thats one more function call wow so slow)
-            enum<Dir> (int (angle * float32 (4. / Math.PI) + 8.5f) % 8) }
+        customWaypoint false (px, py) name (x, y)
 
     let pointsOfInterest playerPos (area: UnityEngine.GameObject) =
         let pd = PlayerData.instance
@@ -411,36 +407,31 @@ module Context =
           currentAreaMapped = mapped
           pointsOfInterest =
             if mapped then
-                Some(pointsOfInterest (playerPos area scene) area)
+                Some(pointsOfInterest (playerPos ()) area)
             else
                 None }
 
-    let allAreas () =
+    let allAreas (extra: UnityEngine.GameObject -> Waypoint list) =
         let zone, sceneName = zoneScene ()
-        let area, mapped = mapArea ()
 
         let name =
             match Language.Language.Get(zone, "Map Zones") with
             | "#!#DIRTMOUTH#!#" -> "Dirtmouth"
             | x -> stripHtml x
 
-        let scene =
-            Seq.init area.transform.childCount (area.transform.GetChild >> _.gameObject)
-            |> Seq.find (_.name >> (=) sceneName)
-
-        let pos = playerPos area scene
+        let pos = playerPos ()
 
         { currentAreaName = name
           mappedAreas =
-            mappedAreas ()
-            |> Array.map (fun (area, zone) ->
+            mappedAreas (fun x y -> extra x <> [])
+            |> Array.map (fun (area, mapped, zone) ->
                 let name =
                     match Language.Language.Get(zone, "Map Zones") with
                     | "#!#DIRTMOUTH#!#" -> "Dirtmouth"
                     | x -> stripHtml x
 
                 { areaName = name
-                  pointsOfInterest = pointsOfInterest pos area })
+                  pointsOfInterest = List.append (extra area) (if mapped then pointsOfInterest pos area else []) })
             |> Array.toList }
 
 
@@ -451,14 +442,42 @@ module Native =
     [<DllImport "libprofiler.so">]
     extern void profiler_save()
 
+type WaypointPos =
+    { x: float32; y: float32; zone: string }
+
+type SaveData =
+    { [<SkipSerializingIfNone>]
+      waypoints: Map<string, WaypointPos> option }
+
 type Game(plugin: MainClass) =
     inherit Game<Actions>()
 
     let mutable targets: string list = []
+    let saveData0: SaveData = { waypoints = None }
+    let mutable saveData: SaveData = saveData0
 
     member _.Targets
         with get () = targets
         and set x = targets <- x
+
+    member this.SaveData() =
+        try
+            this.Serialize saveData
+        with exc ->
+            Printf.kprintf this.LogError "Data save error: %s " (exc.ToString())
+            ""
+
+    member this.LoadData(s: string) =
+        try
+            saveData <-
+                NeuroFSharp.TypeInfo.deserialize [] (TypeInfo.fromSystemType typeof<SaveData>) (JsonValue.Parse s)
+                |> Result.map (fun x -> x :?> SaveData)
+                |> Result.defaultValue saveData0
+        with exc ->
+            if s <> "" then
+                Printf.kprintf this.LogError "Data load error: %s " (exc.ToString())
+
+            saveData <- saveData0
 
     override this.ReregisterActions() =
         this.RegisterActions [ ShowMap; SetWaypoint; DeleteWaypoint; SetTargets ]
@@ -476,11 +495,39 @@ type Game(plugin: MainClass) =
 
             Context.checkMap ()
             |> Result.bind (fun () ->
+                let px, py = Context.playerPos ()
+
+                let mkExtra (area: UnityEngine.GameObject) =
+                    let extra =
+                        saveData.waypoints
+                        |> Option.defaultValue Map.empty
+                        |> Seq.filter (_.Value >> _.zone >> Context.areaFromZone >> fst >> (=) area)
+                        |> Seq.map (fun x -> Context.customWaypoint true (px, py) x.Key (x.Value.x, x.Value.y))
+                        |> List.ofSeq
+
+                    extra
+
                 if local then
                     let ctx = Context.currentArea ()
+                    let zone, sceneName = Context.zoneScene ()
+                    let area, _ = Context.areaFromZone zone
+                    let extra = mkExtra area
+
+                    let ctx =
+                        if List.isEmpty extra then
+                            ctx
+                        else
+                            { ctx with
+                                pointsOfInterest =
+                                    Some(ctx.pointsOfInterest |> Option.defaultValue [] |> List.append extra) }
+
+                    let ctx =
+                        { ctx with
+                            pointsOfInterest = ctx.pointsOfInterest |> Option.map (List.sortBy _.distanceMeters) }
+
                     Ok(Some(this.Serialize ctx))
                 else
-                    let ctx = Context.allAreas ()
+                    let ctx = Context.allAreas mkExtra
                     Ok(Some(this.Serialize ctx)))
 
         // Array.init m.transform.childCount m.transform.GetChild
@@ -507,12 +554,39 @@ type Game(plugin: MainClass) =
         // todo
         | SetWaypoint name ->
             // todo
-            Context.checkMap () |> Result.map (fun () -> None)
+            Context.checkMap ()
+            |> Result.bind (fun () ->
+                let wp = saveData.waypoints |> Option.defaultValue Map.empty
+
+                match wp |> Map.tryFind name with
+                | Some x ->
+                    Error(Some $"waypoint {name} already exists! delete it first if you want to change its position")
+                | None ->
+                    let zone, sceneName = Context.zoneScene ()
+                    let x, y = Context.playerPos ()
+                    let wp = wp |> Map.add name { x = x; y = y; zone = zone }
+                    saveData <- { saveData with waypoints = Some wp }
+
+                    let keys = Map.keys wp |> Seq.toArray
+                    Ok(Some $"waypoint {name} added! current user waypoints: {this.Serialize keys}"))
         | DeleteWaypoint name ->
             // todo
-            Context.checkMap () |> Result.map (fun () -> None)
+            Context.checkMap ()
+            |> Result.bind (fun () ->
+                let wp = saveData.waypoints |> Option.defaultValue Map.empty
+
+                match wp |> Map.tryFind name with
+                | Some x ->
+                    let wp = Map.remove name wp
+                    saveData <- { saveData with waypoints = Some wp }
+                    let keys = Map.keys wp |> Seq.toArray
+                    Ok(Some $"waypoint {name} deleted! remaining user waypoints: {this.Serialize keys}")
+                | None ->
+                    let keys = Map.keys wp |> Seq.toArray
+                    Error(Some $"waypoint {name} not found! existing user waypoints: {this.Serialize keys}"))
         | SetTargets t ->
             targets <- t
+
             if t |> List.contains "Player" then
                 let occCount = t |> List.filter ((=) "Player") |> List.length
                 let s = if occCount = 1 then "" else "s"
