@@ -12,7 +12,8 @@ open NeuroFSharp
 
 type Actions =
     | [<Action("map", "Show a list of points of interest, in the same area or globally.")>] ShowMap of local: bool
-    | [<Action("set_waypoint", "Store the current position as a waypoint on the map")>] SetWaypoint of name: string
+    | [<Action("create_waypoint", "Store the current position as a waypoint on the map")>] CreateWaypoint of
+        name: string
     | [<Action("delete_waypoint", "Delete a named waypoint")>] DeleteWaypoint of name: string
     | [<Action("set_targets", "Set the target priority list. Unlisted targets will not be shot.")>] SetTargets of
         targets: string list
@@ -20,20 +21,20 @@ type Actions =
 type Dir =
     // circle (atan2) start at E and goes towards N
     | E = 0
-    | NE = 1
+    | Ne = 1
     | N = 2
-    | NW = 3
+    | Nw = 3
     | W = 4
-    | SW = 5
+    | Sw = 5
     | S = 6
-    | SE = 7
+    | Se = 7
 
-type Waypoint =
+type PointOfInterest =
     { name: string
       distanceMeters: int
       asimuth: int
       direction: Dir
-      [<SkipSerializingIfEquals true>]
+      [<SkipSerializingIfEquals false>]
       userCreated: bool }
 
 type CurrentAreaMap =
@@ -41,11 +42,11 @@ type CurrentAreaMap =
       [<SkipSerializingIfEquals true>]
       currentAreaMapped: bool
       [<SkipSerializingIfNone>]
-      pointsOfInterest: Waypoint list option }
+      pointsOfInterest: PointOfInterest list option }
 
 type Area =
     { areaName: string
-      pointsOfInterest: Waypoint list }
+      pointsOfInterest: PointOfInterest list }
 
 type WorldMap =
     { currentAreaName: string
@@ -411,7 +412,7 @@ module Context =
             else
                 None }
 
-    let allAreas (extra: UnityEngine.GameObject -> Waypoint list) =
+    let allAreas (extra: UnityEngine.GameObject -> PointOfInterest list) =
         let zone, sceneName = zoneScene ()
 
         let name =
@@ -455,6 +456,7 @@ type Game(plugin: MainClass) =
     let mutable targets: string list = []
     let saveData0: SaveData = { waypoints = None }
     let mutable saveData: SaveData = saveData0
+    let mutable hasMap = false
 
     member _.Targets
         with get () = targets
@@ -480,7 +482,10 @@ type Game(plugin: MainClass) =
             saveData <- saveData0
 
     override this.ReregisterActions() =
-        this.RegisterActions [ ShowMap; SetWaypoint; DeleteWaypoint; SetTargets ]
+        if hasMap then
+            this.RegisterActions [ ShowMap; CreateWaypoint; DeleteWaypoint ]
+
+        this.RegisterActions [ SetTargets ]
 
     override _.Name = "Hollow Knight"
 
@@ -552,7 +557,7 @@ type Game(plugin: MainClass) =
         //         else
         //             plugin.Logger.LogInfo $"skipping scene {y.gameObject.name}"))
         // todo
-        | SetWaypoint name ->
+        | CreateWaypoint name ->
             // todo
             Context.checkMap ()
             |> Result.bind (fun () ->
@@ -626,6 +631,17 @@ type Game(plugin: MainClass) =
         with exc ->
             this.Context true $"Exception while handling player input: {exc}"
 
+        let hasMap2 = PlayerData.instance <> null && PlayerData.instance.hasMap
+
+        if hasMap2 <> hasMap then
+            hasMap <- hasMap2
+
+            (if hasMap then
+                 this.RegisterActions
+             else
+                 this.UnregisterActions)
+                [ ShowMap; CreateWaypoint; DeleteWaypoint ]
+
     member this.LateUpdate() =
         HutongGames.PlayMaker.FsmLog.LoggingEnabled <- true
 
@@ -664,6 +680,17 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
                 Some(
                     let game = Game this
                     game.Start(None, cts.Token) |> ignore
+
+                    // make it not show initially
+                    (game.Action SetTargets).MutateProp "targets" (fun x ->
+                        let x = x :?> NeuroFSharp.ArraySchema
+                        let x = x.Items :?> NeuroFSharp.StringSchema
+                        x.Enum <- Some [||])
+
+                    (game.Action DeleteWaypoint).MutateProp "name" (fun x ->
+                        let x = x :?> NeuroFSharp.StringSchema
+                        x.Enum <- Some [||])
+
                     game
                 )
 

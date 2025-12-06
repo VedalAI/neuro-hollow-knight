@@ -334,9 +334,15 @@ type public Patches() =
 
             g.RegisterActions [ act ]
 
+            let parenMsg =
+                if names |> List.exists (String.exists ((=) '(')) then
+                    " Numbers in () are used to distinguish duplicate names."
+                else
+                    ""
+
             g.Context
                 true
-                $"Targetable entities: {g.Serialize names}. Numbers in () are used to distinguish duplicate names. Your targets, in order of priority: {g.Serialize g.Targets}. Use the `set_targets` action to change the target list."
+                $"Targetable entities: {g.Serialize names}.{parenMsg} Your targets, in order of priority: {g.Serialize g.Targets}. Use the `set_targets` action to change the target list."
 
         lastNames <- names
 
