@@ -449,7 +449,6 @@ type Game(plugin: MainClass) =
     let saveData0: SaveData = { waypoints = None }
     let mutable saveData: SaveData = saveData0
     let mutable hasMap = false
-    let mutable ballLayer = 20
 
     member _.Targets
         with get () = targets
@@ -522,31 +521,7 @@ type Game(plugin: MainClass) =
                 else
                     let ctx = Context.allAreas mkExtra
                     Ok(Some(this.Serialize ctx)))
-
-        // Array.init m.transform.childCount m.transform.GetChild
-        // |> Array.iter (fun x ->
-        //     Array.init x.gameObject.transform.childCount x.gameObject.transform.GetChild
-        //     |> Array.iter (fun y ->
-        //         if pd.scenesMapped.Contains y.gameObject.name || true then
-        //             plugin.Logger.LogInfo $"scene {y.gameObject.name}"
-
-        //             Array.init y.gameObject.transform.childCount y.gameObject.transform.GetChild
-        //             |> Array.iter (fun z ->
-        //                 plugin.Logger.LogInfo $"- {z.gameObject.name}"
-
-        //                 if y.gameObject.name = "Grub Pins" then
-        //                     let w1, w2 = Context.grubPin
-        //                     plugin.Logger.LogInfo $"= ({w1 z.gameObject}) {w2 z.gameObject}"
-        //                 else
-        //                     Context.pinMap
-        //                     |> Map.tryFind z.gameObject.name
-        //                     |> Option.iter (fun (w1, w2) ->
-        //                         plugin.Logger.LogInfo $"= ({w1 z.gameObject}) {w2 z.gameObject}"))
-        //         else
-        //             plugin.Logger.LogInfo $"skipping scene {y.gameObject.name}"))
-        // todo
         | CreateWaypoint name ->
-            // todo
             Context.checkMap ()
             |> Result.bind (fun () ->
                 let wp = saveData.waypoints |> Option.defaultValue Map.empty
@@ -562,7 +537,6 @@ type Game(plugin: MainClass) =
                     let keys = Map.keys wp |> Seq.toArray
                     Ok(Some $"waypoint {name} added! current user waypoints: {this.Serialize keys}"))
         | DeleteWaypoint name ->
-            // todo
             Context.checkMap ()
             |> Result.bind (fun () ->
                 let wp = saveData.waypoints |> Option.defaultValue Map.empty
@@ -597,8 +571,6 @@ type Game(plugin: MainClass) =
         let fff = "fff"
         plugin.Logger.LogInfo $"{DateTime.UtcNow}.{DateTime.UtcNow.ToString fff} {error}"
 
-    member _.BallLayer = ballLayer
-
     member this.Update() =
         try
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F1 then
@@ -606,14 +578,6 @@ type Game(plugin: MainClass) =
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F2 then
                 Native.profiler_save ()
-
-            if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F3 then
-                // for i in 0..64 do
-                //     Printf.kprintf this.LogDebug "coll %d %d" i (UnityEngine.Physics2D.GetLayerCollisionMask i)
-                ballLayer <- ballLayer - 1
-
-            if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F4 then
-                ballLayer <- ballLayer + 1
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F10 then
                 let json = UnityEngine.JsonUtility.ToJson(HeroController.instance.playerData, true)
@@ -641,7 +605,6 @@ type Game(plugin: MainClass) =
     member _.LateUpdate() =
         HutongGames.PlayMaker.FsmLog.LoggingEnabled <- true
 
-// free layers = 3 4 6 7
 and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass() =
     inherit BaseUnityPlugin()
     let mutable harmony = null
@@ -663,6 +626,32 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
         try
             this.Logger <- base.Logger
             // HutongGames.PlayMaker.FsmLog.MirrorDebugLog <- true
+
+            let enemyDamagerLayer = 15
+            // layers 3, 4, 6, 7 unused, hijack one for our purposes
+            let playerDamagerLayer = 3
+            let ballLayer = 20
+
+            UnityEngine.Physics2D.SetLayerCollisionMask(
+                playerDamagerLayer,
+                UnityEngine.Physics2D.GetLayerCollisionMask enemyDamagerLayer
+                ||| (1 <<< ballLayer)
+            )
+
+            for i in 0..31 do
+                let mask = UnityEngine.Physics2D.GetLayerCollisionMask i
+                // copy collision bit for player from enemy
+                let mask =
+                    mask >>> enemyDamagerLayer &&& 1 <<< playerDamagerLayer
+                    ||| (mask &&& ~~~(1 <<< playerDamagerLayer))
+
+                let mask =
+                    if i = ballLayer then
+                        mask ||| (1 <<< playerDamagerLayer)
+                    else
+                        mask
+
+                UnityEngine.Physics2D.SetLayerCollisionMask(i, mask)
 
             MainClass.instance <- this
             harmony <- Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly())
