@@ -1,7 +1,6 @@
 namespace HollowNeuro
 
 open System
-open System.Collections
 open System.Reflection
 open System.Runtime.InteropServices
 open System.Text.RegularExpressions
@@ -257,8 +256,8 @@ module Context =
     let mapArea = zoneScene >> fst >> areaFromZone
 
     let playerPos () =
-        let zone, sceneName = zoneScene ()
-        let area, mapped = mapArea ()
+        let _zone, sceneName = zoneScene ()
+        let area, _mapped = mapArea ()
 
         let scene =
             Seq.init area.transform.childCount (area.transform.GetChild >> _.gameObject)
@@ -389,20 +388,13 @@ module Context =
         |> List.ofSeq
 
     let currentArea () =
-        let zone, sceneName = zoneScene ()
+        let zone, _sceneName = zoneScene ()
         let area, mapped = mapArea ()
 
         let name =
             match Language.Language.Get(zone, "Map Zones") with
             | "#!#DIRTMOUTH#!#" -> "Dirtmouth"
             | x -> stripHtml x
-
-        let scene =
-            Seq.init area.transform.childCount (area.transform.GetChild >> _.gameObject)
-            |> Seq.map (fun x ->
-                printfn "%s %s" x.name sceneName
-                x)
-            |> Seq.find (_.name >> (=) sceneName)
 
         { currentAreaName = name
           currentAreaMapped = mapped
@@ -413,7 +405,7 @@ module Context =
                 None }
 
     let allAreas (extra: UnityEngine.GameObject -> PointOfInterest list) =
-        let zone, sceneName = zoneScene ()
+        let zone, _sceneName = zoneScene ()
 
         let name =
             match Language.Language.Get(zone, "Map Zones") with
@@ -424,7 +416,7 @@ module Context =
 
         { currentAreaName = name
           mappedAreas =
-            mappedAreas (fun x y -> extra x <> [])
+            mappedAreas (fun x _ -> extra x <> [])
             |> Array.map (fun (area, mapped, zone) ->
                 let name =
                     match Language.Language.Get(zone, "Map Zones") with
@@ -457,6 +449,7 @@ type Game(plugin: MainClass) =
     let saveData0: SaveData = { waypoints = None }
     let mutable saveData: SaveData = saveData0
     let mutable hasMap = false
+    let mutable ballLayer = 20
 
     member _.Targets
         with get () = targets
@@ -472,7 +465,7 @@ type Game(plugin: MainClass) =
     member this.LoadData(s: string) =
         try
             saveData <-
-                NeuroFSharp.TypeInfo.deserialize [] (TypeInfo.fromSystemType typeof<SaveData>) (JsonValue.Parse s)
+                TypeInfo.deserialize [] (TypeInfo.fromSystemType typeof<SaveData>) (JsonValue.Parse s)
                 |> Result.map (fun x -> x :?> SaveData)
                 |> Result.defaultValue saveData0
         with exc ->
@@ -493,11 +486,6 @@ type Game(plugin: MainClass) =
 
         match action with
         | ShowMap local ->
-            let pd = PlayerData.instance
-            let m = GameManager.instance.gameMap.GetComponent<GameMap>()
-            let gm = GameManager.instance
-            let zone = gm.GetCurrentMapZone()
-
             Context.checkMap ()
             |> Result.bind (fun () ->
                 let px, py = Context.playerPos ()
@@ -514,7 +502,7 @@ type Game(plugin: MainClass) =
 
                 if local then
                     let ctx = Context.currentArea ()
-                    let zone, sceneName = Context.zoneScene ()
+                    let zone, _sceneName = Context.zoneScene ()
                     let area, _ = Context.areaFromZone zone
                     let extra = mkExtra area
 
@@ -563,11 +551,10 @@ type Game(plugin: MainClass) =
             |> Result.bind (fun () ->
                 let wp = saveData.waypoints |> Option.defaultValue Map.empty
 
-                match wp |> Map.tryFind name with
-                | Some x ->
+                if wp |> Map.containsKey name then
                     Error(Some $"waypoint {name} already exists! delete it first if you want to change its position")
-                | None ->
-                    let zone, sceneName = Context.zoneScene ()
+                else
+                    let zone, _ = Context.zoneScene ()
                     let x, y = Context.playerPos ()
                     let wp = wp |> Map.add name { x = x; y = y; zone = zone }
                     saveData <- { saveData with waypoints = Some wp }
@@ -580,13 +567,12 @@ type Game(plugin: MainClass) =
             |> Result.bind (fun () ->
                 let wp = saveData.waypoints |> Option.defaultValue Map.empty
 
-                match wp |> Map.tryFind name with
-                | Some x ->
+                if wp |> Map.containsKey name then
                     let wp = Map.remove name wp
                     saveData <- { saveData with waypoints = Some wp }
                     let keys = Map.keys wp |> Seq.toArray
                     Ok(Some $"waypoint {name} deleted! remaining user waypoints: {this.Serialize keys}")
-                | None ->
+                else
                     let keys = Map.keys wp |> Seq.toArray
                     Error(Some $"waypoint {name} not found! existing user waypoints: {this.Serialize keys}"))
         | SetTargets t ->
@@ -611,6 +597,8 @@ type Game(plugin: MainClass) =
         let fff = "fff"
         plugin.Logger.LogInfo $"{DateTime.UtcNow}.{DateTime.UtcNow.ToString fff} {error}"
 
+    member _.BallLayer = ballLayer
+
     member this.Update() =
         try
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F1 then
@@ -618,6 +606,14 @@ type Game(plugin: MainClass) =
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F2 then
                 Native.profiler_save ()
+
+            if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F3 then
+                // for i in 0..64 do
+                //     Printf.kprintf this.LogDebug "coll %d %d" i (UnityEngine.Physics2D.GetLayerCollisionMask i)
+                ballLayer <- ballLayer - 1
+
+            if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F4 then
+                ballLayer <- ballLayer + 1
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F10 then
                 let json = UnityEngine.JsonUtility.ToJson(HeroController.instance.playerData, true)
@@ -642,9 +638,10 @@ type Game(plugin: MainClass) =
                  this.UnregisterActions)
                 [ ShowMap; CreateWaypoint; DeleteWaypoint ]
 
-    member this.LateUpdate() =
+    member _.LateUpdate() =
         HutongGames.PlayMaker.FsmLog.LoggingEnabled <- true
 
+// free layers = 3 4 6 7
 and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass() =
     inherit BaseUnityPlugin()
     let mutable harmony = null
@@ -661,8 +658,7 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
     member _.Game = game.Value
 
     member this.Awake() =
-        System.IO.Directory.CreateDirectory "fsms" |> ignore
-        let log = base.Logger
+        IO.Directory.CreateDirectory "fsms" |> ignore
 
         try
             this.Logger <- base.Logger
@@ -670,6 +666,17 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
 
             MainClass.instance <- this
             harmony <- Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly())
+            // AppDomain.CurrentDomain.GetAssemblies()
+            // |> Array.filter (_.FullName >> fun x -> x.Contains "Assembly-CSharp")
+            // |> Seq.collect _.GetTypes()
+            // |> Seq.filter _.IsClass
+            // |> Seq.filter (_.IsGenericType >> not)
+            // |> Seq.collect _.GetMethods()
+            // |> Seq.filter (_.Name >> (=) "OnTriggerEnter2D")
+            // |> Seq.iter (fun met ->
+            //     harmony.Patch(met, new HarmonyMethod(1))
+            //     )
+
             let cnt = Seq.fold (fun x _ -> x + 1) 0 (harmony.GetPatchedMethods())
 
             typeof<CheatManager>.GetMethod("Init", BindingFlags.NonPublic ||| BindingFlags.Static).Invoke(null, [||])
@@ -683,12 +690,12 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
 
                     // make it not show initially
                     (game.Action SetTargets).MutateProp "targets" (fun x ->
-                        let x = x :?> NeuroFSharp.ArraySchema
-                        let x = x.Items :?> NeuroFSharp.StringSchema
+                        let x = x :?> ArraySchema
+                        let x = x.Items :?> StringSchema
                         x.Enum <- Some [||])
 
                     (game.Action DeleteWaypoint).MutateProp "name" (fun x ->
-                        let x = x :?> NeuroFSharp.StringSchema
+                        let x = x :?> StringSchema
                         x.Enum <- Some [||])
 
                     game

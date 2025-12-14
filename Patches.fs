@@ -1,6 +1,5 @@
 namespace HollowNeuro
 
-open System.Reflection
 open HarmonyLib
 open HutongGames.PlayMaker
 
@@ -62,9 +61,144 @@ type IsGameplaySceneAction(act: Actions.CallMethodProper) =
 
         this.Finish()
 
+type CustomTrigger2D(act: Actions.Trigger2dEvent) =
+    inherit FsmStateAction()
+    let mutable proxy: PlayMakerUnity2DProxy = null
+
+    let trigger (desc: string) (collisionInfo: UnityEngine.Collider2D) =
+        MainClass.Instance.Logger.LogInfo $"trigger {desc}: {collisionInfo.gameObject.name}"
+
+        if
+            collisionInfo.gameObject.tag = act.collideTag.Value
+            || act.collideTag.IsNone
+            || System.String.IsNullOrEmpty act.collideTag.Value
+            || act.collideTag.Value = "Untagged"
+        then
+            MainClass.Instance.Logger.LogInfo "sending event"
+            act.Fsm.Event act.sendEvent
+
+    let collision (desc: string) (collisionInfo: UnityEngine.Collision2D) =
+        MainClass.Instance.Logger.LogInfo
+            $"collision {desc}: {collisionInfo.collider.tag}/{collisionInfo.otherCollider.tag}/{collisionInfo.gameObject.name}"
+
+        if
+            collisionInfo.gameObject.tag = act.collideTag.Value
+            || act.collideTag.IsNone
+            || System.String.IsNullOrEmpty act.collideTag.Value
+            || act.collideTag.Value = "Untagged"
+        then
+            MainClass.Instance.Logger.LogInfo "sending event"
+            act.Fsm.Event act.sendEvent
+
+    override _.Init(state: FsmState) : unit =
+        base.Init state
+        act.Init state
+
+    override _.Reset() : unit = act.Reset()
+
+    override this.OnEnter() : unit =
+        proxy <-
+            base.Owner.GetComponent<PlayMakerUnity2DProxy>()
+            |> Option.ofObj
+            |> Option.defaultWith base.Owner.AddComponent<PlayMakerUnity2DProxy>
+
+        let proxy2 =
+            base.Owner.transform.parent.gameObject.GetComponent<PlayMakerUnity2DProxy>()
+            |> Option.ofObj
+            |> Option.defaultWith base.Owner.transform.parent.gameObject.AddComponent<PlayMakerUnity2DProxy>
+
+        // match act.trigger with
+        // | PlayMakerUnity2d.Trigger2DType.OnTriggerEnter2D -> proxy.AddOnCollisionEnter2dDelegate (collision "enter")
+        // | PlayMakerUnity2d.Trigger2DType.OnTriggerStay2D -> proxy.AddOnCollisionStay2dDelegate (collision "stay")
+        // | PlayMakerUnity2d.Trigger2DType.OnTriggerExit2D -> proxy.AddOnCollisionExit2dDelegate (collision "exit")
+        // | _ -> ()
+        [ proxy, "damager"; proxy2, "ball" ]
+        |> List.iter (fun (proxy, name) ->
+            proxy.AddOnCollisionEnter2dDelegate(collision $"enter {name}")
+            proxy.AddOnCollisionStay2dDelegate(collision $"stay {name}")
+            proxy.AddOnCollisionExit2dDelegate(collision $"exit {name}")
+            proxy.AddOnTriggerEnter2dDelegate(trigger $"enter {name}")
+            proxy.AddOnTriggerStay2dDelegate(trigger $"stay {name}")
+            proxy.AddOnTriggerExit2dDelegate(trigger $"exit {name}"))
+
+        if (this.Fsm.Variables.FindFsmBool "isPlayer").Value then
+            MainClass.Instance.Logger.LogInfo $"balllayer {base.Owner.layer}/{base.Owner.gameObject.transform.parent.gameObject.layer} -> {MainClass.Instance.Game.BallLayer}"
+
+            UnityEngine.Physics2D.SetLayerCollisionMask(
+                3,
+                UnityEngine.Physics2D.GetLayerCollisionMask 15
+                ||| (1 <<< MainClass.Instance.Game.BallLayer)
+            )
+
+            for i in 0..31 do
+                let mask = UnityEngine.Physics2D.GetLayerCollisionMask i
+                // copy 3 from 15
+                let mask = mask &&& ~~~(1 <<< 3) ||| (mask &&& (1 <<< 15) >>> 12)
+
+                let mask =
+                    if i = MainClass.Instance.Game.BallLayer then
+                        mask ||| (1 <<< 3) // ||| (1 <<< 15)// ||| (1 <<< 14)
+                    else
+                        mask
+
+                UnityEngine.Physics2D.SetLayerCollisionMask(i, mask)
+            //UnityEngine.Physics2D.SetLayerCollisionMask(3, UnityEngine.Physics2D.GetLayerCollisionMask 15) // ||| (1 <<< MainClass.Instance.Game.BallLayer))
+            base.Owner.layer <- 3
+
+            let dmg =
+                base.Owner.GetComponent<DamageHero>()
+                |> Option.ofObj
+                |> Option.defaultWith base.Owner.AddComponent<DamageHero>
+
+            dmg.damageDealt <- 1
+        // if (this.Fsm.Variables.FindFsmBool "isPlayer").Value then
+        //     MainClass.Instance.Logger.LogInfo $"setting collide layer to empty"
+        //     act.collideLayer.Value <- HeroController.instance.gameObject.layer
+        // else
+        //     MainClass.Instance.Logger.LogInfo $"setting collide layer to enemies"
+        //     act.collideLayer.Value <- "Enemies"
+        // act.collideTag.Value <- "Untagged"
+        // MainClass.Instance.Logger.LogInfo $"tag: {act.collideTag.Value}"
+
+        act.OnEnter()
+
+    override _.OnExit() : unit = act.OnExit()
+    override _.ErrorCheck() : string = act.ErrorCheck()
+
+    // override _.DoCollisionEnter2D(collisionInfo: UnityEngine.Collision2D) : unit =
+    //     MainClass.Instance.Logger.LogInfo $"collision enter: {collisionInfo}"
+    //
+    // override _.DoTriggerEnter(other: UnityEngine.Collider) : unit =
+    //     MainClass.Instance.Logger.LogInfo $"trigger enter: {other}"
+
+type SetIsPlayerAction() =
+    inherit FsmStateAction()
+    static let mutable isPlayer = false
+
+    static member IsPlayer
+        with set x = isPlayer <- x
+
+    override this.OnEnter() : unit =
+        let damager = (this.Fsm.Variables.FindFsmGameObject "Damager").Value
+        let fsm = damager.LocateMyFSM "Attack"
+        (fsm.FsmVariables.FindFsmBool "isPlayer").Value <- isPlayer
+        MainClass.Instance.Logger.LogDebug $"Set isPlayer to {isPlayer}"
+        this.Finish()
+
+type FsmLogger(s: string) =
+    inherit FsmStateAction()
+
+    override this.OnEnter() : unit =
+        MainClass.Instance.Logger.LogDebug s
+        this.Finish()
+
+module Util =
+    let stateByName name (x: FsmState array) = x |> Array.find (_.Name >> (=) name)
+
 [<HarmonyPatch>]
 type public Patches() =
     static let mutable fsmInitialized = false
+    static let mutable heroBox: UnityEngine.GameObject = null
     static let mutable lastNames = []
     // names that are reserved for specific entities
     // (so labels aren't transient but have some persistence)
@@ -137,16 +271,56 @@ type public Patches() =
         else
             fsmInitialized <- true
 
-            // make grimmchild spawn on game start
+            // allow grimmchild to spawn on game start
             // this works by enabling the Wait action which delays spawn by 0.25s
             // this gives time for grimmchild to despawn if already spawned (which happens upon LEVEL LOADED)
             // if not already despawned, the spawn check runs before grimmchild despawns and prevents spawn
             // (yes this is confusing and took literal days to figure out)
             let sg =
-                FSMUtility.LocateFSM(__instance.transform.Find("Charm Effects").gameObject, "Spawn Grimmchild")
+                (__instance.transform.Find "Charm Effects").gameObject.LocateMyFSM "Spawn Grimmchild"
 
-            let sp = sg.FsmStates |> Seq.find (_.Name >> (=) "Spawn Pause")
+            let sp = Util.stateByName "Spawn Pause" sg.FsmStates
             sp.Actions[0].Enabled <- true
+
+    // let spawn = sg.FsmStates |> Array.find (_.Name >> (=) "Spawn")
+
+    // let grimmchild =
+    //     (spawn.Actions |> Array.find (fun x -> x :? Actions.SpawnObjectFromGlobalPool)
+    //     :?> Actions.SpawnObjectFromGlobalPool)
+    //         .gameObject.Value
+
+    // let grimmfsm = FSMUtility.LocateFSM(grimmchild, "Control")
+    // grimmfsm.Fsm.InitData()
+    // let shoot = grimmfsm.FsmStates |> Array.find (_.Name >> (=) "Shoot")
+
+    // let ball =
+    //     (shoot.Actions |> Array.find (fun x -> x :? Actions.SpawnObjectFromGlobalPool)
+    //     :?> Actions.SpawnObjectFromGlobalPool)
+    //         .gameObject.Value
+
+    // let ballfsm = FSMUtility.LocateFSM(ball, "Control")
+    // ballfsm.Fsm.InitData()
+    // let ballInit = ballfsm.FsmStates |> Array.find (_.Name >> (=) "Init")
+
+    // ballInit.LoadActions()
+
+    // let damager =
+    //     (ballInit.Actions |> Array.find (fun x -> x :? Actions.ActivateGameObject)
+    //     :?> Actions.ActivateGameObject)
+    //         .gameObject.GameObject.Value
+
+    // let dfsm = FSMUtility.LocateFSM(damager, "Attack")
+    // dfsm.Fsm.InitData()
+    // let isPlayer = FsmBool "isPlayer"
+    // isPlayer.Value <- false
+    // dfsm.FsmVariables.BoolVariables <- Array.append dfsm.FsmVariables.BoolVariables [| isPlayer |]
+    // let n = shoot.Actions |> Array.findIndex (fun x -> x :? Actions.SetFsmInt)
+    // let a, b = Array.splitAt n shoot.Actions
+    // let setIsPlayer = SetIsPlayerAction()
+    // shoot.Actions <- Array.concat [| a; [| setIsPlayer |]; b |]
+    // setIsPlayer.Init shoot
+
+
 
     // let fsm = __instance.proxyFSM
     // let initState = fsm.FsmStates |> Seq.find (_.Name >> (=) "Init")
@@ -161,6 +335,22 @@ type public Patches() =
     // Printf.ksprintf MainClass.Instance.Logger.LogInfo "%d - %s" initState.Actions.Length $"{ev}"
     // ev.Init initState
 
+    [<HarmonyPatch(typeof<HeroBox>, "Start")>]
+    [<HarmonyPrefix>]
+    static member public HeroBoxStart(__instance: HeroBox) =
+        heroBox <- __instance.gameObject
+        Printf.ksprintf MainClass.Instance.Logger.LogInfo "hblayer %d" __instance.gameObject.layer
+
+    [<HarmonyPatch(typeof<HeroBox>, "OnTriggerEnter2D")>]
+    [<HarmonyPrefix>]
+    static member public TriggerEnter(__instance: HeroBox, otherCollider: UnityEngine.Collider2D) =
+        MainClass.Instance.Logger.LogInfo $"theroenter {otherCollider.gameObject.name}"
+
+    // [<HarmonyPatch(typeof<HeroBox>, "OnTriggerStay2D")>]
+    // [<HarmonyPrefix>]
+    // static member public TriggerStay(__instance: HeroBox, otherCollider: UnityEngine.Collider2D) =
+    //     MainClass.Instance.Logger.LogInfo $"therostay {otherCollider.gameObject.name}"
+
 
     // [<HarmonyPatch(typeof<WaitForHeroInPosition>, nameof Unchecked.defaultof<WaitForHeroInPosition>.OnEnter)>]
     // [<HarmonyPrefix>]
@@ -172,46 +362,45 @@ type public Patches() =
 
     [<HarmonyPatch(typeof<Fsm>, nameof (Unchecked.defaultof<Fsm>.ProcessEvent))>]
     [<HarmonyPrefix>]
-    static member public Proc(__instance: Fsm, fsmEvent: FsmEvent, eventData: FsmEventData) =
+    static member public Proc(__instance: Fsm, fsmEvent: FsmEvent) =
         if __instance.Active && not (FsmEvent.IsNullOrEmpty fsmEvent) then
-            // MainClass.Instance.Logger.LogInfo $"{__instance.Owner.name}/{__instance.Name}: processing {fsmEvent.Name}"
+            //MainClass.Instance.Logger.LogInfo $"{__instance.Owner.name}/{__instance.Name}: processing {fsmEvent.Name}"
             ()
 
-    [<HarmonyPatch(typeof<GameMap>, nameof (Unchecked.defaultof<GameMap>.SetupMap))>]
-    [<HarmonyPrefix>]
-    static member public SetupMap(__instance: GameMap) =
-        let inst = __instance
+    // [<HarmonyPatch(typeof<GameMap>, nameof (Unchecked.defaultof<GameMap>.SetupMap))>]
+    // [<HarmonyPrefix>]
+    // static member public SetupMap(__instance: GameMap) =
+    //     let inst = __instance
 
-        let pd = PlayerData.instance
+    //     let pd = PlayerData.instance
 
-        Array.init inst.transform.childCount inst.transform.GetChild
-        |> Array.iter (fun x ->
-            Array.init x.gameObject.transform.childCount x.gameObject.transform.GetChild
-            |> Array.iter (fun y ->
-                if pd.scenesMapped.Contains y.gameObject.name || true then
-                    MainClass.Instance.Logger.LogInfo $"scene {y.gameObject.name}"
+    //     Array.init inst.transform.childCount inst.transform.GetChild
+    //     |> Array.iter (fun x ->
+    //         Array.init x.gameObject.transform.childCount x.gameObject.transform.GetChild
+    //         |> Array.iter (fun y ->
+    //             if pd.scenesMapped.Contains y.gameObject.name || true then
+    //                 MainClass.Instance.Logger.LogInfo $"scene {y.gameObject.name}"
 
-                    Array.init y.gameObject.transform.childCount y.gameObject.transform.GetChild
-                    |> Array.iter (fun z ->
-                        MainClass.Instance.Logger.LogInfo $"- {z.gameObject.name}"
+    //                 Array.init y.gameObject.transform.childCount y.gameObject.transform.GetChild
+    //                 |> Array.iter (fun z ->
+    //                     MainClass.Instance.Logger.LogInfo $"- {z.gameObject.name}"
 
-                        if y.gameObject.name = "Grub Pins" then
-                            let w1, w2 = Context.grubPin
-                            MainClass.Instance.Logger.LogInfo $"= ({w1 z.gameObject}) {w2 z.gameObject}"
-                        else
-                            Context.pinMap
-                            |> Map.tryFind z.gameObject.name
-                            |> Option.iter (fun (w1, w2) ->
-                                MainClass.Instance.Logger.LogInfo $"= ({w1 z.gameObject}) {w2 z.gameObject}"))
-                else
-                    MainClass.Instance.Logger.LogInfo $"skipping scene {y.gameObject.name}"))
+    //                     if y.gameObject.name = "Grub Pins" then
+    //                         let w1, w2 = Context.grubPin
+    //                         MainClass.Instance.Logger.LogInfo $"= ({w1 z.gameObject}) {w2 z.gameObject}"
+    //                     else
+    //                         Context.pinMap
+    //                         |> Map.tryFind z.gameObject.name
+    //                         |> Option.iter (fun (w1, w2) ->
+    //                             MainClass.Instance.Logger.LogInfo $"= ({w1 z.gameObject}) {w2 z.gameObject}"))
+    //             else
+    //                 MainClass.Instance.Logger.LogInfo $"skipping scene {y.gameObject.name}"))
 
-    [<HarmonyPatch(typeof<FsmLog>, "AddEntry")>]
-    [<HarmonyPrefix>]
-    static member public LogFsm(entry: FsmLogEntry, sendToUnityLog: bool) =
-        //absMainClass.Instance.Logger.LogInfo "a"
-        //entry.DebugLog()
-        ()
+    // [<HarmonyPatch(typeof<FsmLog>, "AddEntry")>]
+    // [<HarmonyPrefix>]
+    // static member public LogFsm(entry: FsmLogEntry) =
+    //     //absMainClass.Instance.Logger.LogInfo "a"
+    //     entry.DebugLog()
 
     [<HarmonyPatch(typeof<GameManager>, nameof (Unchecked.defaultof<GameManager>.ClearSaveFile))>]
     [<HarmonyPrefix>]
@@ -289,6 +478,52 @@ type public Patches() =
 
             ()
 
+    [<HarmonyPatch(typeof<PlayMakerUnity2DProxy>, nameof (Unchecked.defaultof<PlayMakerUnity2DProxy>.Start))>]
+    [<HarmonyPostfix>]
+    static member public DebugProxy(__instance: PlayMakerUnity2DProxy) = () // __instance.debug <- true
+
+    [<HarmonyPatch(typeof<PlayMakerFSM>, "Awake")>]
+    [<HarmonyPostfix>]
+    static member public FsmAwake(__instance: PlayMakerFSM) =
+        MainClass.Instance.Logger.LogInfo $"awake {__instance.gameObject.name} - {__instance.FsmName}"
+
+        match __instance.gameObject.name, __instance.FsmName with
+        | "Enemy Damager", "Attack" ->
+            if
+                __instance.FsmVariables.BoolVariables.Length = 1
+                && __instance.FsmVariables.FloatVariables.Length = 1
+            then
+                let isPlayer = FsmBool "isPlayer"
+                isPlayer.Value <- false
+
+                __instance.FsmVariables.BoolVariables <-
+                    Array.append __instance.FsmVariables.BoolVariables [| isPlayer |]
+
+                let detect = __instance.FsmStates |> Array.find (_.Name >> (=) "Detect")
+                detect.Actions[0] <- CustomTrigger2D(detect.Actions[0] :?> Actions.Trigger2dEvent)
+                detect.Actions[0].Init detect
+                let inv = __instance.FsmStates |> Array.find (_.Name >> (=) "Invincible?")
+                let log0 = FsmLogger "pre detect"
+                let log1 = FsmLogger "post detect"
+                detect.Actions <- Array.concat [| [| log0 |]; detect.Actions; [| log1 |] |]
+                let log0 = FsmLogger "pre inv"
+                let log1 = FsmLogger "post inv"
+                inv.Actions <- Array.concat [| [| log0 |]; inv.Actions; [| log1 |] |]
+
+                MainClass.Instance.Logger.LogInfo "added bool var"
+        | "Grimmchild(Clone)", "Control" ->
+            let shoot = __instance.FsmStates |> Array.find (_.Name >> (=) "Shoot")
+
+            if shoot.Actions.Length = 10 then
+                let n = shoot.Actions |> Array.findIndex (fun x -> x :? Actions.SetFsmInt)
+                let setIsPlayer = SetIsPlayerAction()
+                shoot.Actions <- Array.insertAt n setIsPlayer shoot.Actions
+                setIsPlayer.Init shoot
+                MainClass.Instance.Logger.LogInfo "added SetIsPlayer"
+            else
+                MainClass.Instance.Logger.LogInfo "not updating grimmchild control"
+        | _ -> ()
+
     [<HarmonyPatch(typeof<GrimmEnemyRange>, nameof (Unchecked.defaultof<GrimmEnemyRange>.GetTarget))>]
     [<HarmonyPostfix>]
     static member public GrimmTarget(__instance: GrimmEnemyRange, __result: UnityEngine.GameObject byref) =
@@ -311,17 +546,37 @@ type public Patches() =
                 null
             | "Player" :: xs ->
                 g.Targets <- xs
-                HeroController.instance.gameObject
+                SetIsPlayerAction.IsPlayer <- true
+
+                if heroBox = null then
+                    HeroController.instance.gameObject
+                else
+                    heroBox
             | x :: xs ->
                 match List.tryFind (fst >> (=) x) targets with
                 | Some x ->
                     g.Targets <- t
+                    SetIsPlayerAction.IsPlayer <- false
                     snd x
                 | None -> selectTarget xs
 
         __result <- selectTarget g.Targets
 
-        let names = "Player" :: List.sort (List.map fst targets)
+        let names = List.sort (List.map fst targets)
+
+        let names =
+            if
+                UnityEngine.Physics2D.Linecast(
+                    __instance.transform.position,
+                    HeroController.instance.gameObject.transform.position,
+                    256
+                )
+                |> UnityEngine.RaycastHit2D.op_Implicit
+                |> not
+            then
+                "Player" :: names
+            else
+                names
 
         // if targetable enemies are different now, tell neuro
         if names <> lastNames then
