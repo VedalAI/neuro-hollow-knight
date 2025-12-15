@@ -3,57 +3,74 @@ namespace HollowNeuro
 open HarmonyLib
 open HutongGames.PlayMaker
 
-type CustomTrigger2D(act: Actions.Trigger2dEvent) =
+type CustomFire(fire: Actions.FireAtTarget, getSpeedScale: CustomFire -> float32) =
+    inherit Actions.RigidBody2dActionBase()
+    let mutable self: FsmGameObject = null
+    let mutable speedScale = 1.0f
+
+    override _.Awake() = base.Fsm.HandleFixedUpdate <- true
+
+    override _.OnPreprocess() = base.Fsm.HandleFixedUpdate <- true
+
+    override this.OnEnter() =
+        let obj = base.Fsm.GetOwnerDefaultTarget fire.gameObject
+        self <- FsmGameObject.op_Implicit obj
+        this.CacheRigidBody2d obj
+        speedScale <- getSpeedScale this
+        this.DoSetVelocity()
+
+        if not fire.everyFrame then
+            this.Finish()
+
+    override this.OnFixedUpdate() =
+        this.DoSetVelocity()
+
+        if not fire.everyFrame then
+            this.Finish()
+
+    member private this.DoSetVelocity() =
+        if not (isNull this.rb2d) then
+            let dy =
+                fire.target.Value.transform.position.y + fire.position.Value.y
+                - self.Value.transform.position.y
+
+            let dx =
+                fire.target.Value.transform.position.x + fire.position.Value.x
+                - self.Value.transform.position.x
+
+            let angle =
+                atan2 dy dx * float32 (180.0 / System.Math.PI)
+                + if fire.spread.IsNone then
+                      0f
+                  else
+                      UnityEngine.Random.Range(-fire.spread.Value, fire.spread.Value)
+
+            let rad = angle * float32 (System.Math.PI / 180.0)
+
+            let x = fire.speed.Value * speedScale * cos rad
+            let y = fire.speed.Value * speedScale * sin rad
+
+            this.rb2d.velocity <- UnityEngine.Vector2(x, y)
+
+type CustomWait(time: unit -> float32) =
     inherit FsmStateAction()
-    // let mutable proxy: PlayMakerUnity2DProxy = null
 
-    let trigger (desc: string) (collisionInfo: UnityEngine.Collider2D) =
-        MainClass.Instance.Logger.LogInfo $"trigger {desc}: {collisionInfo.gameObject.name}"
+    let mutable timer = 0.0f
 
-        if
-            collisionInfo.gameObject.tag = act.collideTag.Value
-            || act.collideTag.IsNone
-            || System.String.IsNullOrEmpty act.collideTag.Value
-            || act.collideTag.Value = "Untagged"
-        then
-            MainClass.Instance.Logger.LogInfo "sending event"
-            act.Fsm.Event act.sendEvent
+    override _.OnEnter() =
+        timer <- time ()
+        MainClass.Instance.Logger.LogInfo $"waiting for {timer}"
 
-    let collision (desc: string) (collisionInfo: UnityEngine.Collision2D) =
-        MainClass.Instance.Logger.LogInfo
-            $"collision {desc}: {collisionInfo.collider.tag}/{collisionInfo.otherCollider.tag}/{collisionInfo.gameObject.name}"
+        if timer <= 0f then
+            base.Finish()
 
-        if
-            collisionInfo.gameObject.tag = act.collideTag.Value
-            || act.collideTag.IsNone
-            || System.String.IsNullOrEmpty act.collideTag.Value
-            || act.collideTag.Value = "Untagged"
-        then
-            MainClass.Instance.Logger.LogInfo "sending event"
-            act.Fsm.Event act.sendEvent
+    override _.OnUpdate() =
+        timer <- timer - UnityEngine.Time.deltaTime
 
-    override _.Init(state: FsmState) : unit =
-        base.Init state
-        act.Init state
+        if timer <= 0f then
+            MainClass.Instance.Logger.LogInfo $"finished waiting"
+            base.Finish()
 
-    override this.OnEnter() : unit =
-        if (this.Fsm.Variables.FindFsmBool "isPlayer").Value then
-            base.Owner.layer <- 3
-
-            let dmg =
-                base.Owner.GetComponent<DamageHero>()
-                |> Option.ofObj
-                |> Option.defaultWith base.Owner.AddComponent<DamageHero>
-
-            dmg.damageDealt <- 1
-        else
-            // have to restore layer back in case this is a reused ball
-            // no need to remove DamageHero as the ball wont collide with the player either way (surely)
-            base.Owner.layer <- 15
-
-        act.OnEnter()
-
-    override _.OnExit() : unit = act.OnExit()
 
 type FsmLambda(f: Fsm -> unit) =
     inherit FsmStateAction()
@@ -254,34 +271,68 @@ type public Patches() =
                 __instance.FsmVariables.BoolVariables.Length = 1
                 && __instance.FsmVariables.FloatVariables.Length = 1
             then
-                let isPlayer = FsmBool "isPlayer"
-                isPlayer.Value <- false
+                // set layer depending on isPlayer
+                do
+                    let detect = __instance.FsmStates |> Array.find (_.Name >> (=) "Detect")
 
-                __instance.FsmVariables.BoolVariables <-
-                    Array.append __instance.FsmVariables.BoolVariables [| isPlayer |]
+                    detect.Actions <-
+                        Array.append
+                            [| FsmLambda(fun fsm ->
+                                   MainClass.Instance.Logger.LogInfo "in damager"
 
-                let detect = __instance.FsmStates |> Array.find (_.Name >> (=) "Detect")
-                detect.Actions[0] <- CustomTrigger2D(detect.Actions[0] :?> Actions.Trigger2dEvent)
-                detect.Actions[0].Init detect
-                let inv = __instance.FsmStates |> Array.find (_.Name >> (=) "Invincible?")
-                detect.Actions <- Array.concat [| detect.Actions |]
-                inv.Actions <- Array.concat [| inv.Actions |]
+                                   if isPlayer then
+                                       fsm.GameObject.layer <- 3
 
-                MainClass.Instance.Logger.LogInfo "added bool var"
+                                       let dmg =
+                                           fsm.GameObject.GetComponent<DamageHero>()
+                                           |> Option.ofObj
+                                           |> Option.defaultWith fsm.GameObject.AddComponent<DamageHero>
+
+                                       dmg.damageDealt <- 1
+                                   else
+                                       // have to restore layer back in case this is a reused ball
+                                       // no need to remove DamageHero as the ball wont collide with the player either way (surely)
+                                       fsm.GameObject.layer <- 15) |]
+                            detect.Actions
+
+                    detect.Actions[0].Init detect
         | "Grimmchild(Clone)", "Control" ->
             let shoot = __instance.FsmStates |> Array.find (_.Name >> (=) "Shoot")
 
             if shoot.Actions.Length = 10 then
-                let n = shoot.Actions |> Array.findIndex (fun x -> x :? Actions.SetFsmInt)
+                let change = __instance.FsmStates |> Array.find (_.Name >> (=) "Change")
+                let antic = __instance.FsmStates |> Array.find (_.Name >> (=) "Antic")
+                // give player more time to react to the sound
+                // (the animation stops so dont make the delay too big)
+                do
+                    let newState = FsmState __instance.Fsm
+                    newState.Name <- "Pre-Shoot Delay"
+                    newState.Transitions <- [| FsmTransition() |]
+                    newState.Transitions[0].ToState <- "Shoot"
+                    newState.Transitions[0].ToFsmState <- shoot
+                    newState.Transitions[0].FsmEvent <- FsmEvent.GetFsmEvent "FINISHED"
+                    newState.Actions <- [| CustomWait(fun () -> if isPlayer then 0.4f else 0.0f) |]
+                    antic.Transitions[0].ToState <- "Pre-Shoot Delay"
+                    antic.Transitions[0].ToFsmState <- newState
 
-                let setIsPlayer =
-                    FsmLambda(fun fsm ->
-                        let damager = (fsm.Variables.FindFsmGameObject "Damager").Value
-                        let fsm = damager.LocateMyFSM "Attack"
-                        (fsm.FsmVariables.FindFsmBool "isPlayer").Value <- isPlayer)
+                // slow down the ball when firing at player
+                do
+                    let fireN = shoot.Actions |> Array.findIndex (fun x -> x :? Actions.FireAtTarget)
 
-                shoot.Actions <- Array.insertAt n setIsPlayer shoot.Actions
-                setIsPlayer.Init shoot
+                    shoot.Actions[fireN] <-
+                        CustomFire(
+                            shoot.Actions[fireN] :?> Actions.FireAtTarget,
+                            fun _ -> if isPlayer then 0.4f else 1.0f
+                        )
+
+                    shoot.Actions[fireN].Init shoot
+
+                let offx = change.Actions[1] :?> Actions.SetFloatValue
+                let offy = change.Actions[4] :?> Actions.RandomFloat
+                let mult (x: FsmFloat) = x.Value <- x.Value * 1.5f
+                mult offx.floatValue
+                mult offy.min
+                mult offy.max
                 MainClass.Instance.Logger.LogInfo "added SetIsPlayer"
             else
                 MainClass.Instance.Logger.LogInfo "not updating grimmchild control"
