@@ -79,20 +79,82 @@ type FsmLambda(f: Fsm -> unit) =
         f this.Fsm
         this.Finish()
 
-module Util =
+[<AutoOpen>]
+module Stuff =
     let stateByName name (x: FsmState array) = x |> Array.find (_.Name >> (=) name)
-
-[<HarmonyPatch>]
-type public Patches() =
-    static let mutable isPlayer = false
-    static let mutable fsmInitialized = false
-    static let mutable heroBox: UnityEngine.GameObject = null
-    static let mutable lastNames = []
+    let mutable isPlayer = false
+    let mutable fsmInitialized = false
+    let mutable heroBox: UnityEngine.GameObject = null
+    let mutable lastNames = []
     // names that are reserved for specific entities
     // (so labels aren't transient but have some persistence)
-    static let mutable reservedNames: ((string * int) * UnityEngine.GameObject) list = []
+    let mutable reservedNames: ((string * int) * UnityEngine.GameObject) list = []
 
-    static let neuroSaveSlotPath (slotIndex: int) =
+    type SpriteSwitch() =
+        inherit UnityEngine.MonoBehaviour()
+
+        [<DefaultValue>]
+        val mutable other: tk2dSpriteAnimation
+
+        [<DefaultValue>]
+        val mutable isPlayer: bool
+
+    let pickSpriteLib (orig: tk2dSpriteAnimation) =
+        let sw =
+            orig.GetComponent<SpriteSwitch>() :> obj
+            |> Option.ofObj
+            |> Option.map (fun x -> x :?> SpriteSwitch)
+            |> Option.defaultWith (fun () ->
+                let origS = orig.gameObject.AddComponent<SpriteSwitch>()
+
+                let clone =
+                    (UnityEngine.Object.Instantiate<UnityEngine.GameObject> orig.gameObject)
+                        .GetComponent<tk2dSpriteAnimation>()
+
+                let cloneS = clone.gameObject.GetComponent<SpriteSwitch>()
+                origS.other <- clone
+                cloneS.other <- orig
+                cloneS.isPlayer <- true
+
+                let mutable coll: tk2dSpriteCollectionData = null
+
+                clone.clips <-
+                    clone.clips
+                    |> Array.map (fun clip ->
+                        let clip = tk2dSpriteAnimationClip clip
+
+                        clip.frames
+                        |> Array.iter (fun frame ->
+                            if coll = null then
+                                coll <-
+                                    (UnityEngine.Object.Instantiate<UnityEngine.GameObject>
+                                        frame.spriteCollection.gameObject)
+                                        .GetComponent<tk2dSpriteCollectionData>()
+
+                                // do this thing to avoid manually calling Init (private)
+                                // (not sure how Init is even supposed to be called since it's seemingly not a Monobehaviour thing)
+                                coll.needMaterialInstance <- false
+                                coll.materials <- coll.materials |> Array.map UnityEngine.Material
+                                coll.materialInsts <- coll.materials
+                                coll.Transient <- true
+
+                                coll.materials
+                                |> Seq.iter (fun mat -> mat.color <- UnityEngine.Color(0.5f, 0.5f, 1.0f))
+
+                                coll.spriteDefinitions
+                                |> Array.iter (fun d ->
+                                    d.material <- coll.materials[d.materialId]
+                                    d.materialInst <- coll.materialInsts[d.materialId])
+
+                            frame.spriteCollection <- coll)
+
+                        clip)
+
+                origS)
+
+        if isPlayer = sw.isPlayer then orig else sw.other
+
+    let neuroSaveSlotPath (slotIndex: int) =
         System.IO.Path.Combine(
             UnityEngine.Application.persistentDataPath,
             if slotIndex = 0 then
@@ -101,7 +163,7 @@ type public Patches() =
                 $"neuro{slotIndex}.dat"
         )
 
-    static let labelTargets (targets: UnityEngine.GameObject list) =
+    let labelTargets (targets: UnityEngine.GameObject list) =
         reservedNames <-
             reservedNames
             |> List.filter (fun (_, x) ->
@@ -137,6 +199,9 @@ type public Patches() =
             Map.empty
         |> fst
 
+[<HarmonyPatch>]
+type public Patches() =
+
     [<HarmonyPatch(typeof<CheatManager>, "IsCheatsEnabled", MethodType.Getter)>]
     [<HarmonyPostfix>]
     static member public EnableCheats(__result: bool byref) = __result <- true
@@ -167,7 +232,7 @@ type public Patches() =
             let sg =
                 (__instance.transform.Find "Charm Effects").gameObject.LocateMyFSM "Spawn Grimmchild"
 
-            let sp = Util.stateByName "Spawn Pause" sg.FsmStates
+            let sp = stateByName "Spawn Pause" sg.FsmStates
             sp.Actions[0].Enabled <- true
 
     [<HarmonyPatch(typeof<HeroBox>, "Start")>]
@@ -325,15 +390,33 @@ type public Patches() =
                             fun _ -> if isPlayer then 0.4f else 1.0f
                         )
 
-                    shoot.Actions[fireN].Init shoot
+                    let setBallColor =
+                        FsmLambda(fun fsm ->
+                            let ball = fsm.Variables.FindFsmGameObject "Flameball"
+                            let t = ball.Value.GetComponent<tk2dSpriteAnimator>()
 
-                let offx = change.Actions[1] :?> Actions.SetFloatValue
-                let offy = change.Actions[4] :?> Actions.RandomFloat
-                let mult (x: FsmFloat) = x.Value <- x.Value * 1.5f
-                mult offx.floatValue
-                mult offy.min
-                mult offy.max
-                MainClass.Instance.Logger.LogInfo "added SetIsPlayer"
+                            t.Library <- pickSpriteLib t.Library
+
+                            Seq.init ball.Value.transform.childCount ball.Value.transform.GetChild
+                            |> Seq.iter (fun child ->
+                                let t = child.gameObject.GetComponent<tk2dSpriteAnimator>()
+
+                                if t <> null then
+                                    t.Library <- pickSpriteLib t.Library))
+
+                    shoot.Actions[fireN].Init shoot
+                    setBallColor.Init shoot
+                    shoot.Actions <- shoot.Actions |> Array.insertAt fireN setBallColor
+
+                // increase follow distance by ~2.12 times
+                // (for player safety)
+                do
+                    let offx = change.Actions[1] :?> Actions.SetFloatValue
+                    let offy = change.Actions[4] :?> Actions.RandomFloat
+                    let mult (x: FsmFloat) = x.Value <- x.Value * 1.5f
+                    mult offx.floatValue
+                    mult offy.min
+                    mult offy.max
             else
                 MainClass.Instance.Logger.LogInfo "not updating grimmchild control"
         | _ -> ()
