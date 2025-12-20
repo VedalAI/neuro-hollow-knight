@@ -644,16 +644,16 @@ type public Patches() =
 
             lastNames <- names
 
-        if names <> lastNamesCtx then
-            if not (List.isEmpty names0) then
-                let parenMsg =
-                    if names |> List.exists (String.exists ((=) '(')) then
-                        " Numbers in () are used to distinguish duplicate names."
-                    else
-                        ""
+        // if any *enemy* name not contained in old list
+        if names0 |> List.exists (fun x -> not (List.contains x lastNamesCtx)) then
+            let parenMsg =
+                if names |> List.exists (String.exists ((=) '(')) then
+                    " Numbers in () are used to distinguish duplicate names."
+                else
+                    ""
 
-                g.Context
-                    true
-                    $"Entities around you: {g.Serialize names}.{parenMsg} Your targets, in order of priority: {g.Serialize g.Targets}. Use the `set_targets` action to change the target list."
+            g.Context
+                true
+                $"Entities around you: {g.Serialize names}.{parenMsg} Your targets, in order of priority: {g.Serialize g.Targets}. Use the `set_targets` action to change the target list."
 
-            lastNamesCtx <- names
+            lastNamesCtx <- names0
