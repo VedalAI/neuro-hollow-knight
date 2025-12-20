@@ -81,11 +81,14 @@ type FsmLambda(f: Fsm -> unit) =
 
 [<AutoOpen>]
 module Stuff =
-    let stateByName name (x: FsmState array) = x |> Array.find (_.Name >> (=) name)
+    let findState name (x: PlayMakerFSM) =
+        x.FsmStates |> Array.find (_.Name >> (=) name)
+
     let mutable isPlayer = false
     let mutable fsmInitialized = false
     let mutable heroBox: UnityEngine.GameObject = null
     let mutable lastNames = []
+    let mutable lastNamesCtx = []
     // names that are reserved for specific entities
     // (so labels aren't transient but have some persistence)
     let mutable reservedNames: ((string * int) * UnityEngine.GameObject) list = []
@@ -199,8 +202,79 @@ module Stuff =
             Map.empty
         |> fst
 
+    let countBosses (pd: PlayerData) =
+        // seems like one boss is missing? whatever don't care
+        [ pd.killedInfectedKnight
+          pd.killedMawlek
+          pd.killedNailBros
+          pd.killedJarCollector
+          pd.killedMegaBeamMiner
+          pd.killedDungDefender
+          pd.killedFalseKnight
+          pd.killedFlukeMother
+          pd.killedLobsterLancer
+          pd.killedNailsage
+          pd.killedGrimm
+          pd.killedBigFly
+          pd.killedHiveKnight
+          pd.killedHollowKnight
+          pd.hornet1Defeated
+          pd.hornetOutskirtsDefeated
+          pd.killedMantisLord
+          pd.killedMegaMossCharger
+          pd.killedMimicSpider
+          pd.killedOblobble
+          pd.killedPaintmaster
+          pd.killedFinalBoss
+          pd.killedMageKnight
+          pd.killedTraitorLord
+          pd.killedMegaJellyfish
+          pd.killedBigBuzzer
+          pd.killedBlackKnight
+          pd.killedZote
+          pd.killedGhostHu
+          pd.killedGhostGalien
+          pd.killedGhostAladar
+          pd.killedGhostMarkoth
+          pd.killedGhostMarmu
+          pd.killedGhostNoEyes
+          pd.killedGhostXero
+          pd.killedNightmareGrimm
+          pd.mageLordDefeated
+          pd.mageLordDreamDefeated
+          pd.lurienDefeated
+          pd.hegemolDefeated
+          pd.monomonDefeated
+          pd.infectedKnightDreamDefeated
+          pd.falseKnightDreamDefeated
+          pd.nailsmithKilled
+          // comment to fix annoying formatting
+          ]
+        |> List.map (fun x -> if x then 1 else 0)
+        |> List.sum
+
+    type SheetNameStore() =
+        inherit UnityEngine.MonoBehaviour()
+
+        [<DefaultValue>]
+        val mutable public sheetName: string
+
 [<HarmonyPatch>]
 type public Patches() =
+    [<HarmonyPatch(typeof<DialogueBox>, nameof (Unchecked.defaultof<DialogueBox>.SetConversation))>]
+    [<HarmonyPostfix>]
+    static member public RememberDialogueSheet(__instance: DialogueBox, sheetName: string) =
+        // pages use some weird character indices, couldn't get it to work, show unpaginated
+        let mesh = __instance.gameObject.GetComponent<TMPro.TextMeshPro>()
+        MainClass.Instance.Game.ShowDialogue sheetName mesh.text
+
+    [<HarmonyPatch(typeof<Actions.ListenForQuickMap>, nameof (Unchecked.defaultof<Actions.ListenForQuickMap>.OnUpdate))>]
+    [<HarmonyPrefix>]
+    static member public DisableMapKeyAction() = false
+
+    [<HarmonyPatch(typeof<HeroController>, nameof (Unchecked.defaultof<HeroController>.CanQuickMap))>]
+    [<HarmonyPostfix>]
+    static member public DisableQuickMap(__result: bool byref) = __result <- false
 
     [<HarmonyPatch(typeof<CheatManager>, "IsCheatsEnabled", MethodType.Getter)>]
     [<HarmonyPostfix>]
@@ -212,9 +286,16 @@ type public Patches() =
         __instance.charmCost_40 <- 0
         __instance.gotCharm_40 <- true
         __instance.equippedCharm_40 <- true
+        __instance.newCharm_40 <- false
         __instance.charmsOwned <- 1
-        __instance.hasCharm <- true
-        __instance.EquipCharm 40
+    // __instance.hasCharm <- true
+    // __instance.EquipCharm 40
+
+    [<HarmonyPatch(typeof<InvCharmBackboard>, "OnEnable")>]
+    [<HarmonyPrefix>]
+    static member public DontShowCharm40(__instance: InvCharmBackboard) =
+        if __instance.gotCharmString = "gotCharm_40" then
+            __instance.gotCharmString <- ""
 
     [<HarmonyPatch(typeof<HeroController>, "SetupGameRefs")>]
     [<HarmonyPostfix>]
@@ -232,7 +313,7 @@ type public Patches() =
             let sg =
                 (__instance.transform.Find "Charm Effects").gameObject.LocateMyFSM "Spawn Grimmchild"
 
-            let sp = stateByName "Spawn Pause" sg.FsmStates
+            let sp = findState "Spawn Pause" sg
             sp.Actions[0].Enabled <- true
 
     [<HarmonyPatch(typeof<HeroBox>, "Start")>]
@@ -329,8 +410,54 @@ type public Patches() =
     [<HarmonyPostfix>]
     static member public FsmAwake(__instance: PlayMakerFSM) =
         MainClass.Instance.Logger.LogInfo $"awake {__instance.gameObject.name} - {__instance.FsmName}"
+        let state s = findState s __instance
+        let n = __instance.gameObject.name
 
-        match __instance.gameObject.name, __instance.FsmName with
+        let n =
+            if n.EndsWith "(Clone)" then
+                n.Substring(0, n.Length - "(Clone)".Length)
+            else
+                n
+
+        match n, __instance.FsmName with
+        | "Inv", "UI Inventory" ->
+            let a = (state "Any Other Panes?").Actions[1] :?> Actions.PlayerDataBoolTest
+            a.isTrue <- a.isFalse
+        | "Inventory", "Inventory Control" ->
+            [ (state "Single Pane?").Actions[7]
+              (state "Next Map").Actions[0]
+              (state "Next Map 2").Actions[0]
+              (state "Next Map 3").Actions[0]
+              ]
+            |> List.iter (fun x ->
+                let x = x :?> Actions.PlayerDataBoolTest
+                x.isTrue <- x.isFalse)
+        | "40", "charm_show_if_collected" ->
+            let chk = state "Check"
+
+            match chk.Actions[chk.Actions.Length - 1] with
+            | :? Actions.PlayerDataBoolTest as a ->
+                chk.Actions[chk.Actions.Length - 1] <-
+                    FsmLambda(fun fsm ->
+                        let ownerDefaultTarget = fsm.GetOwnerDefaultTarget a.gameObject
+
+                        if ownerDefaultTarget <> null then
+                            let comp = ownerDefaultTarget.GetComponent<GameManager>()
+
+                            if comp <> null then
+                                let boolCheck = comp.GetPlayerDataBool a.boolName.Value
+
+                                fsm.Event(
+                                    if boolCheck && not (a.boolName.Value.EndsWith "_40") then
+                                        a.isTrue
+                                    else
+                                        a.isFalse
+                                ))
+            | _ -> ()
+        | "Charm Effects", "Spawn Grimmchild" ->
+            // wait for 0.25s to give the old grimmchild instance time to despawn
+            let sp = state "Spawn Pause"
+            sp.Actions[0].Enabled <- true
         | "Enemy Damager", "Attack" ->
             if
                 __instance.FsmVariables.BoolVariables.Length = 1
@@ -338,7 +465,7 @@ type public Patches() =
             then
                 // set layer depending on isPlayer
                 do
-                    let detect = __instance.FsmStates |> Array.find (_.Name >> (=) "Detect")
+                    let detect = state "Detect"
 
                     detect.Actions <-
                         Array.append
@@ -357,16 +484,45 @@ type public Patches() =
                                    else
                                        // have to restore layer back in case this is a reused ball
                                        // no need to remove DamageHero as the ball wont collide with the player either way (surely)
+                                       // just set the damage value instead
+                                       // default lv4 is 11 damage
+                                       // likely final boss count is 20-30
+                                       // divide by 2 = end up at 10-15
+                                       // divide by 1.75 = end up at 11-17
+                                       // divide by 1.5 = end up at 13-20
+                                       // 1.5 seems excessive, 2 is fine but perhaps just a tiny bit conservative?
+                                       // try 1.75 (7/4) for now
+                                       (fsm.Variables.FindFsmInt "Damage").Value <-
+                                           countBosses PlayerData.instance * 4 / 7 + 1
+
                                        fsm.GameObject.layer <- 15) |]
                             detect.Actions
 
                     detect.Actions[0].Init detect
-        | "Grimmchild(Clone)", "Control" ->
-            let shoot = __instance.FsmStates |> Array.find (_.Name >> (=) "Shoot")
+        // never set nightmareLanterAppeared to true
+        | "Sycophant Dream", "Activate Lantern" ->
+            let init = state "Init"
+            let act = init.Actions[init.Actions.Length - 1] :?> Actions.PlayerDataBoolTest
+            act.isFalse <- act.isTrue
+        // never set nightmareLanterLit to true
+        | "grimm_brazier", "grimm_brazier" ->
+            let init = state "Init"
+            let act = init.Actions[init.Actions.Length - 1] :?> Actions.PlayerDataBoolTest
+            act.isFalse <- act.isTrue
+        // hopefully the above is enough to never enable the grimm troupe content
+        | "Grimmchild", "Control" ->
+            let shoot = state "Shoot"
 
             if shoot.Actions.Length = 10 then
-                let change = __instance.FsmStates |> Array.find (_.Name >> (=) "Change")
-                let antic = __instance.FsmStates |> Array.find (_.Name >> (=) "Antic")
+                let change = state "Change"
+                let antic = state "Antic"
+                let chk = state "Check For Target"
+
+                do
+                    // treat lv1 as lv2 for target checking purposes
+                    let cmp = chk.Actions[0] :?> Actions.IntCompare
+                    cmp.equal <- cmp.greaterThan
+
                 // give player more time to react to the sound
                 // (the animation stops so dont make the delay too big)
                 do
@@ -408,12 +564,12 @@ type public Patches() =
                     setBallColor.Init shoot
                     shoot.Actions <- shoot.Actions |> Array.insertAt fireN setBallColor
 
-                // increase follow distance by ~2.12 times
+                // increase follow distance by ~2 times
                 // (for player safety)
                 do
                     let offx = change.Actions[1] :?> Actions.SetFloatValue
                     let offy = change.Actions[4] :?> Actions.RandomFloat
-                    let mult (x: FsmFloat) = x.Value <- x.Value * 1.5f
+                    let mult (x: FsmFloat) = x.Value <- x.Value * 1.4f
                     mult offx.floatValue
                     mult offy.min
                     mult offy.max
@@ -459,7 +615,7 @@ type public Patches() =
 
         __result <- selectTarget g.Targets
 
-        let names = List.sort (List.map fst targets)
+        let names0 = List.sort (List.map fst targets)
 
         let names =
             if
@@ -471,9 +627,9 @@ type public Patches() =
                 |> UnityEngine.RaycastHit2D.op_Implicit
                 |> not
             then
-                "Player" :: names
+                "Player" :: names0
             else
-                names
+                names0
 
         // if targetable enemies are different now, tell neuro
         if names <> lastNames then
@@ -486,14 +642,18 @@ type public Patches() =
 
             g.RegisterActions [ act ]
 
-            let parenMsg =
-                if names |> List.exists (String.exists ((=) '(')) then
-                    " Numbers in () are used to distinguish duplicate names."
-                else
-                    ""
+            lastNames <- names
 
-            g.Context
-                true
-                $"Entities around you: {g.Serialize names}.{parenMsg} Your targets, in order of priority: {g.Serialize g.Targets}. Use the `set_targets` action to change the target list."
+        if names <> lastNamesCtx then
+            if not (List.isEmpty names0) then
+                let parenMsg =
+                    if names |> List.exists (String.exists ((=) '(')) then
+                        " Numbers in () are used to distinguish duplicate names."
+                    else
+                        ""
 
-        lastNames <- names
+                g.Context
+                    true
+                    $"Entities around you: {g.Serialize names}.{parenMsg} Your targets, in order of priority: {g.Serialize g.Targets}. Use the `set_targets` action to change the target list."
+
+            lastNamesCtx <- names

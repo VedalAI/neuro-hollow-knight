@@ -66,7 +66,7 @@ module Context =
             (cnst "Grub")
 
     let stripHtml (x: string) =
-        Regex(" +").Replace(Regex(@"<[^>]*>").Replace(x, " "), " ")
+        Regex(" +").Replace(Regex(@"<[^>]*>").Replace(x.Replace("<br>", "\n"), " "), " ")
 
     let pinMap =
         let nextArea =
@@ -454,6 +454,9 @@ type Game(plugin: MainClass) =
         with get () = targets
         and set x = targets <- x
 
+    member this.ShowDialogue sheet text =
+        this.Context false $"`{sheet}` says: {Context.stripHtml text}"
+
     member this.SaveData() =
         try
             this.Serialize saveData
@@ -527,15 +530,41 @@ type Game(plugin: MainClass) =
                 let wp = saveData.waypoints |> Option.defaultValue Map.empty
 
                 if wp |> Map.containsKey name then
-                    Error(Some $"waypoint {name} already exists! delete it first if you want to change its position")
+                    Error(Some $"waypoint `{name}` already exists! delete it first if you want to change its position")
                 else
-                    let zone, _ = Context.zoneScene ()
-                    let x, y = Context.playerPos ()
-                    let wp = wp |> Map.add name { x = x; y = y; zone = zone }
-                    saveData <- { saveData with waypoints = Some wp }
+                    let pd = PlayerData.instance
 
-                    let keys = Map.keys wp |> Seq.toArray
-                    Ok(Some $"waypoint {name} added! current user waypoints: {this.Serialize keys}"))
+                    let lim =
+                        List.sum (
+                            List.map
+                                (fun (a, b) -> if a then b else 0)
+                                [ pd.hasMarker_b, pd.spareMarkers_b
+                                  pd.hasMarker_r, pd.spareMarkers_r
+                                  pd.hasMarker_w, pd.spareMarkers_w
+                                  pd.hasMarker_y, pd.spareMarkers_y ]
+                        )
+
+                    if Map.count wp < lim then
+                        let zone, _ = Context.zoneScene ()
+                        let x, y = Context.playerPos ()
+                        let wp = wp |> Map.add name { x = x; y = y; zone = zone }
+                        saveData <- { saveData with waypoints = Some wp }
+
+                        let keys = Map.keys wp |> Seq.toArray
+                        Ok(Some $"waypoint `{name}` added! current user waypoints: {this.Serialize keys}")
+                    else
+                        if lim = 0 then
+                            "You are not yet allowed to create waypoints! The player must buy a set of map markers from Iselda first."
+                        else
+                            let help =
+                                if pd.hasMarker_r && pd.hasMarker_b && pd.hasMarker_w && pd.hasMarker_y then
+                                    "Delete an old waypoint in order to create new ones!"
+                                else
+                                    "You can delete an old waypoint or tell the player to buy additional markers from Iselda to increase the limit."
+
+                            $"You have reached your current limit of {lim} waypoints! {help}"
+                        |> Some
+                        |> Error)
         | DeleteWaypoint name ->
             Context.checkMap ()
             |> Result.bind (fun () ->
@@ -545,10 +574,10 @@ type Game(plugin: MainClass) =
                     let wp = Map.remove name wp
                     saveData <- { saveData with waypoints = Some wp }
                     let keys = Map.keys wp |> Seq.toArray
-                    Ok(Some $"waypoint {name} deleted! remaining user waypoints: {this.Serialize keys}")
+                    Ok(Some $"Waypoint `{name}` deleted! Remaining user waypoints: {this.Serialize keys}")
                 else
                     let keys = Map.keys wp |> Seq.toArray
-                    Error(Some $"waypoint {name} not found! existing user waypoints: {this.Serialize keys}"))
+                    Error(Some $"Waypoint `{name}` not found! Existing user waypoints: {this.Serialize keys}"))
         | SetTargets t ->
             targets <- t
 
