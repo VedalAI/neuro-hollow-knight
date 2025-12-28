@@ -87,11 +87,9 @@ module Stuff =
     let mutable isPlayer = false
     let mutable fsmInitialized = false
     let mutable heroBox: UnityEngine.GameObject = null
-    let mutable lastNames = []
     let mutable lastNamesCtx = []
-    // names that are reserved for specific entities
-    // (so labels aren't transient but have some persistence)
-    let mutable reservedNames: ((string * int) * UnityEngine.GameObject) list = []
+    let mutable lastSent = System.DateTime.Now.AddDays -1.
+    let mutable lastCtx = ""
 
     type SpriteSwitch() =
         inherit UnityEngine.MonoBehaviour()
@@ -166,41 +164,8 @@ module Stuff =
                 $"neuro{slotIndex}.dat"
         )
 
-    let labelTargets (targets: UnityEngine.GameObject list) =
-        reservedNames <-
-            reservedNames
-            |> List.filter (fun (_, x) ->
-                // somehow, null checks aren't enough, i have to try-catch it
-                try
-                    // NPE here even with x <> null... maybe activeSelf property's native code is somehow returning null...?
-                    // ...or accesses something null or whatever
-                    x.activeSelf
-                with :? System.NullReferenceException ->
-                    false)
-
-        targets
-        |> List.mapFold
-            (fun state target ->
-                // if target has a reserved name, use that
-                // otherwise, find the first non-reserved name and use that
-                // (map is probably more overhead than savings but whatever)
-                match reservedNames |> List.tryFind (snd >> (=) target) with
-                | Some((name, count), _) -> ((if count = 0 then name else $"{name} ({count + 1})"), target), state
-                | None ->
-                    let name = target.name
-
-                    let rec findUnusedName count =
-                        if reservedNames |> List.exists (fst >> (=) (name, count)) then
-                            findUnusedName (count + 1)
-                        else
-                            reservedNames <- ((name, count), target) :: reservedNames
-
-                            ((if count = 0 then name else $"{name} ({count + 1})"), target),
-                            Map.add name (count + 1) state
-
-                    findUnusedName (Map.tryFind name state |> Option.defaultValue 0))
-            Map.empty
-        |> fst
+    let grimmRange = 7.81f
+    let patchedGrimmRange = grimmRange * 2.f
 
     let countBosses (pd: PlayerData) =
         // seems like one boss is missing? whatever don't care
@@ -427,8 +392,7 @@ type public Patches() =
             [ (state "Single Pane?").Actions[7]
               (state "Next Map").Actions[0]
               (state "Next Map 2").Actions[0]
-              (state "Next Map 3").Actions[0]
-              ]
+              (state "Next Map 3").Actions[0] ]
             |> List.iter (fun x ->
                 let x = x :?> Actions.PlayerDataBoolTest
                 x.isTrue <- x.isFalse)
@@ -511,6 +475,11 @@ type public Patches() =
             act.isFalse <- act.isTrue
         // hopefully the above is enough to never enable the grimm troupe content
         | "Grimmchild", "Control" ->
+            let range =
+                Seq.init __instance.gameObject.transform.childCount __instance.gameObject.transform.GetChild
+                |> Seq.find (_.name >> (=) "Enemy Range")
+
+            range.GetComponent<UnityEngine.CircleCollider2D>().radius <- patchedGrimmRange
             let shoot = state "Shoot"
 
             if shoot.Actions.Length = 10 then
@@ -582,78 +551,93 @@ type public Patches() =
     static member public GrimmTarget(__instance: GrimmEnemyRange, __result: UnityEngine.GameObject byref) =
         let g = MainClass.Instance.Game
 
-        let targets =
+        let dist (x: UnityEngine.GameObject) =
+            (__instance.transform.position - x.transform.position).magnitude
+
+        let distFast (x: UnityEngine.GameObject) =
+            (__instance.transform.position - x.transform.position).sqrMagnitude
+
+        let inRange x =
+            distFast x < grimmRange * grimmRange
+            && UnityEngine.Physics2D.Linecast(
+                __instance.transform.position,
+                HeroController.instance.gameObject.transform.position,
+                256
+               )
+               |> UnityEngine.RaycastHit2D.op_Implicit
+               |> not
+
+        let targets0 =
+            let cmp f = fun x y -> compare (f x) (f y)
+
             __instance.enemyList
-            |> Seq.filter (fun x ->
-                UnityEngine.Physics2D.Linecast(__instance.transform.position, x.transform.position, 256)
-                |> UnityEngine.RaycastHit2D.op_Implicit
-                |> not)
-            |> Seq.sortBy (_.transform.position >> (-) __instance.transform.position >> _.sqrMagnitude)
             |> List.ofSeq
-            |> labelTargets
+            |> List.sortWith (
+                match MainClass.Instance.Game.Tactic with
+                | ShootNearestFirst -> cmp distFast
+                | ShootFurthestFirst -> cmp (distFast >> (~-))
+                | ShootLeastHpFirst -> cmp (_.GetComponent<HealthManager>() >> Option.ofObj >> Option.map _.hp)
+                | ShootMostHpFirst -> cmp (_.GetComponent<HealthManager>() >> Option.ofObj >> Option.map (_.hp >> (~-)))
+                | DontShoot -> fun _ _ -> 0
+            )
 
-        let rec selectTarget t =
-            match t with
-            | [] ->
-                g.Targets <- t
-                null
-            | "Player" :: xs ->
-                g.Targets <- xs
-                isPlayer <- true
+        let targets =
+            HeroController.instance.gameObject :: targets0
+            |> List.map (fun x ->
+                if x = HeroController.instance.gameObject then
+                    { name = "Player"
+                      distance = dist x / 2.0f
+                      hp = Some PlayerData.instance.health
+                      inShootRange = inRange x
+                      currentlyInvincible = false }
+                else
+                    let hm = x.GetComponent<HealthManager>() |> Option.ofObj
 
+                    { name =
+                        if x = HeroController.instance.gameObject then
+                            "Player"
+                        else
+                            x.name
+                      distance = dist x / 2.0f
+                      hp = hm |> Option.map _.hp
+                      inShootRange = inRange x
+                      currentlyInvincible = hm |> Option.map _.IsInvincible |> Option.defaultValue false })
+
+        if
+            inRange HeroController.instance.gameObject
+            && MainClass.Instance.Game.DequeuePlayerShot()
+        then
+            isPlayer <- true
+
+            __result <-
                 if heroBox = null then
                     HeroController.instance.gameObject
                 else
                     heroBox
-            | x :: xs ->
-                match List.tryFind (fst >> (=) x) targets with
-                | Some x ->
-                    g.Targets <- t
-                    isPlayer <- false
-                    snd x
-                | None -> selectTarget xs
+        else if MainClass.Instance.Game.Tactic = DontShoot then
+            __result <- null
+        else
+            __result <- null
+            isPlayer <- false
+            __result <- targets0 |> List.tryFind inRange |> Option.defaultValue null
 
-        __result <- selectTarget g.Targets
-
-        let names0 = List.sort (List.map fst targets)
-
-        let names =
-            if
-                UnityEngine.Physics2D.Linecast(
-                    __instance.transform.position,
-                    HeroController.instance.gameObject.transform.position,
-                    256
-                )
-                |> UnityEngine.RaycastHit2D.op_Implicit
-                |> not
-            then
-                "Player" :: names0
-            else
-                names0
-
-        // if targetable enemies are different now, tell neuro
-        if names <> lastNames then
-            let act = g.Action SetTargets
-
-            act.MutateProp "targets" (fun x ->
-                let x = x :?> NeuroFSharp.ArraySchema
-                let x = x.Items :?> NeuroFSharp.StringSchema
-                x.Enum <- Some(names |> Array.ofList))
-
-            g.RegisterActions [ act ]
-
-            lastNames <- names
+        let names = targets |> List.map _.name |> List.sort
 
         // if any *enemy* name not contained in old list
-        if names0 |> List.exists (fun x -> not (List.contains x lastNamesCtx)) then
-            let parenMsg =
-                if names |> List.exists (String.exists ((=) '(')) then
-                    " Numbers in () are used to distinguish duplicate names."
-                else
-                    ""
+        // or if 5 seconds have passed
+        let sendAnyway = (System.DateTime.Now - lastSent).TotalSeconds >= 5.
 
-            g.Context
-                true
-                $"Entities around you: {g.Serialize names}.{parenMsg} Your targets, in order of priority: {g.Serialize g.Targets}. Use the `set_targets` action to change the target list."
+        if sendAnyway || names |> List.exists (fun x -> not (List.contains x lastNamesCtx)) then
+            // if only distances changed, dont send even if sendAnyway is true
+            let ctx = g.Serialize(targets |> List.map (fun x -> { x with distance = 0.0f }))
 
-            lastNamesCtx <- names0
+            if ctx <> lastCtx then
+                lastCtx <- ctx
+
+                g.Context
+                    true
+                    $"Entities around you: {g.Serialize targets}. Your current targeting tactic: {g.Serialize g.Tactic}. Use the `set_tactic` action to change the tactic."
+
+                lastNamesCtx <- names
+
+            lastSent <- System.DateTime.Now

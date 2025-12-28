@@ -9,13 +9,22 @@ open BepInEx.Logging
 open HarmonyLib
 open NeuroFSharp
 
+type Tactic =
+    | ShootNearestFirst
+    | ShootFurthestFirst
+    | ShootMostHpFirst
+    | ShootLeastHpFirst
+    | DontShoot
+
 type Actions =
     | [<Action("map", "Show a list of points of interest, in the same area or globally.")>] ShowMap of local: bool
     | [<Action("create_waypoint", "Store the current position as a waypoint on the map")>] CreateWaypoint of
         name: string
     | [<Action("delete_waypoint", "Delete a named waypoint")>] DeleteWaypoint of name: string
-    | [<Action("set_targets", "Set the target priority list. Unlisted targets will not be shot.")>] SetTargets of
-        targets: string list
+    | [<Action("shoot_player", "Shoot the player with a single shot. Can be repeated to fire multiple times.")>] ShootPlayer
+    | [<Action("set_tactic",
+               "Set the enemy targeting tactic used for autofire, i.e. which enemies to prioritize when shooting.")>] SetTactic of
+        tactic: Tactic
 
 type Dir =
     // circle (atan2) start at E and goes towards N
@@ -51,6 +60,15 @@ type WorldMap =
     { currentAreaName: string
       [<SkipSerializingIfNone>]
       mappedAreas: Area list }
+
+type Entity =
+    { name: string
+      distance: float32
+      [<SkipSerializingIfNone>]
+      hp: int option
+      inShootRange: bool
+      [<SkipSerializingIfEquals false>]
+      currentlyInvincible: bool }
 
 module Context =
     let cnst x _ = x
@@ -445,14 +463,18 @@ type SaveData =
 type Game(plugin: MainClass) =
     inherit Game<Actions>()
 
-    let mutable targets: string list = []
+    let mutable tactic = Tactic.DontShoot
+    let mutable playerShots = 0
     let saveData0: SaveData = { waypoints = None }
     let mutable saveData: SaveData = saveData0
     let mutable hasMap = false
 
-    member _.Targets
-        with get () = targets
-        and set x = targets <- x
+    member _.DequeuePlayerShot() =
+        playerShots <> 0
+        && (playerShots <- playerShots - 1
+            true)
+
+    member _.Tactic = tactic
 
     member this.ShowDialogue sheet text =
         this.Context false $"`{sheet}` says: {Context.stripHtml text}"
@@ -480,7 +502,7 @@ type Game(plugin: MainClass) =
         if hasMap then
             this.RegisterActions [ ShowMap; CreateWaypoint; DeleteWaypoint ]
 
-        this.RegisterActions [ SetTargets ]
+        this.RegisterActions [ SetTactic; ShootPlayer ]
 
     override _.Name = "Hollow Knight"
 
@@ -578,19 +600,11 @@ type Game(plugin: MainClass) =
                 else
                     let keys = Map.keys wp |> Seq.toArray
                     Error(Some $"Waypoint `{name}` not found! Existing user waypoints: {this.Serialize keys}"))
-        | SetTargets t ->
-            targets <- t
-
-            if t |> List.contains "Player" then
-                let occCount = t |> List.filter ((=) "Player") |> List.length
-                let s = if occCount = 1 then "" else "s"
-
-                Ok(
-                    Some
-                        $"Successfully set the target list. The player will be shot {occCount} time{s} (once for each occurence in the list), listing them multiple times is allowed."
-                )
-            else
-                Ok None
+        | ShootPlayer ->
+            Ok(Some "Queued a shot towards the player. Repeat the shoot_player action to queue more shots.")
+        | SetTactic t ->
+            tactic <- t
+            Ok(Some $"Successfully set the tactic to {this.Serialize t}.")
 
     override _.LogError error =
         let fff = "fff"
@@ -705,12 +719,6 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
                 Some(
                     let game = Game this
                     game.Start(None, cts.Token) |> ignore
-
-                    // make it not show initially
-                    (game.Action SetTargets).MutateProp "targets" (fun x ->
-                        let x = x :?> ArraySchema
-                        let x = x.Items :?> StringSchema
-                        x.Enum <- Some [||])
 
                     (game.Action DeleteWaypoint).MutateProp "name" (fun x ->
                         let x = x :?> StringSchema
