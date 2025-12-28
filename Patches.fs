@@ -89,6 +89,7 @@ module Stuff =
     let mutable heroBox: UnityEngine.GameObject = null
     let mutable lastNamesCtx = []
     let mutable lastSent = System.DateTime.Now.AddDays -1.
+    let mutable lastHp: int option = Option.None
     let mutable lastCtx = ""
 
     type SpriteSwitch() =
@@ -636,9 +637,25 @@ type public Patches() =
             if ctx <> lastCtx then
                 lastCtx <- ctx
 
+                let hpCtx =
+                    if lastHp = Some PlayerData.instance.health then
+                        ""
+                    else
+                        match lastHp with
+                        | Some x when x = PlayerData.instance.health -> ""
+                        | None -> ""
+                        | Some x when PlayerData.instance.health = 0 -> $"The player has been dealt lethal damage! "
+                        | Some x when PlayerData.instance.health > x ->
+                            $"The player healed by {PlayerData.instance.health - x} hitpoints. "
+                        | Some x when PlayerData.instance.health < x ->
+                            $"The player took {x - PlayerData.instance.health} damage. "
+                        | Some x -> raise (exn "unreachable")
+
+                lastHp <- Some PlayerData.instance.health
+
                 g.Context
                     true
-                    $"Entities around you: {g.Serialize targets}. Your current targeting tactic: {g.Serialize g.Tactic}. Use the `set_tactic` action to change the tactic."
+                    $"{hpCtx}Entities around you: {g.Serialize targets}. Your current targeting tactic: {g.Serialize g.Tactic}. Use the `set_tactic` action to change the tactic."
 
                 lastNamesCtx <- names
 
