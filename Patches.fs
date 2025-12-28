@@ -588,6 +588,7 @@ type public Patches() =
                     { name = "Player"
                       distance = dist x / 2.0f
                       hp = Some PlayerData.instance.health
+                      maxHp = Some PlayerData.instance.CurrentMaxHealth
                       inShootRange = inRange x
                       currentlyInvincible = false }
                 else
@@ -600,6 +601,7 @@ type public Patches() =
                             x.name
                       distance = dist x / 2.0f
                       hp = hm |> Option.map _.hp
+                      maxHp = Option.None
                       inShootRange = inRange x
                       currentlyInvincible = hm |> Option.map _.IsInvincible |> Option.defaultValue false })
 

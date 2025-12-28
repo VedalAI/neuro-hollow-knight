@@ -73,6 +73,8 @@ type Entity =
       distance: float32
       [<SkipSerializingIfNone>]
       hp: int option
+      [<SkipSerializingIfNone>]
+      maxHp: int option
       inShootRange: bool
       [<SkipSerializingIfEquals false>]
       currentlyInvincible: bool }
