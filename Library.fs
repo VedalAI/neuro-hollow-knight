@@ -29,18 +29,25 @@ type Actions =
 type Dir =
     // circle (atan2) start at E and goes towards N
     | E = 0
-    | Ne = 1
-    | N = 2
-    | Nw = 3
-    | W = 4
-    | Sw = 5
-    | S = 6
-    | Se = 7
+    | Nee = 1
+    | Ne = 2
+    | Nne = 3
+    | N = 4
+    | Nnw = 5
+    | Nw = 6
+    | Nww = 7
+    | W = 8
+    | Sww = 9
+    | Sw = 10
+    | Ssw = 11
+    | S = 12
+    | Sse = 13
+    | Se = 14
+    | See = 15
 
 type PointOfInterest =
     { name: string
       distanceMeters: int
-      asimuth: int
       direction: Dir
       [<SkipSerializingIfEquals false>]
       userCreated: bool }
@@ -349,17 +356,15 @@ module Context =
 
         { name = name
           distanceMeters = int (dist * 10.0f)
-          // start with e-n-w-s, negate to e-s-w-n, shift by 90 to n-e-s-w
-          asimuth = int (round (450.0f - angle * float32 (180. / Math.PI))) % 360
           direction =
             // separate circle into 8 sectors
-            // 7.5-0.5 = E
+            // 15.5-0.5 = E
             // 0.5-1.5 = NE
             // ...
-            // 6.5-7.5 = SE
-            // (add 8.5 to (8) account for atan2 returning negative values and (0.5) round)
-            // (could add 8 and use round instead but thats one more function call wow so slow)
-            enum<Dir> (int (angle * float32 (4. / Math.PI) + 8.5f) % 8)
+            // 14.5-15.5 = SEE
+            // (add 16.5 to (16) account for atan2 returning negative values and (0.5) round)
+            // (could add 16 and use round instead but thats one more function call wow so slow)
+            enum<Dir> (int (angle * float32 (8. / Math.PI) + 16.5f) % 16)
           userCreated = userCreated }
 
     let waypoint
