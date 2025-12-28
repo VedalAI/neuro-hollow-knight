@@ -444,7 +444,7 @@ type public Patches() =
                                            |> Option.ofObj
                                            |> Option.defaultWith fsm.GameObject.AddComponent<DamageHero>
 
-                                       dmg.damageDealt <- 1
+                                       dmg.damageDealt <- 0
                                    else
                                        // have to restore layer back in case this is a reused ball
                                        // no need to remove DamageHero as the ball wont collide with the player either way (surely)
