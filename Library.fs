@@ -21,7 +21,8 @@ type Actions =
     | [<Action("create_waypoint", "Store the current position as a waypoint on the map")>] CreateWaypoint of
         name: string
     | [<Action("delete_waypoint", "Delete a named waypoint")>] DeleteWaypoint of name: string
-    | [<Action("shoot_player", "Shoot the player with a single shot. Can be repeated to fire multiple times.")>] ShootPlayer
+    | [<Action("shoot_player", "Shoot the player with a single shot. Can be repeated to fire multiple times.")>] ShootPlayer of
+        dealDamage: bool
     | [<Action("set_tactic",
                "Set the enemy targeting tactic used for autofire, i.e. which enemies to prioritize when shooting.")>] SetTactic of
         tactic: Tactic
@@ -99,8 +100,7 @@ module Context =
     let pinMap =
         let nextArea =
             mkPin
-                (getComp<MapNextAreaDisplay>
-                 >> fun _ -> false) // fun d -> d.visitedString = "" || PlayerData.instance.GetBool d.visitedString)
+                (getComp<MapNextAreaDisplay> >> fun _ -> false) // fun d -> d.visitedString = "" || PlayerData.instance.GetBool d.visitedString)
                 (cnst "Next area")
 
         let text = mkPin (cnst true) (getComp<TMPro.TMP_Text> >> _.text >> stripHtml)
@@ -399,7 +399,11 @@ module Context =
                id
            else
                Seq.filter (fun scene ->
-                   if scene.name = "Grub Pins" || pd.scenesMapped.Contains scene.name || scene.activeSelf then
+                   if
+                       scene.name = "Grub Pins"
+                       || pd.scenesMapped.Contains scene.name
+                       || scene.activeSelf
+                   then
                        logger.LogInfo $"including scene {scene.name}"
                        true
                    else
@@ -484,15 +488,17 @@ type Game(plugin: MainClass) =
     inherit Game<Actions>()
 
     let mutable tactic = Tactic.DontShoot
-    let mutable playerShots = 0
+    let mutable playerShots = []
     let saveData0: SaveData = { waypoints = None }
     let mutable saveData: SaveData = saveData0
     let mutable hasMap = false
 
     member _.DequeuePlayerShot() =
-        playerShots <> 0
-        && (playerShots <- playerShots - 1
-            true)
+        match playerShots with
+        | a :: b ->
+            playerShots <- b
+            Some a
+        | [] -> None
 
     member _.Tactic = tactic
 
@@ -620,7 +626,8 @@ type Game(plugin: MainClass) =
                 else
                     let keys = Map.keys wp |> Seq.toArray
                     Error(Some $"Waypoint `{name}` not found! Existing user waypoints: {this.Serialize keys}"))
-        | ShootPlayer ->
+        | ShootPlayer dealDamage ->
+            playerShots <- dealDamage :: playerShots
             Ok(Some "Queued a shot towards the player. Repeat the shoot_player action to queue more shots.")
         | SetTactic t ->
             tactic <- t

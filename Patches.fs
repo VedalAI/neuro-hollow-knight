@@ -2,6 +2,8 @@ namespace HollowNeuro
 
 open HarmonyLib
 open HutongGames.PlayMaker
+open System
+open System.Reflection
 
 type CustomFire(fire: Actions.FireAtTarget, getSpeedScale: CustomFire -> float32) =
     inherit Actions.RigidBody2dActionBase()
@@ -84,7 +86,7 @@ module Stuff =
     let findState name (x: PlayMakerFSM) =
         x.FsmStates |> Array.find (_.Name >> (=) name)
 
-    let mutable isPlayer = false
+    let mutable isPlayer = Option.None
     let mutable fsmInitialized = false
     let mutable heroBox: UnityEngine.GameObject = null
     let mutable lastNamesCtx = []
@@ -154,7 +156,7 @@ module Stuff =
 
                 origS)
 
-        if isPlayer = sw.isPlayer then orig else sw.other
+        if isPlayer.IsSome = sw.isPlayer then orig else sw.other
 
     let neuroSaveSlotPath (slotIndex: int) =
         System.IO.Path.Combine(
@@ -241,11 +243,82 @@ type public Patches() =
 
     [<HarmonyPatch(typeof<HeroController>, nameof (Unchecked.defaultof<HeroController>.CanQuickMap))>]
     [<HarmonyPostfix>]
-    static member public DisableQuickMap(__result: bool byref) = if disableMap then __result <- false
+    static member public DisableQuickMap(__result: bool byref) =
+        if disableMap then
+            __result <- false
 
     [<HarmonyPatch(typeof<CheatManager>, "IsCheatsEnabled", MethodType.Getter)>]
     [<HarmonyPostfix>]
     static member public EnableCheats(__result: bool byref) = __result <- true
+
+    [<HarmonyPatch(typeof<HeroController>, nameof (Unchecked.defaultof<HeroController>.TakeDamage))>]
+    [<HarmonyPrefix>]
+    static member public Take0Damage
+        (
+            __instance: HeroController,
+            go: UnityEngine.GameObject,
+            damageSide: GlobalEnums.CollisionSide,
+            damageAmount: int
+        ) =
+        if damageAmount <= 0 && go.name = "Enemy Damager" then
+            // CanTakeDamage
+            if
+                __instance.damageMode <> GlobalEnums.DamageMode.NO_DAMAGE
+                && __instance.transitionState = GlobalEnums.HeroTransitionState.WAITING_TO_TRANSITION
+                && not __instance.cState.invulnerable
+                && not __instance.cState.recoiling
+                && not __instance.playerData.isInvincible
+                && not __instance.cState.dead
+                && not __instance.cState.hazardDeath
+                && not BossSceneController.IsTransitioning
+            then
+                (typeof<HeroController>.GetMethod("CancelAttack", BindingFlags.NonPublic ||| BindingFlags.Instance))
+                    .Invoke(__instance, [||])
+                |> ignore
+
+                if __instance.cState.wallSliding then
+                    __instance.cState.wallSliding <- false
+                    __instance.wallSlideVibrationPlayer.Stop() |> ignore
+
+                if __instance.cState.touchingWall then
+                    __instance.cState.touchingWall <- false
+
+                if __instance.cState.recoilingLeft || __instance.cState.recoilingRight then
+                    (typeof<HeroController>
+                        .GetMethod("CancelRecoilHorizontal", BindingFlags.NonPublic ||| BindingFlags.Instance))
+                        .Invoke(__instance, [||])
+                    |> ignore
+
+                if __instance.cState.bouncing || __instance.cState.shroomBouncing then
+                    (typeof<HeroController>.GetMethod("CancelBounce", BindingFlags.NonPublic ||| BindingFlags.Instance))
+                        .Invoke(__instance, [||])
+                    |> ignore
+
+                    let rb2d = __instance.GetComponent<UnityEngine.Rigidbody2D>()
+                    rb2d.velocity <- UnityEngine.Vector2(rb2d.velocity.x, 0f)
+
+                __instance.GetComponent<HeroAudioController>().PlaySound GlobalEnums.HeroSounds.TAKE_HIT
+
+                if
+                    __instance.cState.nailCharging
+                    || typeof<HeroController>
+                        .GetField("nailChargeTimer", BindingFlags.NonPublic ||| BindingFlags.Instance)
+                        .GetValue
+                           __instance
+                       :?> float32
+                       <> 0f
+                then
+                    __instance.cState.nailCharging <- false
+                    // to reset nailChargeTimer
+                    __instance.CanNailArt() |> ignore
+
+                __instance.StartCoroutine(
+                    typeof<HeroController>
+                        .GetMethod("StartRecoil", BindingFlags.NonPublic ||| BindingFlags.Instance)
+                        .Invoke(__instance, [| damageSide; true; damageAmount |])
+                    :?> System.Collections.IEnumerator
+                )
+                |> ignore
 
     [<HarmonyPatch(typeof<PlayerData>, "SetupNewPlayerData")>]
     [<HarmonyPostfix>]
@@ -438,7 +511,8 @@ type public Patches() =
                             [| FsmLambda(fun fsm ->
                                    MainClass.Instance.Logger.LogInfo "in damager"
 
-                                   if isPlayer then
+                                   match isPlayer with
+                                   | Some d ->
                                        fsm.GameObject.layer <- 3
 
                                        let dmg =
@@ -446,8 +520,8 @@ type public Patches() =
                                            |> Option.ofObj
                                            |> Option.defaultWith fsm.GameObject.AddComponent<DamageHero>
 
-                                       dmg.damageDealt <- 0
-                                   else
+                                       dmg.damageDealt <- d
+                                   | None ->
                                        // have to restore layer back in case this is a reused ball
                                        // no need to remove DamageHero as the ball wont collide with the player either way (surely)
                                        // just set the damage value instead
@@ -503,7 +577,7 @@ type public Patches() =
                     newState.Transitions[0].ToState <- "Shoot"
                     newState.Transitions[0].ToFsmState <- shoot
                     newState.Transitions[0].FsmEvent <- FsmEvent.GetFsmEvent "FINISHED"
-                    newState.Actions <- [| CustomWait(fun () -> if isPlayer then 0.4f else 0.0f) |]
+                    newState.Actions <- [| CustomWait(fun () -> if isPlayer.IsSome then 0.4f else 0.0f) |]
                     antic.Transitions[0].ToState <- "Pre-Shoot Delay"
                     antic.Transitions[0].ToFsmState <- newState
 
@@ -514,7 +588,7 @@ type public Patches() =
                     shoot.Actions[fireN] <-
                         CustomFire(
                             shoot.Actions[fireN] :?> Actions.FireAtTarget,
-                            fun _ -> if isPlayer then 0.4f else 1.0f
+                            fun _ -> if isPlayer.IsSome then 0.4f else 1.0f
                         )
 
                     let setBallColor =
@@ -607,11 +681,14 @@ type public Patches() =
                       inShootRange = inRange x
                       currentlyInvincible = hm |> Option.map _.IsInvincible |> Option.defaultValue false })
 
+        let mutable shot = Option.None
+
         if
             inRange HeroController.instance.gameObject
-            && MainClass.Instance.Game.DequeuePlayerShot()
+            && (shot <- MainClass.Instance.Game.DequeuePlayerShot()
+                shot.IsSome)
         then
-            isPlayer <- true
+            isPlayer <- shot |> Option.map (fun x -> if x then 1 else 0)
 
             __result <-
                 if heroBox = null then
@@ -622,7 +699,7 @@ type public Patches() =
             __result <- null
         else
             __result <- null
-            isPlayer <- false
+            isPlayer <- Option.None
             __result <- targets0 |> List.tryFind inRange |> Option.defaultValue null
 
         let names = targets |> List.map _.name |> List.sort
