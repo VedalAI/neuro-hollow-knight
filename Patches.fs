@@ -168,6 +168,7 @@ module Stuff =
         )
 
     let disableMap = true
+    let disableBallTint = true
     let grimmRange = 7.81f
     let patchedGrimmRange = grimmRange * 2.f
 
@@ -606,8 +607,9 @@ type public Patches() =
                                     t.Library <- pickSpriteLib t.Library))
 
                     shoot.Actions[fireN].Init shoot
-                    setBallColor.Init shoot
-                    shoot.Actions <- shoot.Actions |> Array.insertAt fireN setBallColor
+                    if not disableBallTint then
+                        setBallColor.Init shoot
+                        shoot.Actions <- shoot.Actions |> Array.insertAt fireN setBallColor
 
                 // increase follow distance by ~2 times
                 // (for player safety)
