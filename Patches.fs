@@ -735,7 +735,7 @@ type public Patches() =
 
                 g.Context
                     true
-                    $"{hpCtx}Entities around you: {g.Serialize targets}. Your current targeting tactic: {g.Serialize g.Tactic}. Use the `set_tactic` action to change the tactic."
+                    $"{hpCtx}Entities around you: {g.Serialize targets}. Your current targeting tactic: {g.Serialize g.Tactic}. Use the `set_tactic` action to change the tactic to help or hinder the player."
 
                 lastNamesCtx <- names
 
