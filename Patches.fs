@@ -165,6 +165,7 @@ module Stuff =
                 $"neuro{slotIndex}.dat"
         )
 
+    let disableMap = true
     let grimmRange = 7.81f
     let patchedGrimmRange = grimmRange * 2.f
 
@@ -236,11 +237,11 @@ type public Patches() =
 
     [<HarmonyPatch(typeof<Actions.ListenForQuickMap>, nameof (Unchecked.defaultof<Actions.ListenForQuickMap>.OnUpdate))>]
     [<HarmonyPrefix>]
-    static member public DisableMapKeyAction() = false
+    static member public DisableMapKeyAction() = not disableMap
 
     [<HarmonyPatch(typeof<HeroController>, nameof (Unchecked.defaultof<HeroController>.CanQuickMap))>]
     [<HarmonyPostfix>]
-    static member public DisableQuickMap(__result: bool byref) = __result <- false
+    static member public DisableQuickMap(__result: bool byref) = if disableMap then __result <- false
 
     [<HarmonyPatch(typeof<CheatManager>, "IsCheatsEnabled", MethodType.Getter)>]
     [<HarmonyPostfix>]

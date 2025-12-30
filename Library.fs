@@ -80,6 +80,7 @@ type Entity =
       currentlyInvincible: bool }
 
 module Context =
+    let mutable logger: ManualLogSource = null
     let cnst x _ = x
     let mkPin (filter: UnityEngine.GameObject -> bool) (name: UnityEngine.GameObject -> string) = filter, name
     let getComp<'A> (o: UnityEngine.GameObject) = o.GetComponent<'A>()
@@ -99,7 +100,7 @@ module Context =
         let nextArea =
             mkPin
                 (getComp<MapNextAreaDisplay>
-                 >> fun d -> d.visitedString = "" || PlayerData.instance.GetBool d.visitedString)
+                 >> fun _ -> false) // fun d -> d.visitedString = "" || PlayerData.instance.GetBool d.visitedString)
                 (cnst "Next area")
 
         let text = mkPin (cnst true) (getComp<TMPro.TMP_Text> >> _.text >> stripHtml)
@@ -133,13 +134,14 @@ module Context =
                         fsm.FsmVariables.StringVariables
                         |> Array.tryFind (_.Name >> (=) "PlayerData Bool")
 
-                    not (has |> Option.exists (_.Value >> PlayerData.instance.GetBool >> not))
-                    && not (has2 |> Option.exists (_.Value >> PlayerData.instance.GetBool >> not))
-                    && not (killed |> Option.exists (_.Value >> PlayerData.instance.GetBool))
-                    && not (
-                        spec
-                        |> Option.exists (_.Value >> (fun x -> x = "" || PlayerData.instance.GetBool x) >> not)
-                    )
+                    let defaultTo d (x: HutongGames.PlayMaker.FsmString option) =
+                        let v = x |> Option.map _.Value |> Option.defaultValue ""
+                        if v = "" then d else PlayerData.instance.GetBool v
+
+                    defaultTo true has
+                    && defaultTo true has2
+                    && not (defaultTo false killed)
+                    && defaultTo true spec
             )
 
         Map.empty
@@ -396,15 +398,26 @@ module Context =
         |> if pd.mapAllRooms then
                id
            else
-               Seq.filter (fun scene -> scene.name = "Grub Pins" || pd.scenesMapped.Contains scene.name)
+               Seq.filter (fun scene ->
+                   if scene.name = "Grub Pins" || pd.scenesMapped.Contains scene.name || scene.activeSelf then
+                       logger.LogInfo $"including scene {scene.name}"
+                       true
+                   else
+                       logger.LogWarning $"skipping scene {scene.name}"
+                       false)
         |> Seq.collect (fun scene ->
             Seq.init scene.transform.childCount (scene.transform.GetChild >> _.gameObject)
             |> Seq.collect (fun pin ->
                 if scene.name = "Grub Pins" then
                     Some grubPin
                 else
-                    Map.tryFind pin.name pinMap |> Option.orElseWith (fun () -> None)
+                    Map.tryFind pin.name pinMap
+                    |> Option.orElseWith (fun () ->
+                        logger.LogError $"unknown pin type {pin.name}"
+                        None)
                 |> Option.bind (fun (allow, name) ->
+                    logger.LogWarning $"allowed {name pin} ({scene.name}/{pin.name})? {allow pin}"
+
                     if allow pin then
                         Some(waypoint playerPos area scene (name pin) pin)
                     else
@@ -675,6 +688,7 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
 
         try
             this.Logger <- base.Logger
+            Context.logger <- base.Logger
             // HutongGames.PlayMaker.FsmLog.MirrorDebugLog <- true
 
             let enemyDamagerLayer = 15
