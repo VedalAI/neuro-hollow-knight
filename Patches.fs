@@ -109,12 +109,15 @@ module Stuff =
             |> Option.ofObj
             |> Option.map (fun x -> x :?> SpriteSwitch)
             |> Option.defaultWith (fun () ->
+                Context.logger.LogError $"creating new sprite for {orig.name}"
                 let origS = orig.gameObject.AddComponent<SpriteSwitch>()
 
                 let clone =
                     (UnityEngine.Object.Instantiate<UnityEngine.GameObject> orig.gameObject)
                         .GetComponent<tk2dSpriteAnimation>()
 
+                // it seems that this doesn't cause memory leaks because anim object persists across scenes (or something like that)
+                UnityEngine.Object.DontDestroyOnLoad clone.gameObject
                 let cloneS = clone.gameObject.GetComponent<SpriteSwitch>()
                 origS.other <- clone
                 cloneS.other <- orig
@@ -134,6 +137,8 @@ module Stuff =
                                     (UnityEngine.Object.Instantiate<UnityEngine.GameObject>
                                         frame.spriteCollection.gameObject)
                                         .GetComponent<tk2dSpriteCollectionData>()
+                                UnityEngine.Object.DontDestroyOnLoad coll.gameObject
+                                //SceneManager.DontDestroyOnLoad coll.gameObject
 
                                 // do this thing to avoid manually calling Init (private)
                                 // (not sure how Init is even supposed to be called since it's seemingly not a Monobehaviour thing)
@@ -167,8 +172,8 @@ module Stuff =
                 $"neuro{slotIndex}.dat"
         )
 
-    let disableMap = true
-    let disableBallTint = true
+    let disableMap = false
+    let disableBallTint = false
     let grimmRange = 7.81f
     let patchedGrimmRange = grimmRange * 2.f
 
@@ -607,6 +612,7 @@ type public Patches() =
                                     t.Library <- pickSpriteLib t.Library))
 
                     shoot.Actions[fireN].Init shoot
+
                     if not disableBallTint then
                         setBallColor.Init shoot
                         shoot.Actions <- shoot.Actions |> Array.insertAt fireN setBallColor
