@@ -8,6 +8,7 @@ open BepInEx
 open BepInEx.Logging
 open HarmonyLib
 open NeuroFSharp
+open UnityEngine.SceneManagement
 
 type Tactic =
     | ShootNearestFirst
@@ -82,6 +83,7 @@ type Entity =
 
 module Context =
     let mutable logger: ManualLogSource = null
+    let mutable dumpingLocal = true
     let cnst x _ = x
     let mkPin (filter: UnityEngine.GameObject -> bool) (name: UnityEngine.GameObject -> string) = filter, name
     let getComp<'A> (o: UnityEngine.GameObject) = o.GetComponent<'A>()
@@ -98,10 +100,50 @@ module Context =
         Regex(" +").Replace(Regex(@"<[^>]*>").Replace(x.Replace("<br>", "\n"), " "), " ")
 
     let pinMap =
+        let areaMap s =
+            match s with
+            | "visitedAbyss" -> "ABYSS"
+            | "visitedCity" -> "CITY"
+            | "visitedCliffs" -> "CLIFFS"
+            | "visitedCrossroads" -> "CROSSROADS"
+            | "visitedDeepnest" -> "DEEPNEST"
+            | "visitedFogCanyon" -> "FOG_CANYON"
+            | "visitedFungalWastes" -> "WASTES"
+            | "visitedFungus" -> "FUNGUS"
+            | "visitedGreenpath" -> "GREENPATH"
+            | "visitedMines" -> "MINES"
+            | "visitedMines10" -> "MINES10"
+            | "visitedOutskirts" -> "OUTSKIRTS"
+            | "visitedRestingGrounds" -> "RESTING_GROUNDS"
+            | "visitedRoyalGardens" -> "ROYAL_GARDENS"
+            | "visitedRuins" -> "RUINS"
+            | "visitedWaterways" -> "WATERWAYS"
+            | _ -> ""
+
         let nextArea =
             mkPin
-                (getComp<MapNextAreaDisplay> >> fun _ -> false) // fun d -> d.visitedString = "" || PlayerData.instance.GetBool d.visitedString)
-                (cnst "Next area")
+                (getComp<MapNextAreaDisplay>
+                 >> fun d ->
+                     d.visitedString <> "" && not (PlayerData.instance.GetBool d.visitedString)
+                     || dumpingLocal && areaMap d.visitedString <> "")
+                (getComp<MapNextAreaDisplay>
+                 >> fun d ->
+                     if d.visitedString = "" then
+                         "Area transition"
+                     else if PlayerData.instance.GetBool d.visitedString then
+                         let n = areaMap d.visitedString
+
+                         if n = "" then
+                             "Area transition"
+                         else
+                             $"Area transition: "
+                             + match Language.Language.Get(n, "Map Zones") with
+                               | "#!#DIRTMOUTH#!#" -> "Dirtmouth"
+                               | "#!#RUINS#!#" -> "Ruins"
+                               | "#!#MINES10#!#" -> "Crystal Peak (subarea)"
+                               | x -> (stripHtml x).Replace("\n", " ").Replace("  ", " ").Replace("  ", " ")
+                     else
+                         "Unexplored area transition")
 
         let text = mkPin (cnst true) (getComp<TMPro.TMP_Text> >> _.text >> stripHtml)
 
@@ -536,6 +578,8 @@ type Game(plugin: MainClass) =
 
         match action with
         | ShowMap local ->
+            Context.dumpingLocal <- local
+
             Context.checkMap ()
             |> Result.bind (fun () ->
                 let px, py = Context.playerPos ()
@@ -658,6 +702,9 @@ type Game(plugin: MainClass) =
                     System.IO.File.ReadAllText "hero.json",
                     HeroController.instance.playerData
                 )
+
+            if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F6 then
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex)
         with exc ->
             this.Context true $"Exception while handling player input: {exc}"
 
