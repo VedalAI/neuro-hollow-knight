@@ -93,6 +93,7 @@ module Stuff =
     let mutable lastSent = System.DateTime.Now.AddDays -1.
     let mutable lastHp: int option = Option.None
     let mutable lastCtx = ""
+    let charmsToHide = [ 2; 40 ]
 
     type SpriteSwitch() =
         inherit UnityEngine.MonoBehaviour()
@@ -137,6 +138,7 @@ module Stuff =
                                     (UnityEngine.Object.Instantiate<UnityEngine.GameObject>
                                         frame.spriteCollection.gameObject)
                                         .GetComponent<tk2dSpriteCollectionData>()
+
                                 UnityEngine.Object.DontDestroyOnLoad coll.gameObject
                                 //SceneManager.DontDestroyOnLoad coll.gameObject
 
@@ -334,14 +336,23 @@ type public Patches() =
         __instance.equippedCharm_40 <- true
         __instance.newCharm_40 <- false
         __instance.charmsOwned <- 1
+        // and compass
+        __instance.charmCost_2 <- 0
+        __instance.gotCharm_2 <- true
+        __instance.equippedCharm_2 <- true
+        __instance.newCharm_2 <- false
+        __instance.charmsOwned <- 2
+
     // __instance.hasCharm <- true
     // __instance.EquipCharm 40
 
     [<HarmonyPatch(typeof<InvCharmBackboard>, "OnEnable")>]
     [<HarmonyPrefix>]
-    static member public DontShowCharm40(__instance: InvCharmBackboard) =
-        if __instance.gotCharmString = "gotCharm_40" then
-            __instance.gotCharmString <- ""
+    static member public DontShowHiddenCharms(__instance: InvCharmBackboard) =
+        charmsToHide
+        |> List.iter (fun ch ->
+            if __instance.gotCharmString = $"gotCharm_{ch}" then
+                __instance.gotCharmString <- "")
 
     [<HarmonyPatch(typeof<HeroController>, "SetupGameRefs")>]
     [<HarmonyPostfix>]
@@ -477,7 +488,7 @@ type public Patches() =
             |> List.iter (fun x ->
                 let x = x :?> Actions.PlayerDataBoolTest
                 x.isTrue <- x.isFalse)
-        | "40", "charm_show_if_collected" ->
+        | x, "charm_show_if_collected" when charmsToHide |> List.exists (_.ToString() >> (=) x) ->
             let chk = state "Check"
 
             match chk.Actions[chk.Actions.Length - 1] with
@@ -493,7 +504,12 @@ type public Patches() =
                                 let boolCheck = comp.GetPlayerDataBool a.boolName.Value
 
                                 fsm.Event(
-                                    if boolCheck && not (a.boolName.Value.EndsWith "_40") then
+                                    if
+                                        boolCheck
+                                        && not (
+                                            charmsToHide |> List.exists (fun x -> a.boolName.Value.EndsWith $"_{x}")
+                                        )
+                                    then
                                         a.isTrue
                                     else
                                         a.isFalse
