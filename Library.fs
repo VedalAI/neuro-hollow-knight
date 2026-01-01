@@ -140,6 +140,7 @@ module Context =
                              + match Language.Language.Get(n, "Map Zones") with
                                | "#!#DIRTMOUTH#!#" -> "Dirtmouth"
                                | "#!#RUINS#!#" -> "Ruins"
+                               | "#!#FUNGUS#!#" -> "Fungal Wastes (subarea)"
                                | "#!#MINES10#!#" -> "Crystal Peak (subarea)"
                                | x -> (stripHtml x).Replace("\n", " ").Replace("  ", " ").Replace("  ", " ")
                      else
