@@ -788,7 +788,11 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
     inherit BaseUnityPlugin()
     let mutable harmony = null
     let mutable game = None
-    let mutable tex: UnityEngine.Texture2D = null
+    let mutable tex: UnityEngine.Texture2D = UnityEngine.Texture2D(2, 2)
+
+    let mutable pieces: UnityEngine.Texture2D array =
+        Array.init 5 (fun _ -> UnityEngine.Texture2D(2, 2))
+
     let cts = new Threading.CancellationTokenSource()
 
     [<DefaultValue>]
@@ -800,6 +804,7 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
     static member Instance = MainClass.instance
     member _.Game = game.Value
     member _.Tex = tex
+    member _.Pieces = pieces
 
     member this.Awake() =
         IO.Directory.CreateDirectory "fsms" |> ignore
@@ -838,12 +843,20 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
             tex <- UnityEngine.Texture2D(2, 2)
 
             do
-                let st =
-                    Assembly.GetExecutingAssembly().GetManifestResourceStream "HollowNeuro.Resources.texture.png"
+                let asm = Assembly.GetExecutingAssembly()
+                let st = asm.GetManifestResourceStream "HollowNeuro.Resources.texture.png"
 
                 using (new System.IO.MemoryStream()) (fun ms ->
                     st.CopyTo ms
                     UnityEngine.ImageConversion.LoadImage(tex, ms.ToArray()) |> ignore)
+
+                Seq.init 5 (fun i -> asm.GetManifestResourceStream $"HollowNeuro.Resources.hp{i}.png")
+                |> Seq.map (fun st ->
+                    using (new System.IO.MemoryStream()) (fun ms ->
+                        st.CopyTo ms
+                        ms.ToArray()))
+                |> Seq.iteri (fun i data -> UnityEngine.ImageConversion.LoadImage(pieces[i], data) |> ignore)
+
 
             MainClass.instance <- this
             harmony <- Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly())

@@ -613,6 +613,60 @@ type public Patches() =
                 n
 
         match n, __instance.FsmName with
+        | "Heart Pieces", _ ->
+            let p = __instance.gameObject
+
+            if (p.transform.GetChild 0).localPosition.x > 0f then
+                Array.init p.transform.childCount (p.transform.GetChild >> _.gameObject)
+                |> Array.iter (fun p ->
+                    p.transform.localPosition <- UnityEngine.Vector3(0f, 0f, -0.001f)
+                    p.transform.localScale <- UnityEngine.Vector3(1f, 1f, 1.23f)
+
+                    let n =
+                        match p.name with
+                        | "Pieces 1" -> 1
+                        | "Pieces 2" -> 2
+                        | "Pieces 3" -> 3
+                        | "Pieces 4" -> 4
+                        | _ -> 0
+
+                    let s = p.GetComponent<UnityEngine.SpriteRenderer>()
+
+                    let s' =
+                        UnityEngine.Sprite.Create(
+                            MainClass.Instance.Pieces[n],
+                            UnityEngine.Rect(0f, 0f, 395f, 537f),
+                            UnityEngine.Vector2(0.5f, 0.5f),
+                            64f
+                        )
+
+                    s.sprite <- s')
+
+                let s = p.GetComponent<UnityEngine.SpriteRenderer>()
+
+                let s' =
+                    UnityEngine.Sprite.Create(
+                        MainClass.Instance.Pieces[0],
+                        UnityEngine.Rect(0f, 0f, 395f, 537f),
+                        UnityEngine.Vector2(0.5f, 0.5f),
+                        64f
+                    )
+
+                s.sprite <- s'
+                s.transform.localScale <- UnityEngine.Vector3(0.728f, 0.728f, 1f)
+                s.transform.localPosition <- UnityEngine.Vector3(-7.3f, -3.536f, -1.22f)
+                let b = s.GetComponent<UnityEngine.BoxCollider2D>()
+                b.offset <- UnityEngine.Vector2(0.05f, -0.05f)
+                b.size <- UnityEngine.Vector2(b.size.x * float32 (1.27 * 1.4 / 0.728), b.size.y * float32 (0.86 * 1.4 / 0.728))
+
+                s.GetComponents<SetPosIfPlayerdataBool>()
+                |> Array.iter (fun x ->
+                    x.XPos <- -7.7f
+
+                    if PlayerData.instance.GetBool x.playerDataBool then
+                        s.transform.localPosition <-
+                            UnityEngine.Vector3(x.XPos, s.transform.localPosition.y, s.transform.localPosition.z))
+
         | "Inv", "UI Inventory" ->
             let a = (state "Any Other Panes?").Actions[1] :?> Actions.PlayerDataBoolTest
             a.isTrue <- a.isFalse
