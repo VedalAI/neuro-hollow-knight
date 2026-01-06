@@ -821,7 +821,7 @@ type Game(plugin: MainClass) =
         with exc ->
             this.Context true $"Exception while handling player input: {exc}"
 
-        if PlayerData.instance <> null && false then
+        if PlayerData.instance <> null then
             let gcLevel = Math.Min(4, 2 + Context.countBosses PlayerData.instance / 8)
 
             if PlayerData.instance.grimmChildLevel <> gcLevel then
