@@ -179,57 +179,6 @@ module Stuff =
     let grimmRange = 7.81f
     let patchedGrimmRange = grimmRange * 2.f
 
-    let countBosses (pd: PlayerData) =
-        // seems like one boss is missing? whatever don't care
-        [ pd.killedInfectedKnight
-          pd.killedMawlek
-          pd.killedNailBros
-          pd.killedJarCollector
-          pd.killedMegaBeamMiner
-          pd.killedDungDefender
-          pd.killedFalseKnight
-          pd.killedFlukeMother
-          pd.killedLobsterLancer
-          pd.killedNailsage
-          pd.killedGrimm
-          pd.killedBigFly
-          pd.killedHiveKnight
-          pd.killedHollowKnight
-          pd.hornet1Defeated
-          pd.hornetOutskirtsDefeated
-          pd.killedMantisLord
-          pd.killedMegaMossCharger
-          pd.killedMimicSpider
-          pd.killedOblobble
-          pd.killedPaintmaster
-          pd.killedFinalBoss
-          pd.killedMageKnight
-          pd.killedTraitorLord
-          pd.killedMegaJellyfish
-          pd.killedBigBuzzer
-          pd.killedBlackKnight
-          pd.killedZote
-          pd.killedGhostHu
-          pd.killedGhostGalien
-          pd.killedGhostAladar
-          pd.killedGhostMarkoth
-          pd.killedGhostMarmu
-          pd.killedGhostNoEyes
-          pd.killedGhostXero
-          pd.killedNightmareGrimm
-          pd.mageLordDefeated
-          pd.mageLordDreamDefeated
-          pd.lurienDefeated
-          pd.hegemolDefeated
-          pd.monomonDefeated
-          pd.infectedKnightDreamDefeated
-          pd.falseKnightDreamDefeated
-          pd.nailsmithKilled
-          // comment to fix annoying formatting
-          ]
-        |> List.map (fun x -> if x then 1 else 0)
-        |> List.sum
-
     type SheetNameStore() =
         inherit UnityEngine.MonoBehaviour()
 
@@ -467,6 +416,7 @@ type public Patches() =
     [<HarmonyPatch(typeof<PlayerData>, "SetupNewPlayerData")>]
     [<HarmonyPostfix>]
     static member public EnableGrimmChild(__instance: PlayerData) =
+        __instance.grimmChildLevel <- 2
         __instance.charmCost_40 <- 0
         __instance.gotCharm_40 <- true
         __instance.equippedCharm_40 <- true
@@ -657,7 +607,12 @@ type public Patches() =
                 s.transform.localPosition <- UnityEngine.Vector3(-7.3f, -3.536f, -1.22f)
                 let b = s.GetComponent<UnityEngine.BoxCollider2D>()
                 b.offset <- UnityEngine.Vector2(0.05f, -0.05f)
-                b.size <- UnityEngine.Vector2(b.size.x * float32 (1.27 * 1.4 / 0.728), b.size.y * float32 (0.86 * 1.4 / 0.728))
+
+                b.size <-
+                    UnityEngine.Vector2(
+                        b.size.x * float32 (1.27 * 1.4 / 0.728),
+                        b.size.y * float32 (0.86 * 1.4 / 0.728)
+                    )
 
                 s.GetComponents<SetPosIfPlayerdataBool>()
                 |> Array.iter (fun x ->
@@ -745,7 +700,7 @@ type public Patches() =
                                        // 1.5 seems excessive, 2 is fine but perhaps just a tiny bit conservative?
                                        // try 1.75 (7/4) for now
                                        (fsm.Variables.FindFsmInt "Damage").Value <-
-                                           countBosses PlayerData.instance * 4 / 7 + 1
+                                           Context.countBosses PlayerData.instance * 4 / 7 + 1
 
                                        fsm.GameObject.layer <- 15) |]
                             detect.Actions

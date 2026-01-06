@@ -89,6 +89,57 @@ module Context =
     let stripHtml (x: string) =
         Regex(" +").Replace(Regex(@"<[^>]*>").Replace(x.Replace("<br>", "\n"), " "), " ")
 
+    let countBosses (pd: PlayerData) =
+        // seems like one boss is missing? whatever don't care
+        [| pd.killedInfectedKnight
+           pd.killedMawlek
+           pd.killedNailBros
+           pd.killedJarCollector
+           pd.killedMegaBeamMiner
+           pd.killedDungDefender
+           pd.killedFalseKnight
+           pd.killedFlukeMother
+           pd.killedLobsterLancer
+           pd.killedNailsage
+           pd.killedGrimm
+           pd.killedBigFly
+           pd.killedHiveKnight
+           pd.killedHollowKnight
+           pd.hornet1Defeated
+           pd.hornetOutskirtsDefeated
+           pd.killedMantisLord
+           pd.killedMegaMossCharger
+           pd.killedMimicSpider
+           pd.killedOblobble
+           pd.killedPaintmaster
+           pd.killedFinalBoss
+           pd.killedMageKnight
+           pd.killedTraitorLord
+           pd.killedMegaJellyfish
+           pd.killedBigBuzzer
+           pd.killedBlackKnight
+           pd.killedZote
+           pd.killedGhostHu
+           pd.killedGhostGalien
+           pd.killedGhostAladar
+           pd.killedGhostMarkoth
+           pd.killedGhostMarmu
+           pd.killedGhostNoEyes
+           pd.killedGhostXero
+           pd.killedNightmareGrimm
+           pd.mageLordDefeated
+           pd.mageLordDreamDefeated
+           pd.lurienDefeated
+           pd.hegemolDefeated
+           pd.monomonDefeated
+           pd.infectedKnightDreamDefeated
+           pd.falseKnightDreamDefeated
+           pd.nailsmithKilled
+           // comment to fix annoying formatting
+           |]
+        |> Array.map (fun x -> if x then 1 else 0)
+        |> Array.sum
+
     let pinMap =
         let areaMap s =
             match s with
@@ -770,6 +821,16 @@ type Game(plugin: MainClass) =
         with exc ->
             this.Context true $"Exception while handling player input: {exc}"
 
+        if PlayerData.instance <> null && false then
+            let gcLevel = Math.Min(4, 2 + Context.countBosses PlayerData.instance / 8)
+
+            if PlayerData.instance.grimmChildLevel <> gcLevel then
+                PlayerData.instance.grimmChildLevel <- gcLevel
+
+                UnityEngine.GameObject.FindGameObjectsWithTag "Grimmchild"
+                |> Array.choose (fun gc -> PlayMakerFSM.FindFsmOnGameObject(gc, "Control") |> Option.ofObj)
+                |> Array.iter (fun fsm -> fsm.SendEvent "LEVEL UP")
+
         let hasMap2 = PlayerData.instance <> null && PlayerData.instance.hasMap
 
         if hasMap2 <> hasMap then
@@ -839,8 +900,6 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
                         mask
 
                 UnityEngine.Physics2D.SetLayerCollisionMask(i, mask)
-
-            tex <- UnityEngine.Texture2D(2, 2)
 
             do
                 let asm = Assembly.GetExecutingAssembly()

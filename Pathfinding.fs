@@ -92,8 +92,7 @@ module Pathfinding =
           244, PlayerData.instance.openedRestingGrounds, "Resting Grounds"
           281, PlayerData.instance.openedDeepnest, "Distant Village"
           346, PlayerData.instance.openedHiddenStation, "Hidden Station" ]
-        |> List.filter (fun (x, y, z) -> y)
-        |> List.map (fun (x, y, z) -> x, z)
+        |> List.choose (fun (x, y, z) -> if y then Some(x, z) else None)
 
     let stag s =
         if PlayerData.instance.hasPinStag then
@@ -200,9 +199,8 @@ module Pathfinding =
                 else
                     // access guaranteed reachable door
                     reachable
-                    |> Seq.filter (fun (_, cond, _, _) -> cond)
+                    |> Seq.choose (fun (x, w, y, z) -> if w then Some(x, y, z) else None)
                     |> Array.ofSeq
-                    |> Array.map (fun (x, _, y, z) -> x, y, z)
 
             doors
             |> Array.iter (fun (door, x, y) ->
@@ -326,14 +324,14 @@ module Pathfinding =
 
                                 // within room
                                 Generated.doorDoors s d
-                                |> List.filter (fun (_, cond, _, _) -> cond)
-                                |> List.iter (fun (door, _, dist, dir) ->
-                                    // UnityEngine.Debug.LogWarning $"can walk {Generated.sceneNames[s]}[{d} -> {door}]"
+                                |> List.iter (fun (door, cond, dist, dir) ->
+                                    if cond then
+                                        // UnityEngine.Debug.LogWarning $"can walk {Generated.sceneNames[s]}[{d} -> {door}]"
 
-                                    let bf = ByFoot(dir, float32 dist, door)
+                                        let bf = ByFoot(dir, float32 dist, door)
 
-                                    addElem s bf (fun () -> oldDist + float32 dist, bf) m (fun () ->
-                                        visD.Contains((s, door)) |> not)))
+                                        addElem s bf (fun () -> oldDist + float32 dist, bf) m (fun () ->
+                                            visD.Contains((s, door)) |> not)))
 
                         iter ()
 
