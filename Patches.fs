@@ -236,8 +236,144 @@ module Stuff =
         [<DefaultValue>]
         val mutable public sheetName: string
 
+    let createDefinitionForRegionInTexture
+        (name: string)
+        (textureDimensions: UnityEngine.Vector2)
+        (uvRegion: UnityEngine.Rect)
+        (trimRect: UnityEngine.Rect)
+        (anchor: UnityEngine.Vector2)
+        : tk2dSpriteDefinition =
+        let scale = 1.0f / 64.0f
+
+        let height = uvRegion.height
+        let width = uvRegion.width
+        let texX = textureDimensions.x
+        let texY = textureDimensions.y
+
+        let def = tk2dSpriteDefinition ()
+
+        def.flipped <- tk2dSpriteDefinition.FlipMode.None
+        def.extractRegion <- false
+        def.name <- name
+        def.colliderType <- tk2dSpriteDefinition.ColliderType.Unset
+
+        let eps = UnityEngine.Vector2(0.001f, 0.001f)
+
+        let v2 =
+            UnityEngine.Vector2((uvRegion.x + eps.x) / texX, 1.0f - (uvRegion.y + uvRegion.height + eps.y) / texY)
+
+        let v3 =
+            UnityEngine.Vector2((uvRegion.x + uvRegion.width - eps.x) / texX, 1.0f - (uvRegion.y - eps.y) / texY)
+
+        let offset =
+            UnityEngine.Vector2(trimRect.x - anchor.x, 0.0f - trimRect.y + anchor.y)
+
+        let offset = offset * scale
+
+        let pos0 = UnityEngine.Vector3((0.0f - anchor.x) * scale, anchor.y * scale, 0.0f)
+
+        let pos1 =
+            pos0
+            + UnityEngine.Vector3(trimRect.width * scale, (0.0f - trimRect.height) * scale, 0.0f)
+
+        let r0 = UnityEngine.Vector3(0.0f, (0.0f - height) * scale, 0.0f)
+        let r1 = r0 + UnityEngine.Vector3(width * scale, height * scale, 0.0f)
+
+        def.positions <-
+            [| UnityEngine.Vector3(r0.x + offset.x, r0.y + offset.y, 0.0f)
+               UnityEngine.Vector3(r1.x + offset.x, r0.y + offset.y, 0.0f)
+               UnityEngine.Vector3(r0.x + offset.x, r1.y + offset.y, 0.0f)
+               UnityEngine.Vector3(r1.x + offset.x, r1.y + offset.y, 0.0f) |]
+
+        def.uvs <-
+            [| UnityEngine.Vector2(v2.x, v2.y)
+               UnityEngine.Vector2(v3.x, v2.y)
+               UnityEngine.Vector2(v2.x, v3.y)
+               UnityEngine.Vector2(v3.x, v3.y) |]
+
+        def.normals <- [||]
+        def.tangents <- [||]
+        def.indices <- [| 0; 3; 1; 2; 3; 0 |]
+
+        let bMin = UnityEngine.Vector3(pos0.x, pos1.y, 0.0f)
+        let bMax = UnityEngine.Vector3(pos1.x, pos0.y, 0.0f)
+
+        def.boundsData <- [| (bMax + bMin) / 2.0f; bMax - bMin |]
+        def.untrimmedBoundsData <- [| (bMax + bMin) / 2.0f; bMax - bMin |]
+        def.texelSize <- UnityEngine.Vector2(scale, scale)
+
+        def
+
 [<HarmonyPatch>]
 type public Patches() =
+    [<HarmonyPatch(typeof<tk2dSpriteCollectionData>, "Init")>]
+    [<HarmonyPrefix>]
+    static member public InitCln(__instance: tk2dSpriteCollectionData) =
+        if __instance.gameObject.name = "HUD Cln" then
+            __instance.materials <- [| __instance.materials[0]; UnityEngine.Material __instance.materials[0] |]
+            __instance.textures <- [| __instance.textures[0]; MainClass.Instance.Tex |]
+            __instance.materials[1].mainTexture <- MainClass.Instance.Tex
+
+    [<HarmonyPatch(typeof<tk2dSpriteAnimator>,
+                   nameof (Unchecked.defaultof<tk2dSpriteAnimator>.Play: string -> unit),
+                   [| typeof<string> |])>]
+    [<HarmonyPrefix>]
+    static member public PlayTk2dAnim(__instance: tk2dSpriteAnimator, name: string) =
+        if __instance.Library <> null then
+            if __instance.Library.gameObject.name = "HUD Anim" then
+                if Array.length __instance.Library.clips = 64 then
+                    __instance.Library.clips <- Array.append __instance.Library.clips [| __instance.Library.clips[0] |]
+                    let sc = __instance.Library.clips[0].frames[0].spriteCollection
+
+                    let ts =
+                        UnityEngine.Vector2(float32 sc.textures[1].width, float32 sc.textures[1].height)
+
+                    let mutable startY = 0
+
+                    [| "Blue Appear", 143, 31, 9
+                       "Health Empty", 67, 59, 1
+                       "Health Appear", 119, 130, 5
+                       "Health Bound", 65, 70, 1
+                       "Blue Break", 127, 124, 5
+                       "Health Break", 127, 158, 6
+                       "Health Idle", 65, 70, 45
+                       "Blue Idle", 99, 149, 99
+                       "Blue Break Fast", 127, 124, 5
+                       "Health Refill", 119, 130, 6
+                       "Health Max Up", 126, 117, 14 |]
+                    |> Array.iter (fun (cname, cw, ch, clen) ->
+                        //let hi = __instance.Library.clips |> Array.find (_.name >> (=) "Health Idle")
+                        //let hiLen = 45
+                        let c = __instance.Library.clips |> Array.find (_.name >> (=) cname)
+                        let b = Array.length sc.spriteDefinitions
+
+                        let cdefs =
+                            Array.init clen (fun i ->
+                                let def =
+                                    createDefinitionForRegionInTexture
+                                        $"{cname}_{i}"
+                                        ts
+                                        // uv
+                                        (UnityEngine.Rect(float32 (cw * i), float32 startY, float32 cw, float32 ch))
+                                        // trim rect
+                                        (UnityEngine.Rect(0f, 0f, float32 cw, float32 ch))
+                                        // anchor
+                                        (UnityEngine.Vector2(float32 cw / 2f, float32 ch / 2f))
+
+                                def.untrimmedBoundsData <-
+                                    [| UnityEngine.Vector3(0f, -0.5f, 0f); UnityEngine.Vector3(126f, 167f, 0f) |]
+
+                                def.materialId <- 1
+                                def.material <- sc.materials[def.materialId]
+                                def.materialInst <- sc.materialInsts[def.materialId]
+
+                                def)
+
+                        startY <- startY + ch
+                        sc.spriteDefinitions <- Array.append sc.spriteDefinitions cdefs
+
+                        c.frames |> Seq.iteri (fun i fr -> fr.spriteId <- b + i))
+
     [<HarmonyPatch(typeof<DialogueBox>, nameof (Unchecked.defaultof<DialogueBox>.SetConversation))>]
     [<HarmonyPostfix>]
     static member public RememberDialogueSheet(__instance: DialogueBox, sheetName: string) =

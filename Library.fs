@@ -18,7 +18,13 @@ type Tactic =
     | DontShoot
 
 type Actions =
-    | [<Action("map", "Show a list of points of interest, in the same area or globally.")>] ShowMap of local: bool
+    | [<Action("map",
+               "Show a list of points of interest, in the current area or globally. You can then use the `pathfind_room` action to find the shortest path to the room that contains them.")>] ShowMap of
+        local: bool
+    //| [<Action("pathfind_area", "Find the shortest path to an area.")>] PathfindArea of name: string
+    | [<Action("pathfind_room", "Pathfind to a room by its id.")>] PathfindRoom of roomId: int
+    | [<Action("unexplored_exits", "Find a list of unexplored rooms, in the current area or globally.")>] UnexploredRooms of
+        local: bool
     | [<Action("create_waypoint", "Store the current position as a waypoint on the map")>] CreateWaypoint of
         name: string
     | [<Action("delete_waypoint", "Delete a named waypoint")>] DeleteWaypoint of name: string
@@ -28,27 +34,10 @@ type Actions =
                "Set the enemy targeting tactic used for autofire, i.e. which enemies to prioritize when shooting.")>] SetTactic of
         tactic: Tactic
 
-type Dir =
-    // circle (atan2) start at E and goes towards N
-    | E = 0
-    | Nee = 1
-    | Ne = 2
-    | Nne = 3
-    | N = 4
-    | Nnw = 5
-    | Nw = 6
-    | Nww = 7
-    | W = 8
-    | Sww = 9
-    | Sw = 10
-    | Ssw = 11
-    | S = 12
-    | Sse = 13
-    | Se = 14
-    | See = 15
-
 type PointOfInterest =
     { name: string
+      [<SkipSerializingIfNone>]
+      roomId: int option
       distanceMeters: int
       direction: Dir
       [<SkipSerializingIfEquals false>]
@@ -87,6 +76,7 @@ module Context =
     let cnst x _ = x
     let mkPin (filter: UnityEngine.GameObject -> bool) (name: UnityEngine.GameObject -> string) = filter, name
     let getComp<'A> (o: UnityEngine.GameObject) = o.GetComponent<'A>()
+    let mapActions: obj list = [ ShowMap; CreateWaypoint; DeleteWaypoint; PathfindRoom ]
 
     let grubPin =
         mkPin
@@ -394,7 +384,7 @@ module Context =
 
         px, py
 
-    let customWaypoint (userCreated: bool) (px, py) name (x, y) =
+    let customWaypoint (userCreated: bool) (px, py) name (x, y) roomId =
         let dx = x - px
         let dy = y - py
         let dist = sqrt (dx * dx + dy * dy)
@@ -402,6 +392,7 @@ module Context =
         let angle = atan2 dy dx
 
         { name = name
+          roomId = roomId
           distanceMeters = int (dist * 10.0f)
           direction =
             // separate circle into 8 sectors
@@ -431,7 +422,10 @@ module Context =
             + scene.transform.localPosition.y
             + object.transform.localPosition.y
 
-        customWaypoint false (px, py) name (x, y)
+        let sceneName = if scene.name = "Grub Pins" then object.name else scene.name
+        let roomId = Generated.sceneIdx sceneName
+
+        customWaypoint false (px, py) name (x, y) (if roomId = 0 then None else Some roomId)
 
     let pointsOfInterest playerPos (area: UnityEngine.GameObject) =
         let pd = PlayerData.instance
@@ -521,11 +515,20 @@ module Native =
     extern void profiler_save()
 
 type WaypointPos =
-    { x: float32; y: float32; zone: string }
+    { x: float32
+      y: float32
+      zone: string
+      room: int option }
 
 type SaveData =
     { [<SkipSerializingIfNone>]
       waypoints: Map<string, WaypointPos> option }
+
+type UnloadAssets() =
+    interface System.Collections.IEnumerator with
+        override this.MoveNext() = false
+        override this.Current: obj = UnityEngine.Resources.UnloadUnusedAssets()
+        override this.Reset() : unit = ()
 
 type Game(plugin: MainClass) =
     inherit Game<Actions>()
@@ -535,6 +538,7 @@ type Game(plugin: MainClass) =
     let saveData0: SaveData = { waypoints = None }
     let mutable saveData: SaveData = saveData0
     let mutable hasMap = false
+    let mutable showFm = false
 
     member _.DequeuePlayerShot() =
         match playerShots with
@@ -569,7 +573,7 @@ type Game(plugin: MainClass) =
 
     override this.ReregisterActions() =
         if hasMap then
-            this.RegisterActions [ ShowMap; CreateWaypoint; DeleteWaypoint ]
+            this.RegisterActions Context.mapActions
 
         this.RegisterActions [ SetTactic; ShootPlayer ]
 
@@ -578,6 +582,38 @@ type Game(plugin: MainClass) =
     override this.HandleAction(action: Actions) =
 
         match action with
+        | PathfindRoom sB ->
+            let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
+            let hero = HeroController.instance
+            let px, py = hero.transform.position.x, hero.transform.position.y
+
+            //let pathfinder = Pathfinding.pathfinder sA sB (Some(float px, float py))
+            match Pathfinding.pathfinder sA sB (Some(px, py)) with
+            | None -> Error(Some "path not found")
+            | Some path ->
+                this.LogDebug $"path: {path}"
+
+                let desc =
+                    path
+                    |> List.collect (fun x ->
+                        match x with
+                        | ByTram(dir, dist, Some sc) -> Some(dir, dist, $"take the tram to {sc}")
+                        | ByStag(dir, dist, sc) -> Some(dir, dist, $"take the stag to {sc}")
+                        | ByTram(dir, dist, None) -> Some(dir, dist, "take the tram")
+                        | ByFoot(dir, dist, _) -> Some(dir, dist, "")
+                        | UseDoor _ -> None
+                        | ByElevator(dir, dist) -> Some(dir, dist, "take the elevator")
+                        |> Option.toList)
+                    |> List.collect (fun (dir, dist, desc) ->
+                        let dir = dir.ToString().ToUpper()
+
+                        $"walk {int (dist / 2f)} meters towards {dir}"
+                        :: if desc = "" then [] else [ desc ])
+                    |> String.concat "; "
+
+                Ok(Some $"The path is: {desc}")
+
+
         | ShowMap local ->
             Context.dumpingLocal <- local
 
@@ -590,7 +626,8 @@ type Game(plugin: MainClass) =
                         saveData.waypoints
                         |> Option.defaultValue Map.empty
                         |> Seq.filter (_.Value >> _.zone >> Context.areaFromZone >> fst >> (=) area)
-                        |> Seq.map (fun x -> Context.customWaypoint true (px, py) x.Key (x.Value.x, x.Value.y))
+                        |> Seq.map (fun x ->
+                            Context.customWaypoint true (px, py) x.Key (x.Value.x, x.Value.y) x.Value.room)
                         |> List.ofSeq
 
                     extra
@@ -640,7 +677,18 @@ type Game(plugin: MainClass) =
                     if Map.count wp < lim then
                         let zone, _ = Context.zoneScene ()
                         let x, y = Context.playerPos ()
-                        let wp = wp |> Map.add name { x = x; y = y; zone = zone }
+
+                        let wp =
+                            wp
+                            |> Map.add
+                                name
+                                { x = x
+                                  y = y
+                                  zone = zone
+                                  room =
+                                    let x = Generated.sceneIdx (SceneManager.GetActiveScene().name)
+                                    if x = 0 then None else Some x }
+
                         saveData <- { saveData with waypoints = Some wp }
 
                         let keys = Map.keys wp |> Seq.toArray
@@ -706,6 +754,12 @@ type Game(plugin: MainClass) =
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F6 then
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex)
+
+                plugin.StartCoroutine(UnloadAssets()) |> ignore
+
+            if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F7 then
+                showFm <- not showFm
+                PlayMakerFSM.BroadcastEvent(if showFm then "FIRST MAP UP" else "FIRST MAP DOWN")
         with exc ->
             this.Context true $"Exception while handling player input: {exc}"
 
@@ -718,7 +772,7 @@ type Game(plugin: MainClass) =
                  this.RegisterActions
              else
                  this.UnregisterActions)
-                [ ShowMap; CreateWaypoint; DeleteWaypoint ]
+                Context.mapActions
 
     member _.LateUpdate() =
         HutongGames.PlayMaker.FsmLog.LoggingEnabled <- true
@@ -727,6 +781,7 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
     inherit BaseUnityPlugin()
     let mutable harmony = null
     let mutable game = None
+    let mutable tex: UnityEngine.Texture2D = null
     let cts = new Threading.CancellationTokenSource()
 
     [<DefaultValue>]
@@ -737,6 +792,7 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
 
     static member Instance = MainClass.instance
     member _.Game = game.Value
+    member _.Tex = tex
 
     member this.Awake() =
         IO.Directory.CreateDirectory "fsms" |> ignore
@@ -771,6 +827,13 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
                         mask
 
                 UnityEngine.Physics2D.SetLayerCollisionMask(i, mask)
+
+            tex <- UnityEngine.Texture2D(2, 2)
+            do
+                let st = Assembly.GetExecutingAssembly().GetManifestResourceStream "HollowNeuro.Resources.texture.png"
+                using (new System.IO.MemoryStream()) (fun ms ->
+                    st.CopyTo ms
+                    UnityEngine.ImageConversion.LoadImage(tex, ms.ToArray()) |> ignore)
 
             MainClass.instance <- this
             harmony <- Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly())

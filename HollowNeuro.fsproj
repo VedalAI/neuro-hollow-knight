@@ -37,8 +37,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\*.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="JsonValue.fs" />
     <Compile Include="NeuroFSharp.fs" />
+    <Compile Include="Generated.fs" />
+    <Compile Include="Pathfinding.fs" />
     <Compile Include="Library.fs" />
     <Compile Include="Patches.fs" />
   </ItemGroup>
