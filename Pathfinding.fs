@@ -139,7 +139,7 @@ module Pathfinding =
 
     let lowerTramStations = [| 329; 330; 331 |]
 
-    let pathfinder sA sB (pos: (float32 * float32) option) =
+    let pathfind sA sB (pos: (float32 * float32) option) =
         // find shortest path to target scene
         //let mutable q = Map.empty
         let mutable i = 0
@@ -149,6 +149,7 @@ module Pathfinding =
 
         let visS = System.Collections.Generic.HashSet<int>()
         let visD = System.Collections.Generic.HashSet<int * string>()
+        let reachable = reachability () |> Array.map ((<>) ResolvedReachability.No)
 
         let addElem s simpleSeg properSeg old chk =
             pushSeg simpleSeg old
@@ -260,7 +261,7 @@ module Pathfinding =
                     let bs = ByStag(dir, dist, n)
                     addElem s bs (fun () -> oldDist + dist + 50f, bs) old (fun () -> visS.Contains s |> not)))
 
-        if sA <> sB then
+        if sA <> sB && reachable[sA] then
             visS.Add sA |> ignore
             visScene sA x0 y0 [] 0f
 
@@ -299,13 +300,13 @@ module Pathfinding =
                                 enum<Dir> (int (angle * float32 (8. / Math.PI) + 16.5f) % 16), dist
 
                         // visit scene
-                        if visS.Add s then
+                        if visS.Add s && reachable[s] then
                             visScene s x0 y0 m oldDist
 
                         // visit doors
                         d
                         |> Option.iter (fun d ->
-                            if visD.Add((s, d)) then
+                            if visD.Add((s, d)) && reachable[s] then
                                 // to other room
                                 let ts, td = Generated.doorTarget s d
 

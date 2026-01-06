@@ -587,9 +587,12 @@ type Game(plugin: MainClass) =
             let hero = HeroController.instance
             let px, py = hero.transform.position.x, hero.transform.position.y
 
-            //let pathfinder = Pathfinding.pathfinder sA sB (Some(float px, float py))
-            match Pathfinding.pathfinder sA sB (Some(px, py)) with
-            | None -> Error(Some "path not found")
+            match Pathfinding.pathfind sA sB (Some(px, py)) with
+            | None ->
+                Error(
+                    Some
+                        "Path not found! Perhaps the target area isn't reachable, or the map is incomplete, or you have to purchase map pins to see more transportation options."
+                )
             | Some path ->
                 this.LogDebug $"path: {path}"
 
@@ -607,8 +610,12 @@ type Game(plugin: MainClass) =
                     |> List.collect (fun (dir, dist, desc) ->
                         let dir = dir.ToString().ToUpper()
 
-                        $"walk {int (dist / 2f)} meters towards {dir}"
-                        :: if desc = "" then [] else [ desc ])
+                        List.append
+                            (if dist > 10f then
+                                 [ $"walk {int (dist / 2f)} meters towards {dir}" ]
+                             else
+                                 [])
+                            (if desc = "" then [] else [ desc ]))
                     |> String.concat "; "
 
                 Ok(Some $"The path is: {desc}")
@@ -829,8 +836,11 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
                 UnityEngine.Physics2D.SetLayerCollisionMask(i, mask)
 
             tex <- UnityEngine.Texture2D(2, 2)
+
             do
-                let st = Assembly.GetExecutingAssembly().GetManifestResourceStream "HollowNeuro.Resources.texture.png"
+                let st =
+                    Assembly.GetExecutingAssembly().GetManifestResourceStream "HollowNeuro.Resources.texture.png"
+
                 using (new System.IO.MemoryStream()) (fun ms ->
                     st.CopyTo ms
                     UnityEngine.ImageConversion.LoadImage(tex, ms.ToArray()) |> ignore)
