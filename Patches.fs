@@ -870,6 +870,8 @@ type public Patches() =
                             fun _ -> if isPlayer.IsSome then 0.4f else 1.0f
                         )
 
+                    (shoot.Actions[fireN - 1] :?> Actions.SetFsmInt).setValue <- null
+
                     let setBallColor =
                         FsmLambda(fun fsm ->
                             let ball = fsm.Variables.FindFsmGameObject "Flameball"
