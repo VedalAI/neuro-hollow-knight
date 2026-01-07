@@ -255,6 +255,8 @@ module Stuff =
 
 [<HarmonyPatch>]
 type public Patches() =
+    static let mutable l10nPatched = false
+
     [<HarmonyPatch(typeof<tk2dSpriteCollectionData>, "Init")>]
     [<HarmonyPrefix>]
     static member public InitCln(__instance: tk2dSpriteCollectionData) =
@@ -549,6 +551,20 @@ type public Patches() =
     [<HarmonyPostfix>]
     static member public DebugProxy(__instance: PlayMakerUnity2DProxy) = () // __instance.debug <- true
 
+    (*[<HarmonyPatch(typeof<global.Language.Language>,
+                   nameof (global.Language.Language.Get: (string * string) -> string),
+                   [| typeof<string>; typeof<string> |])>]
+    [<HarmonyPrefix>]*)
+    static member public LanguageGet(key: string, sheetTitle: string, __result: string byref) =
+        match key with
+        | "BUTTON_DESC_HOLD_PATCHED" ->
+            __result <- "Ask Evil to guide you through Hallownest."
+            false
+        | "GET_MAP_2" ->
+            __result <- "All of your collected map data, pins, and markers will be uploaded to her GPS."
+            false
+        | _ -> true
+
     [<HarmonyPatch(typeof<PlayMakerFSM>, "Awake")>]
     [<HarmonyPostfix>]
     static member public FsmAwake(__instance: PlayMakerFSM) =
@@ -562,7 +578,39 @@ type public Patches() =
             else
                 n
 
+        if not l10nPatched then
+            l10nPatched <- true
+
+            MainClass.Instance.Harmony.Patch(
+                typeof<Language.Language>
+                    .GetMethod(
+                        nameof (global.Language.Language.Get: (string * string) -> string),
+                        [| typeof<string>; typeof<string> |]
+                    ),
+                prefix = HarmonyMethod(typeof<Patches>.GetMethod "LanguageGet")
+            )
+            |> ignore
+
         match n, __instance.FsmName with
+        | "First Map", _ ->
+            let ch =
+                Array.init
+                    __instance.gameObject.transform.childCount
+                    (__instance.gameObject.transform.GetChild >> _.gameObject)
+
+            ch
+            |> Array.tryFind (_.name >> (=) "Button")
+            |> Option.filter _.activeSelf
+            |> Option.iter (fun btn ->
+                let gm3 = ch |> Array.find (_.name >> (=) "Text 3")
+                let gm2 = ch |> Array.find (_.name >> (=) "Text 2")
+                let holdText = ch |> Array.find (_.name >> (=) "Text Hold")
+                UnityEngine.Object.Destroy btn
+                UnityEngine.Object.Destroy gm3
+                //UnityEngine.Object.Destroy gm2
+                let t = holdText.GetComponent<SetTextMeshProGameText>()
+                t.convName <- "BUTTON_DESC_HOLD_PATCHED")
+
         | "Heart Pieces", _ ->
             let p = __instance.gameObject
 
@@ -716,6 +764,26 @@ type public Patches() =
             let init = state "Init"
             let act = init.Actions[init.Actions.Length - 1] :?> Actions.PlayerDataBoolTest
             act.isFalse <- act.isTrue
+        // banker: act as if no grimmchild
+        | "Banker", "Conversation Control" ->
+            let g = state "Grimmchild?"
+            let act = g.Actions[g.Actions.Length - 1] :?> Actions.PlayerDataBoolTest
+            act.isTrue <- act.isFalse
+        // brumm torch npc: act as if no grimmchild
+        | "Brumm Torch NPC", "Conversation Control" ->
+            let chk = state "Check Active"
+            let act = chk.Actions[0] :?> Actions.PlayerDataBoolTest
+            act.isTrue <- act.isFalse
+        // queen npc: never read grimmchild state (keep at false)
+        | "Queen", "Conversation Control" ->
+            let chk = state "Convo Choice"
+            if chk.Actions.Length = 18 then
+                chk.Actions <- Array.removeAt 4 chk.Actions
+        // flamebearer: act as if no grimmchild
+        | "Flamebearer Spawn", "Spawn Control" ->
+            let chk = state "State"
+            let act = chk.Actions[4] :?> Actions.PlayerDataBoolTest
+            act.isTrue <- act.isFalse
         // hopefully the above is enough to never enable the grimm troupe content
         | "Grimmchild", "Control" ->
             let range =

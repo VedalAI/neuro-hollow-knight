@@ -831,6 +831,12 @@ type Game(plugin: MainClass) =
                 |> Array.choose (fun gc -> PlayMakerFSM.FindFsmOnGameObject(gc, "Control") |> Option.ofObj)
                 |> Array.iter (fun fsm -> fsm.SendEvent "LEVEL UP")
 
+            // converts grimmchild charm to carefree melody, dangerous
+            PlayerData.instance.nymmInTown <- false
+            // double safety (this is already patched on fsm side)
+            PlayerData.instance.nightmareLanternAppeared <- false
+            PlayerData.instance.nightmareLanternLit <- false
+
         let hasMap2 = PlayerData.instance <> null && PlayerData.instance.hasMap
 
         if hasMap2 <> hasMap then
@@ -866,6 +872,7 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
     member _.Game = game.Value
     member _.Tex = tex
     member _.Pieces = pieces
+    member _.Harmony = harmony
 
     member this.Awake() =
         IO.Directory.CreateDirectory "fsms" |> ignore
