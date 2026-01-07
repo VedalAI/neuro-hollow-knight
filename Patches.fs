@@ -673,6 +673,17 @@ type public Patches() =
         | "Inv", "UI Inventory" ->
             let a = (state "Any Other Panes?").Actions[1] :?> Actions.PlayerDataBoolTest
             a.isTrue <- a.isFalse
+        | "Inv", "Button Control" ->
+            let chk = state "Check Item"
+
+            chk.Transitions <-
+                chk.Transitions
+                |> Array.filter (fun x ->
+                    match x.FsmEvent.Name with
+                    | "INV_NAME_MAP"
+                    | "INV_NAME_MAPQUILL"
+                    | "INV_NAME_QUILL" -> false
+                    | _ -> true)
         | "Inventory", "Inventory Control" ->
             [ (state "Single Pane?").Actions[7]
               (state "Next Map").Actions[0]
@@ -777,6 +788,7 @@ type public Patches() =
         // queen npc: never read grimmchild state (keep at false)
         | "Queen", "Conversation Control" ->
             let chk = state "Convo Choice"
+
             if chk.Actions.Length = 18 then
                 chk.Actions <- Array.removeAt 4 chk.Actions
         // flamebearer: act as if no grimmchild
