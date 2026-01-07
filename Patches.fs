@@ -556,14 +556,46 @@ type public Patches() =
                    [| typeof<string>; typeof<string> |])>]
     [<HarmonyPrefix>]*)
     static member public LanguageGet(key: string, sheetTitle: string, __result: string byref) =
-        match key with
-        | "BUTTON_DESC_HOLD_PATCHED" ->
-            __result <- "Ask Evil to guide you through Hallownest."
+        match
+            match key with
+            | "BUTTON_DESC_HOLD_PATCHED" -> Some "Ask Evil to guide you through Hallownest."
+            | "GET_MAP_2" -> Some "All of your collected map data, pins, and markers will be uploaded to her GPS."
+            | "MARKER_B_DESC" ->
+                Some
+                    "These markers are new additions to the shop. Evil can use them to mark interesting spots on her map!<br><br>The colour is quite soothing, don't you think?"
+            | "MARKER_Y_DESC" ->
+                Some
+                    "These markers are new additions to the shop. Evil can use them to mark interesting spots on her map!<br><br>This understated colour makes me think of hunting underground for treasure..."
+            | "MARKER_W_DESC" ->
+                Some
+                    "These markers are new additions to the shop. Evil can use them to mark interesting spots on her map!<br><br>The material I used for this colour is quite rare, so it costs a little more."
+            | "MARKER_R_DESC" ->
+                Some
+                    "These markers are new additions to the shop. Evil can use them to mark interesting spots on her map!<br><br>This colour could be used to remind you of hard-won battles."
+            | "PIN_DESC_BENCH" ->
+                Some
+                    "These pins will mark benches and other rest spots on Evil's map. Useful if you're exhausted and just need to find somewhere to sit!"
+            | "SHOP_DESC_QUILL" ->
+                Some
+                    "You'll need this if you want Evil's map to be updated with new areas as you explore.<br><br>It's essential for anyone serious about mapping!"
+            | "PIN_DESC_GHOST" ->
+                Some
+                    "Cornifer told me he's found some interesting looking graves and shrines in the depths.<br><br>Evil can use these pins to mark down any interesting graves on her map. Go and pay your respects."
+            | "PIN_DESC_DREAMPLANT" ->
+                Some
+                    "Cornifer has been telling me about these strange whispering roots he's been seeing.<br><br>I made some pins so Evil can record their locations herself."
+            | "PIN_DESC_SHOP" ->
+                Some
+                    "Evil can use these pins to mark shopkeepers or any other interesting bugs you find on your travels.<br><br>Every so often, you should pass by and see how they're doing. I'm sure they'd like that."
+            | "PIN_DESC_COCOON" ->
+                Some
+                    "Have you seen those beautiful blue cocoons? I made these pins so Evil can keep track of them.<br><br>The cocoons are pretty, but very delicate. Please be careful around them."
+            | _ -> Option.None
+        with
+        | Some x ->
+            __result <- x
             false
-        | "GET_MAP_2" ->
-            __result <- "All of your collected map data, pins, and markers will be uploaded to her GPS."
-            false
-        | _ -> true
+        | None -> true
 
     [<HarmonyPatch(typeof<PlayMakerFSM>, "Awake")>]
     [<HarmonyPostfix>]
