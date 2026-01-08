@@ -176,7 +176,7 @@ module Stuff =
 
     let disableMap = false
     let disableBallTint = false
-    let grimmRange = 7.81f
+    let grimmRange = 7.81f * 1.2f
     let patchedGrimmRange = grimmRange * 2.f
 
     type SheetNameStore() =
