@@ -167,8 +167,9 @@ module Context =
             mkPin
                 (getComp<MapNextAreaDisplay>
                  >> fun d ->
-                     d.visitedString <> "" && not (PlayerData.instance.GetBool d.visitedString)
-                     || dumpingLocal && areaMap d.visitedString <> "")
+                    false)
+                     //d.visitedString <> "" && not (PlayerData.instance.GetBool d.visitedString)
+                     //|| dumpingLocal && areaMap d.visitedString <> "")
                 (getComp<MapNextAreaDisplay>
                  >> fun d ->
                      if d.visitedString = "" then
@@ -516,7 +517,20 @@ module Context =
                         Some(waypoint playerPos area scene (name pin) pin)
                     else
                         None)
-                |> Option.toList))
+                |> Option.toList)
+            |> Seq.append (
+                if PlayerData.instance.shadeScene = scene.name then
+                    let roomId = Generated.sceneIdx scene.name
+
+                    [ customWaypoint
+                          false
+                          playerPos
+                          "Shade"
+                          (PlayerData.instance.shadeMapPos.x, PlayerData.instance.shadeMapPos.y)
+                          (if roomId = 0 then None else Some roomId) ]
+                else
+                    []
+            ))
         |> List.ofSeq
 
     let currentArea () =
