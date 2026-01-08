@@ -877,7 +877,7 @@ type public Patches() =
                                            // 1.5 seems excessive, 2 is fine but perhaps just a tiny bit conservative?
                                            // try 1.75 (7/4) for now
                                            (fsm.Variables.FindFsmInt "Damage").Value <-
-                                               Context.countBosses PlayerData.instance * 4 / 7 + 2
+                                               (Context.countBosses PlayerData.instance * 5 + 31) / 18
 
                                            fsm.GameObject.layer <- 15) |]
                                 detect.Actions
