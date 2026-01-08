@@ -83,6 +83,73 @@ type FsmLambda(f: Fsm -> unit) =
 
 [<AutoOpen>]
 module Stuff =
+    let areaTitle ev =
+        if Language.Language.Has(ev, "Titles") then
+            Language.Language.Get(ev, "Titles")
+        else if Language.Language.Has(ev + "_MAIN", "Titles") then
+            [ ev + "_SUPER"; ev + "_MAIN"; ev + "_SUB" ]
+            |> List.filter (fun x -> Language.Language.Has(x, "Titles"))
+            |> List.map (fun x -> Language.Language.Get(x, "Titles"))
+            |> String.concat " "
+        else if Language.Language.Has(ev, "Map Zones") then
+            Language.Language.Get(ev, "Map Zones")
+        else
+            ""
+
+    let areas =
+        fun s ->
+            match s with
+            | "ABYSS" -> 13, false, "visitedAbyss", s
+            | "CROSSROADS"
+            | "CROSSROADS_INF" ->
+                2,
+                false,
+                "visitedCrossroads",
+                if PlayerData.instance.GetBool "crossroadsInfected" then
+                    "CROSSROADS_INF"
+                else
+                    "CROSSROADS"
+            | "DEEPNEST" -> 9, false, "visitedDeepnest", s
+            | "DIRTMOUTH" -> 1, false, "visitedDirtmouth", s
+            | "EGGTEMPLE" -> 0, true, "", s
+            | "FOG_CANYON" -> 4, false, "visitedFogCanyon", s
+            | "FUNGUS" -> 5, false, "visitedFungus", s
+            | "GREENPATH" -> 3, false, "visitedGreenpath", s
+            | "HIVE" -> 11, false, "visitedHive", s
+            | "KINGSPASS" ->
+                0,
+                true,
+                "",
+                if GameManager.instance.playerData.GetBool "visitedCrossroads" then
+                    "KINGSPASS"
+                else
+                    ""
+            | "MINES" -> 8, false, "visitedMines", s
+            | "RESTING_GROUNDS" -> 12, false, "visitedRestingGrounds", s
+            | "ROYAL_GARDENS" -> 10, false, "visitedRoyalGardens", s
+            | "RUINS" -> 6, false, "visitedRuins", s
+            | "SHAMANTEMPLE" -> 0, true, "", s
+            | "WATERWAYS" -> 7, false, "visitedWaterways", s
+            | "MANTIS_VILLAGE" -> 0, true, "", s
+            | "FUNGUS_CORE" -> 0, true, "", s
+            | "MAGE_TOWER" -> 0, true, "", s
+            | "FUNGUS_SHAMAN" -> 0, true, "", s
+            | "QUEENS_STATION" -> 0, true, "", s
+            | "KINGS_STATION" -> 0, true, "", s
+            | "BLUE_LAKE" -> 0, true, "", s
+            | "ACID_LAKE" -> 0, true, "", s
+            | "OUTSKIRTS" -> 14, false, "visitedOutskirts", s
+            | "LOVE_TOWER" -> 0, true, "", s
+            | "SPIDER_VILLAGE" -> 0, true, "", s
+            | "HEGEMOL_NEST" -> 0, true, "", s
+            | "WHITE_PALACE" -> 15, false, "visitedWhitePalace", s
+            | "COLOSSEUM" -> 0, true, "seenColosseumTitle", s
+            | "ABYSS_DEEP" -> 16, false, "visitedAbyssLower", s
+            | "CLIFFS" -> 17, false, "visitedCliffs", s
+            | "GODHOME" -> 18, false, "visitedGodhome", s
+            | "GODSEEKER_WASTE" -> 0, true, "", s
+            | _ -> 0, true, "", s
+
     let findState name (x: PlayMakerFSM) =
         x.FsmStates |> Array.find (_.Name >> (=) name)
 
@@ -92,7 +159,7 @@ module Stuff =
     let mutable lastNamesCtx = []
     let mutable lastSent = System.DateTime.Now.AddDays -1.
     let mutable lastHp: int option = Option.None
-    let mutable lastCtx = ""
+    let mutable lastCtx = Option.None, ""
     let charmsToHide = [ 2; 40 ]
 
     type SpriteSwitch() =
@@ -929,116 +996,155 @@ type public Patches() =
     [<HarmonyPatch(typeof<GrimmEnemyRange>, nameof (Unchecked.defaultof<GrimmEnemyRange>.GetTarget))>]
     [<HarmonyPostfix>]
     static member public GrimmTarget(__instance: GrimmEnemyRange, __result: UnityEngine.GameObject byref) =
-        let g = MainClass.Instance.Game
+        try
+            let g = MainClass.Instance.Game
 
-        let dist (x: UnityEngine.GameObject) =
-            (__instance.transform.position - x.transform.position).magnitude
+            let dist (x: UnityEngine.GameObject) =
+                (__instance.transform.position - x.transform.position).magnitude
 
-        let distFast (x: UnityEngine.GameObject) =
-            (__instance.transform.position - x.transform.position).sqrMagnitude
+            let distFast (x: UnityEngine.GameObject) =
+                (__instance.transform.position - x.transform.position).sqrMagnitude
 
-        let inRange x =
-            distFast x < grimmRange * grimmRange
-            && UnityEngine.Physics2D.Linecast(
-                __instance.transform.position,
-                HeroController.instance.gameObject.transform.position,
-                256
-               )
-               |> UnityEngine.RaycastHit2D.op_Implicit
-               |> not
+            let inRange x =
+                distFast x < grimmRange * grimmRange
+                && UnityEngine.Physics2D.Linecast(
+                    __instance.transform.position,
+                    HeroController.instance.gameObject.transform.position,
+                    256
+                   )
+                   |> UnityEngine.RaycastHit2D.op_Implicit
+                   |> not
 
-        let targets0 =
-            let cmp f = fun x y -> compare (f x) (f y)
+            let targets0 =
+                let cmp f = fun x y -> compare (f x) (f y)
 
-            __instance.enemyList
-            |> List.ofSeq
-            |> List.sortWith (
-                match MainClass.Instance.Game.Tactic with
-                | ShootNearestFirst -> cmp distFast
-                | ShootFurthestFirst -> cmp (distFast >> (~-))
-                | ShootLeastHpFirst -> cmp (_.GetComponent<HealthManager>() >> Option.ofObj >> Option.map _.hp)
-                | ShootMostHpFirst -> cmp (_.GetComponent<HealthManager>() >> Option.ofObj >> Option.map (_.hp >> (~-)))
-                | DontShoot -> fun _ _ -> 0
-            )
+                __instance.enemyList
+                |> List.ofSeq
+                |> List.sortWith (
+                    match MainClass.Instance.Game.Tactic with
+                    | ShootNearestFirst -> cmp distFast
+                    | ShootFurthestFirst -> cmp (distFast >> (~-))
+                    | ShootLeastHpFirst -> cmp (_.GetComponent<HealthManager>() >> Option.ofObj >> Option.map _.hp)
+                    | ShootMostHpFirst ->
+                        cmp (_.GetComponent<HealthManager>() >> Option.ofObj >> Option.map (_.hp >> (~-)))
+                    | DontShoot -> fun _ _ -> 0
+                )
 
-        let targets =
-            HeroController.instance.gameObject :: targets0
-            |> List.map (fun x ->
-                if x = HeroController.instance.gameObject then
-                    { name = "Player"
-                      distance = dist x / 2.0f
-                      hp = Some PlayerData.instance.health
-                      maxHp = Some PlayerData.instance.CurrentMaxHealth
-                      inShootRange = inRange x
-                      currentlyInvincible = false }
-                else
-                    let hm = x.GetComponent<HealthManager>() |> Option.ofObj
-
-                    { name =
-                        if x = HeroController.instance.gameObject then
-                            "Player"
-                        else
-                            x.name
-                      distance = dist x / 2.0f
-                      hp = hm |> Option.map _.hp
-                      maxHp = Option.None
-                      inShootRange = inRange x
-                      currentlyInvincible = hm |> Option.map _.IsInvincible |> Option.defaultValue false })
-
-        let mutable shot = Option.None
-
-        if
-            inRange HeroController.instance.gameObject
-            && (shot <- MainClass.Instance.Game.DequeuePlayerShot()
-                shot.IsSome)
-        then
-            isPlayer <- shot |> Option.map (fun x -> if x then 1 else 0)
-
-            __result <-
-                if heroBox = null then
-                    HeroController.instance.gameObject
-                else
-                    heroBox
-        else if MainClass.Instance.Game.Tactic = DontShoot then
-            __result <- null
-        else
-            __result <- null
-            isPlayer <- Option.None
-            __result <- targets0 |> List.tryFind inRange |> Option.defaultValue null
-
-        let names = targets |> List.map _.name |> List.sort
-
-        // if any *enemy* name not contained in old list
-        // or if 5 seconds have passed
-        let sendAnyway = (System.DateTime.Now - lastSent).TotalSeconds >= 5.
-
-        if sendAnyway || names |> List.exists (fun x -> not (List.contains x lastNamesCtx)) then
-            // if only distances changed, dont send even if sendAnyway is true
-            let ctx = g.Serialize(targets |> List.map (fun x -> { x with distance = 0.0f }))
-
-            if ctx <> lastCtx then
-                lastCtx <- ctx
-
-                let hpCtx =
-                    if lastHp = Some PlayerData.instance.health then
-                        ""
+            let targets =
+                HeroController.instance.gameObject :: targets0
+                |> List.map (fun x ->
+                    if x = HeroController.instance.gameObject then
+                        { name = "Player"
+                          distance = dist x / 2.0f
+                          hp = Some PlayerData.instance.health
+                          maxHp = Some PlayerData.instance.CurrentMaxHealth
+                          inShootRange = inRange x
+                          currentlyInvincible = false }
                     else
-                        match lastHp with
-                        | Some x when x = PlayerData.instance.health -> ""
+                        let hm = x.GetComponent<HealthManager>() |> Option.ofObj
+
+                        { name =
+                            if x = HeroController.instance.gameObject then
+                                "Player"
+                            else
+                                x.name
+                          distance = dist x / 2.0f
+                          hp = hm |> Option.map _.hp
+                          maxHp = Option.None
+                          inShootRange = inRange x
+                          currentlyInvincible = hm |> Option.map _.IsInvincible |> Option.defaultValue false })
+
+            let mutable shot = Option.None
+
+            if
+                inRange HeroController.instance.gameObject
+                && (shot <- MainClass.Instance.Game.DequeuePlayerShot()
+                    shot.IsSome)
+            then
+                isPlayer <- shot |> Option.map (fun x -> if x then 1 else 0)
+
+                __result <-
+                    if heroBox = null then
+                        HeroController.instance.gameObject
+                    else
+                        heroBox
+            else if MainClass.Instance.Game.Tactic = DontShoot then
+                __result <- null
+            else
+                __result <- null
+                isPlayer <- Option.None
+                __result <- targets0 |> List.tryFind inRange |> Option.defaultValue null
+
+            let names = targets |> List.map _.name |> List.sort
+
+            // if any *enemy* name not contained in old list
+            // or if 5 seconds have passed
+            let sendAnyway = (System.DateTime.Now - lastSent).TotalSeconds >= 5.
+
+            if sendAnyway || names |> List.exists (fun x -> not (List.contains x lastNamesCtx)) then
+                let atcs = UnityEngine.Object.FindObjectsOfType<AreaTitleController>()
+
+                let aNameSet = System.Collections.Generic.HashSet<string>()
+
+                let aNames =
+                    atcs
+                    |> Array.toList
+                    |> List.filter (_.areaEvent >> (<>) "")
+                    |> List.filter (fun atc ->
+                        atc.doorTrigger = ""
+                        || HeroController.instance.GetEntryGateName() = atc.doorTrigger)
+                    |> List.map (_.areaEvent >> areas)
+                    |> List.filter (fun (id, sub, vis, event) -> event <> "")
+                    |> List.sortBy (fun (id, sub, vis, event) -> sub)
+                    |> List.map (fun (id, sub, vis, event) -> areaTitle event)
+                    |> List.filter (fun x -> x <> "" && aNameSet.Add x)
+
+                let aNames =
+                    if aNames = [] then
+                        [ areaTitle (GameManager.instance.sm.mapZone.ToString()) ]
+                    else
+                        aNames
+
+                let aNames =
+                    if List.isEmpty aNames then
+                        Option.None
+                    else
+                        Some(String.concat ", " aNames)
+
+                // if only distances changed, dont send even if sendAnyway is true
+                let ctx =
+                    aNames, g.Serialize(targets |> List.map (fun x -> { x with distance = 0.0f }))
+
+                if ctx <> lastCtx then
+                    lastCtx <- ctx
+
+                    let aCtx =
+                        match aNames with
+                        | Some n -> $"Current location: {n}. "
                         | None -> ""
-                        | Some x when PlayerData.instance.health = 0 -> $"The player has been dealt lethal damage! "
-                        | Some x when PlayerData.instance.health > x ->
-                            $"The player healed by {PlayerData.instance.health - x} hitpoints. "
-                        | Some x when PlayerData.instance.health < x ->
-                            $"The player took {x - PlayerData.instance.health} damage. "
-                        | Some x -> raise (exn "unreachable")
 
-                lastHp <- Some PlayerData.instance.health
+                    let hpCtx =
+                        if lastHp = Some PlayerData.instance.health then
+                            ""
+                        else
+                            match lastHp with
+                            | Some x when x = PlayerData.instance.health -> ""
+                            | None -> ""
+                            | Some x when PlayerData.instance.health = 0 -> $"The player has been dealt lethal damage! "
+                            | Some x when PlayerData.instance.health > x ->
+                                $"The player healed by {PlayerData.instance.health - x} hitpoints. "
+                            | Some x when PlayerData.instance.health < x ->
+                                $"The player took {x - PlayerData.instance.health} damage. "
+                            | Some x -> raise (exn "unreachable")
 
-                g.Context
-                    true
-                    $"{hpCtx}Entities around you: {g.Serialize targets}. Your current targeting tactic: {g.Serialize g.Tactic}. Use the `set_tactic` action to change the tactic to help or hinder the player."
+                    lastHp <- Some PlayerData.instance.health
 
-                lastNamesCtx <- names
+                    g.Context
+                        true
+                        $"{aCtx}{hpCtx}Entities around you: {g.Serialize targets}. Your current targeting tactic: {g.Serialize g.Tactic}. Use the `set_tactic` action to change the tactic to help or hinder the player."
 
-            lastSent <- System.DateTime.Now
+                    lastNamesCtx <- names
+
+                lastSent <- System.DateTime.Now
+        with exc ->
+            MainClass.Instance.Logger.LogError $"grimm range exception: {exc}"
