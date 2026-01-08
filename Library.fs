@@ -679,7 +679,7 @@ type Game(plugin: MainClass) =
                 (Some(px, py))
             |> ignore
 
-            Ok(Some $"Unexplored room list, in order of closeness: {this.Serialize ans}")
+            Ok(Some $"Unexplored room list, in order of closeness: {ans |> List.rev |> this.Serialize}")
         | PathfindRoom sB ->
             let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
             let hero = HeroController.instance
