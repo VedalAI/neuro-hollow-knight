@@ -584,10 +584,11 @@ type UnloadAssets() =
 type Game(plugin: MainClass) =
     inherit Game<Actions>()
 
+    let saveDataType = TypeInfo.fromSystemType typeof<SaveData>
     let mutable tactic = Tactic.DontShoot
     let mutable playerShots = []
     let saveData0: SaveData = { waypoints = None }
-    let mutable saveData: SaveData = saveData0
+    let mutable _saveData: SaveData = saveData0
     let mutable hasMap = false
     let mutable showFm = false
 
@@ -603,24 +604,42 @@ type Game(plugin: MainClass) =
     member this.ShowDialogue sheet text =
         this.Context false $"`{sheet}` says: {Context.stripHtml text}"
 
-    member this.SaveData() =
+    member this.SaveDataStr() =
         try
-            this.Serialize saveData
+            this.Serialize _saveData
         with exc ->
             Printf.kprintf this.LogError "Data save error: %s " (exc.ToString())
             ""
 
+    member this.SaveData
+        with get () = _saveData
+        and set x =
+            _saveData <- x
+
+            (this.Action DeleteWaypoint).MutateProp "name" (fun x ->
+                let x = x :?> StringSchema
+                x.Enum <- Some(Option.defaultValue Map.empty _saveData.waypoints |> Map.keys |> Array.ofSeq))
+
+            if hasMap then
+                this.RegisterActions [ DeleteWaypoint ]
+
     member this.LoadData(s: string) =
         try
-            saveData <-
-                TypeInfo.deserialize [] (TypeInfo.fromSystemType typeof<SaveData>) (JsonValue.Parse s)
+            this.LogDebug $"loading save data {s}"
+            this.SaveData <-
+                TypeInfo.deserialize [] saveDataType (JsonValue.Parse s)
                 |> Result.map (fun x -> x :?> SaveData)
+                |> Result.mapError (fun x ->
+                    this.LogDebug $"save data load error: {x}"
+                    x)
                 |> Result.defaultValue saveData0
+
+            this.ReregisterActions()
         with exc ->
             if s <> "" then
                 Printf.kprintf this.LogError "Data load error: %s " (exc.ToString())
 
-            saveData <- saveData0
+            this.SaveData <- saveData0
 
     override this.ReregisterActions() =
         if hasMap then
@@ -681,7 +700,7 @@ type Game(plugin: MainClass) =
 
                 let mkExtra (area: UnityEngine.GameObject) =
                     let extra =
-                        saveData.waypoints
+                        this.SaveData.waypoints
                         |> Option.defaultValue Map.empty
                         |> Seq.filter (_.Value >> _.zone >> Context.areaFromZone >> fst >> (=) area)
                         |> Seq.map (fun x ->
@@ -715,7 +734,7 @@ type Game(plugin: MainClass) =
         | CreateWaypoint name ->
             Context.checkMap ()
             |> Result.bind (fun () ->
-                let wp = saveData.waypoints |> Option.defaultValue Map.empty
+                let wp = this.SaveData.waypoints |> Option.defaultValue Map.empty
 
                 if wp |> Map.containsKey name then
                     Error(Some $"waypoint `{name}` already exists! delete it first if you want to change its position")
@@ -747,7 +766,9 @@ type Game(plugin: MainClass) =
                                     let x = Generated.sceneIdx (SceneManager.GetActiveScene().name)
                                     if x = 0 then None else Some x }
 
-                        saveData <- { saveData with waypoints = Some wp }
+                        this.SaveData <-
+                            { this.SaveData with
+                                waypoints = Some wp }
 
                         let keys = Map.keys wp |> Seq.toArray
                         Ok(Some $"waypoint `{name}` added! current user waypoints: {this.Serialize keys}")
@@ -767,11 +788,15 @@ type Game(plugin: MainClass) =
         | DeleteWaypoint name ->
             Context.checkMap ()
             |> Result.bind (fun () ->
-                let wp = saveData.waypoints |> Option.defaultValue Map.empty
+                let wp = this.SaveData.waypoints |> Option.defaultValue Map.empty
 
                 if wp |> Map.containsKey name then
                     let wp = Map.remove name wp
-                    saveData <- { saveData with waypoints = Some wp }
+
+                    this.SaveData <-
+                        { this.SaveData with
+                            waypoints = Some wp }
+
                     let keys = Map.keys wp |> Seq.toArray
                     Ok(Some $"Waypoint `{name}` deleted! Remaining user waypoints: {this.Serialize keys}")
                 else

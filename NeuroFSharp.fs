@@ -688,13 +688,13 @@ module internal TypeInfo =
                 JsonValue.Record [||]
             else
                 let ty = x[0].GetType()
-                let kf = ty.GetField "key"
-                let vf = ty.GetField "value"
+                let km = ty.GetMethod "get_Key"
+                let vm = ty.GetMethod "get_Value"
 
                 x
                 |> Array.map (fun kv ->
-                    let k = kf.GetValue obj :?> string
-                    let v = kf.GetValue obj
+                    let k = km.Invoke(kv, null) :?> string
+                    let v = vm.Invoke(kv, null)
                     k, serialize info v)
                 |> JsonValue.Record
         | Record(info, _attrs) ->
@@ -911,6 +911,11 @@ module internal TypeInfo =
             | PrimitiveInt, JsonValue.Number x when ty = typeof<single> -> Ok(single x)
             | PrimitiveInt, JsonValue.Number x when ty = typeof<double> -> Ok(double x)
             | PrimitiveInt, JsonValue.Number x when ty = typeof<decimal> -> Ok(decimal x)
+            | PrimitiveFloat, JsonValue.Number x when ty = typeof<float> -> Ok(float x)
+            | PrimitiveFloat, JsonValue.Number x when ty = typeof<float32> -> Ok(float32 x)
+            | PrimitiveFloat, JsonValue.Number x when ty = typeof<single> -> Ok(single x)
+            | PrimitiveFloat, JsonValue.Number x when ty = typeof<double> -> Ok(double x)
+            | PrimitiveFloat, JsonValue.Number x when ty = typeof<decimal> -> Ok(decimal x)
             | PrimitiveFloat, JsonValue.Float x when ty = typeof<float> -> Ok(float x)
             | PrimitiveFloat, JsonValue.Float x when ty = typeof<float32> -> Ok(float32 x)
             | PrimitiveFloat, JsonValue.Float x when ty = typeof<single> -> Ok(single x)

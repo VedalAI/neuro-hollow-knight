@@ -534,7 +534,7 @@ type public Patches() =
                             let path = neuroSaveSlotPath saveSlot
                             let pathTmp = path + ".new"
                             let pathBak = path + ".bak"
-                            let data = MainClass.Instance.Game.SaveData()
+                            let data = MainClass.Instance.Game.SaveDataStr()
                             System.IO.File.WriteAllText(pathTmp, data)
 
                             if System.IO.File.Exists path then
