@@ -290,11 +290,29 @@ type public Patches() =
                             cdata
                             |> Array.mapi (fun i (x, y, w, h) ->
                                 let ox, oy =
-                                    if cname = "Blue Idle" then 0, -23
+                                    if cname = "Blue Idle" then
+                                        0, -23
                                     else if cname = "Health Max Up" then
-                                        let x, y = [|4, 16; 2, 4; 0, 2; -4, 16; 0, 4; 0, 3; 0, 12; 0, 4; 0, 2; 0, 12; 0, 4; 0, 2; 0, 11; -1, 13|][i]
+                                        let x, y =
+                                            [| 4, 16
+                                               2, 4
+                                               0, 2
+                                               -4, 16
+                                               0, 4
+                                               0, 3
+                                               0, 12
+                                               0, 4
+                                               0, 2
+                                               0, 12
+                                               0, 4
+                                               0, 2
+                                               0, 11
+                                               -1, 13 |][i]
+
                                         x, y - 14
-                                    else 0, 0
+                                    else
+                                        0, 0
+
                                 let def =
                                     createDefinitionForRegionInTexture
                                         $"{cname}_{i}"
@@ -304,10 +322,7 @@ type public Patches() =
                                         // trim rect
                                         (UnityEngine.Rect(0f, 0f, float32 w, float32 h))
                                         // anchor
-                                        (UnityEngine.Vector2(
-                                            float32 w / 2f + float32 ox,
-                                            float32 h / 2f + float32 oy
-                                        ))
+                                        (UnityEngine.Vector2(float32 w / 2f + float32 ox, float32 h / 2f + float32 oy))
 
                                 def.untrimmedBoundsData <-
                                     [| UnityEngine.Vector3(0f, -0.5f, 0f); UnityEngine.Vector3(126f, 167f, 0f) |]
@@ -597,314 +612,319 @@ type public Patches() =
     [<HarmonyPatch(typeof<PlayMakerFSM>, "Awake")>]
     [<HarmonyPostfix>]
     static member public FsmAwake(__instance: PlayMakerFSM) =
-        MainClass.Instance.Logger.LogInfo $"awake {__instance.gameObject.name} - {__instance.FsmName}"
-        let state s = findState s __instance
-        let n = __instance.gameObject.name
+        // try/catch because
+        try
+            MainClass.Instance.Logger.LogInfo $"awake {__instance.gameObject.name} - {__instance.FsmName}"
+            let state s = findState s __instance
+            let n = __instance.gameObject.name
 
-        let n =
-            if n.EndsWith "(Clone)" then
-                n.Substring(0, n.Length - "(Clone)".Length)
-            else
-                n
+            let n =
+                if n.EndsWith "(Clone)" then
+                    n.Substring(0, n.Length - "(Clone)".Length)
+                else
+                    n
 
-        if not l10nPatched then
-            l10nPatched <- true
+            if not l10nPatched then
+                l10nPatched <- true
 
-            MainClass.Instance.Harmony.Patch(
-                typeof<Language.Language>
-                    .GetMethod(
-                        nameof (global.Language.Language.Get: (string * string) -> string),
-                        [| typeof<string>; typeof<string> |]
-                    ),
-                prefix = HarmonyMethod(typeof<Patches>.GetMethod "LanguageGet")
-            )
-            |> ignore
+                MainClass.Instance.Harmony.Patch(
+                    typeof<Language.Language>
+                        .GetMethod(
+                            nameof (global.Language.Language.Get: (string * string) -> string),
+                            [| typeof<string>; typeof<string> |]
+                        ),
+                    prefix = HarmonyMethod(typeof<Patches>.GetMethod "LanguageGet")
+                )
+                |> ignore
 
-        (*if n.StartsWith "Health " && n.Length <= 9 then
-            let n = int (n.Substring 7)
-            MainClass.Instance.Game.Healths[n - 1] <- __instance.gameObject*)
+            (*if n.StartsWith "Health " && n.Length <= 9 then
+                let n = int (n.Substring 7)
+                MainClass.Instance.Game.Healths[n - 1] <- __instance.gameObject*)
 
-        match n, __instance.FsmName with
-        | "First Map", _ ->
-            let ch =
-                Array.init
-                    __instance.gameObject.transform.childCount
-                    (__instance.gameObject.transform.GetChild >> _.gameObject)
+            match n, __instance.FsmName with
+            | "First Map", _ ->
+                let ch =
+                    Array.init
+                        __instance.gameObject.transform.childCount
+                        (__instance.gameObject.transform.GetChild >> _.gameObject)
 
-            ch
-            |> Array.tryFind (_.name >> (=) "Button")
-            |> Option.filter _.activeSelf
-            |> Option.iter (fun btn ->
-                let gm3 = ch |> Array.find (_.name >> (=) "Text 3")
-                let gm2 = ch |> Array.find (_.name >> (=) "Text 2")
-                let holdText = ch |> Array.find (_.name >> (=) "Text Hold")
-                UnityEngine.Object.Destroy btn
-                UnityEngine.Object.Destroy gm3
-                //UnityEngine.Object.Destroy gm2
-                let t = holdText.GetComponent<SetTextMeshProGameText>()
-                t.convName <- "BUTTON_DESC_HOLD_PATCHED")
+                ch
+                |> Array.tryFind (_.name >> (=) "Button")
+                |> Option.filter _.activeSelf
+                |> Option.iter (fun btn ->
+                    let gm3 = ch |> Array.find (_.name >> (=) "Text 3")
+                    let gm2 = ch |> Array.find (_.name >> (=) "Text 2")
+                    let holdText = ch |> Array.find (_.name >> (=) "Text Hold")
+                    UnityEngine.Object.Destroy btn
+                    UnityEngine.Object.Destroy gm3
+                    //UnityEngine.Object.Destroy gm2
+                    let t = holdText.GetComponent<SetTextMeshProGameText>()
+                    t.convName <- "BUTTON_DESC_HOLD_PATCHED")
 
-        | "Heart Pieces", _ ->
-            let p = __instance.gameObject
+            | "Heart Pieces", _ ->
+                let p = __instance.gameObject
 
-            if (p.transform.GetChild 0).localPosition.x > 0f then
-                Array.init p.transform.childCount (p.transform.GetChild >> _.gameObject)
-                |> Array.iter (fun p ->
-                    p.transform.localPosition <- UnityEngine.Vector3(0f, 0f, -0.001f)
-                    p.transform.localScale <- UnityEngine.Vector3(1f, 1f, 1.23f)
+                if (p.transform.GetChild 0).localPosition.x > 0f then
+                    Array.init p.transform.childCount (p.transform.GetChild >> _.gameObject)
+                    |> Array.iter (fun p ->
+                        p.transform.localPosition <- UnityEngine.Vector3(0f, 0f, -0.001f)
+                        p.transform.localScale <- UnityEngine.Vector3(1f, 1f, 1.23f)
 
-                    let n =
-                        match p.name with
-                        | "Pieces 1" -> 1
-                        | "Pieces 2" -> 2
-                        | "Pieces 3" -> 3
-                        | "Pieces 4" -> 4
-                        | _ -> 0
+                        let n =
+                            match p.name with
+                            | "Pieces 1" -> 1
+                            | "Pieces 2" -> 2
+                            | "Pieces 3" -> 3
+                            | "Pieces 4" -> 4
+                            | _ -> 0
+
+                        let s = p.GetComponent<UnityEngine.SpriteRenderer>()
+
+                        let s' =
+                            UnityEngine.Sprite.Create(
+                                MainClass.Instance.Pieces[n],
+                                UnityEngine.Rect(0f, 0f, 395f, 537f),
+                                UnityEngine.Vector2(0.5f, 0.5f),
+                                64f
+                            )
+
+                        s.sprite <- s')
 
                     let s = p.GetComponent<UnityEngine.SpriteRenderer>()
 
                     let s' =
                         UnityEngine.Sprite.Create(
-                            MainClass.Instance.Pieces[n],
+                            MainClass.Instance.Pieces[0],
                             UnityEngine.Rect(0f, 0f, 395f, 537f),
                             UnityEngine.Vector2(0.5f, 0.5f),
                             64f
                         )
 
-                    s.sprite <- s')
+                    s.sprite <- s'
+                    s.transform.localScale <- UnityEngine.Vector3(0.728f, 0.728f, 1f)
+                    s.transform.localPosition <- UnityEngine.Vector3(-7.3f, -3.536f, -1.22f)
+                    let b = s.GetComponent<UnityEngine.BoxCollider2D>()
+                    b.offset <- UnityEngine.Vector2(0.05f, -0.05f)
 
-                let s = p.GetComponent<UnityEngine.SpriteRenderer>()
-
-                let s' =
-                    UnityEngine.Sprite.Create(
-                        MainClass.Instance.Pieces[0],
-                        UnityEngine.Rect(0f, 0f, 395f, 537f),
-                        UnityEngine.Vector2(0.5f, 0.5f),
-                        64f
-                    )
-
-                s.sprite <- s'
-                s.transform.localScale <- UnityEngine.Vector3(0.728f, 0.728f, 1f)
-                s.transform.localPosition <- UnityEngine.Vector3(-7.3f, -3.536f, -1.22f)
-                let b = s.GetComponent<UnityEngine.BoxCollider2D>()
-                b.offset <- UnityEngine.Vector2(0.05f, -0.05f)
-
-                b.size <-
-                    UnityEngine.Vector2(
-                        b.size.x * float32 (1.27 * 1.4 / 0.728),
-                        b.size.y * float32 (0.86 * 1.4 / 0.728)
-                    )
-
-                s.GetComponents<SetPosIfPlayerdataBool>()
-                |> Array.iter (fun x ->
-                    x.XPos <- -7.7f
-
-                    if PlayerData.instance.GetBool x.playerDataBool then
-                        s.transform.localPosition <-
-                            UnityEngine.Vector3(x.XPos, s.transform.localPosition.y, s.transform.localPosition.z))
-
-        | "Inv", "UI Inventory" ->
-            let a = (state "Any Other Panes?").Actions[1] :?> Actions.PlayerDataBoolTest
-            a.isTrue <- a.isFalse
-        | "Inv", "Button Control" ->
-            let chk = state "Check Item"
-
-            chk.Transitions <-
-                chk.Transitions
-                |> Array.filter (fun x ->
-                    match x.FsmEvent.Name with
-                    | "INV_NAME_MAP"
-                    | "INV_NAME_MAPQUILL"
-                    | "INV_NAME_QUILL" -> false
-                    | _ -> true)
-        | "Inventory", "Inventory Control" ->
-            [ (state "Single Pane?").Actions[7]
-              (state "Next Map").Actions[0]
-              (state "Next Map 2").Actions[0]
-              (state "Next Map 3").Actions[0] ]
-            |> List.iter (fun x ->
-                let x = x :?> Actions.PlayerDataBoolTest
-                x.isTrue <- x.isFalse)
-        | x, "charm_show_if_collected" when charmsToHide |> List.exists (_.ToString() >> (=) x) ->
-            let chk = state "Check"
-
-            match chk.Actions[chk.Actions.Length - 1] with
-            | :? Actions.PlayerDataBoolTest as a ->
-                chk.Actions[chk.Actions.Length - 1] <-
-                    FsmLambda(fun fsm ->
-                        let ownerDefaultTarget = fsm.GetOwnerDefaultTarget a.gameObject
-
-                        if ownerDefaultTarget <> null then
-                            let comp = ownerDefaultTarget.GetComponent<GameManager>()
-
-                            if comp <> null then
-                                let boolCheck = comp.GetPlayerDataBool a.boolName.Value
-
-                                fsm.Event(
-                                    if
-                                        boolCheck
-                                        && not (
-                                            charmsToHide |> List.exists (fun x -> a.boolName.Value.EndsWith $"_{x}")
-                                        )
-                                    then
-                                        a.isTrue
-                                    else
-                                        a.isFalse
-                                ))
-            | _ -> ()
-        | "Charm Effects", "Spawn Grimmchild" ->
-            // wait for 0.25s to give the old grimmchild instance time to despawn
-            let sp = state "Spawn Pause"
-            sp.Actions[0].Enabled <- true
-        | "Enemy Damager", "Attack" ->
-            if
-                __instance.FsmVariables.BoolVariables.Length = 1
-                && __instance.FsmVariables.FloatVariables.Length = 1
-            then
-                // set layer depending on isPlayer
-                do
-                    let detect = state "Detect"
-
-                    detect.Actions <-
-                        Array.append
-                            [| FsmLambda(fun fsm ->
-                                   MainClass.Instance.Logger.LogInfo "in damager"
-
-                                   match isPlayer with
-                                   | Some d ->
-                                       fsm.GameObject.layer <- 3
-
-                                       let dmg =
-                                           fsm.GameObject.GetComponent<DamageHero>()
-                                           |> Option.ofObj
-                                           |> Option.defaultWith fsm.GameObject.AddComponent<DamageHero>
-
-                                       dmg.damageDealt <- d
-                                   | None ->
-                                       // have to restore layer back in case this is a reused ball
-                                       // no need to remove DamageHero as the ball wont collide with the player either way (surely)
-                                       // just set the damage value instead
-                                       // default lv4 is 11 damage
-                                       // likely final boss count is 20-30
-                                       // divide by 2 = end up at 10-15
-                                       // divide by 1.75 = end up at 11-17
-                                       // divide by 1.5 = end up at 13-20
-                                       // 1.5 seems excessive, 2 is fine but perhaps just a tiny bit conservative?
-                                       // try 1.75 (7/4) for now
-                                       (fsm.Variables.FindFsmInt "Damage").Value <-
-                                           Context.countBosses PlayerData.instance * 4 / 7 + 1
-
-                                       fsm.GameObject.layer <- 15) |]
-                            detect.Actions
-
-                    detect.Actions[0].Init detect
-        // never set nightmareLanterAppeared to true
-        | "Sycophant Dream", "Activate Lantern" ->
-            let init = state "Init"
-            let act = init.Actions[init.Actions.Length - 1] :?> Actions.PlayerDataBoolTest
-            act.isFalse <- act.isTrue
-        // never set nightmareLanterLit to true
-        | "grimm_brazier", "grimm_brazier" ->
-            let init = state "Init"
-            let act = init.Actions[init.Actions.Length - 1] :?> Actions.PlayerDataBoolTest
-            act.isFalse <- act.isTrue
-        // banker: act as if no grimmchild
-        | "Banker", "Conversation Control" ->
-            let g = state "Grimmchild?"
-            let act = g.Actions[g.Actions.Length - 1] :?> Actions.PlayerDataBoolTest
-            act.isTrue <- act.isFalse
-        // brumm torch npc: act as if no grimmchild
-        | "Brumm Torch NPC", "Conversation Control" ->
-            let chk = state "Check Active"
-            let act = chk.Actions[0] :?> Actions.PlayerDataBoolTest
-            act.isTrue <- act.isFalse
-        // queen npc: never read grimmchild state (keep at false)
-        | "Queen", "Conversation Control" ->
-            let chk = state "Convo Choice"
-
-            if chk.Actions.Length = 18 then
-                chk.Actions <- Array.removeAt 4 chk.Actions
-        // flamebearer: act as if no grimmchild
-        | "Flamebearer Spawn", "Spawn Control" ->
-            let chk = state "State"
-            let act = chk.Actions[4] :?> Actions.PlayerDataBoolTest
-            act.isTrue <- act.isFalse
-        // hopefully the above is enough to never enable the grimm troupe content
-        | "Grimmchild", "Control" ->
-            let range =
-                Seq.init __instance.gameObject.transform.childCount __instance.gameObject.transform.GetChild
-                |> Seq.find (_.name >> (=) "Enemy Range")
-
-            range.GetComponent<UnityEngine.CircleCollider2D>().radius <- patchedGrimmRange
-            let shoot = state "Shoot"
-
-            if shoot.Actions.Length = 10 then
-                let change = state "Change"
-                let antic = state "Antic"
-                let chk = state "Check For Target"
-
-                do
-                    // treat lv1 as lv2 for target checking purposes
-                    let cmp = chk.Actions[0] :?> Actions.IntCompare
-                    cmp.equal <- cmp.greaterThan
-
-                // give player more time to react to the sound
-                // (the animation stops so dont make the delay too big)
-                do
-                    let newState = FsmState __instance.Fsm
-                    newState.Name <- "Pre-Shoot Delay"
-                    newState.Transitions <- [| FsmTransition() |]
-                    newState.Transitions[0].ToState <- "Shoot"
-                    newState.Transitions[0].ToFsmState <- shoot
-                    newState.Transitions[0].FsmEvent <- FsmEvent.GetFsmEvent "FINISHED"
-                    newState.Actions <- [| CustomWait(fun () -> if isPlayer.IsSome then 0.4f else 0.0f) |]
-                    antic.Transitions[0].ToState <- "Pre-Shoot Delay"
-                    antic.Transitions[0].ToFsmState <- newState
-
-                // slow down the ball when firing at player
-                do
-                    let fireN = shoot.Actions |> Array.findIndex (fun x -> x :? Actions.FireAtTarget)
-
-                    shoot.Actions[fireN] <-
-                        CustomFire(
-                            shoot.Actions[fireN] :?> Actions.FireAtTarget,
-                            fun _ -> if isPlayer.IsSome then 0.4f else 1.0f
+                    b.size <-
+                        UnityEngine.Vector2(
+                            b.size.x * float32 (1.27 * 1.4 / 0.728),
+                            b.size.y * float32 (0.86 * 1.4 / 0.728)
                         )
 
-                    (shoot.Actions[fireN - 1] :?> Actions.SetFsmInt).setValue <- null
+                    s.GetComponents<SetPosIfPlayerdataBool>()
+                    |> Array.iter (fun x ->
+                        x.XPos <- -7.7f
 
-                    let setBallColor =
+                        if PlayerData.instance.GetBool x.playerDataBool then
+                            s.transform.localPosition <-
+                                UnityEngine.Vector3(x.XPos, s.transform.localPosition.y, s.transform.localPosition.z))
+
+            | "Inv", "UI Inventory" ->
+                let a = (state "Any Other Panes?").Actions[1] :?> Actions.PlayerDataBoolTest
+                a.isTrue <- a.isFalse
+            | "Inv", "Button Control" ->
+                let chk = state "Check Item"
+
+                chk.Transitions <-
+                    chk.Transitions
+                    |> Array.filter (fun x ->
+                        match x.FsmEvent.Name with
+                        | "INV_NAME_MAP"
+                        | "INV_NAME_MAPQUILL"
+                        | "INV_NAME_QUILL" -> false
+                        | _ -> true)
+            | "Inventory", "Inventory Control" ->
+                [ (state "Single Pane?").Actions[7]
+                  (state "Next Map").Actions[0]
+                  (state "Next Map 2").Actions[0]
+                  (state "Next Map 3").Actions[0] ]
+                |> List.iter (fun x ->
+                    let x = x :?> Actions.PlayerDataBoolTest
+                    x.isTrue <- x.isFalse)
+            | x, "charm_show_if_collected" when charmsToHide |> List.exists (_.ToString() >> (=) x) ->
+                let chk = state "Check"
+
+                match chk.Actions[chk.Actions.Length - 1] with
+                | :? Actions.PlayerDataBoolTest as a ->
+                    chk.Actions[chk.Actions.Length - 1] <-
                         FsmLambda(fun fsm ->
-                            let ball = fsm.Variables.FindFsmGameObject "Flameball"
-                            let t = ball.Value.GetComponent<tk2dSpriteAnimator>()
+                            let ownerDefaultTarget = fsm.GetOwnerDefaultTarget a.gameObject
 
-                            t.Library <- pickSpriteLib t.Library
+                            if ownerDefaultTarget <> null then
+                                let comp = ownerDefaultTarget.GetComponent<GameManager>()
 
-                            Seq.init ball.Value.transform.childCount ball.Value.transform.GetChild
-                            |> Seq.iter (fun child ->
-                                let t = child.gameObject.GetComponent<tk2dSpriteAnimator>()
+                                if comp <> null then
+                                    let boolCheck = comp.GetPlayerDataBool a.boolName.Value
 
-                                if t <> null then
-                                    t.Library <- pickSpriteLib t.Library))
+                                    fsm.Event(
+                                        if
+                                            boolCheck
+                                            && not (
+                                                charmsToHide
+                                                |> List.exists (fun x -> a.boolName.Value.EndsWith $"_{x}")
+                                            )
+                                        then
+                                            a.isTrue
+                                        else
+                                            a.isFalse
+                                    ))
+                | _ -> ()
+            | "Charm Effects", "Spawn Grimmchild" ->
+                // wait for 0.25s to give the old grimmchild instance time to despawn
+                let sp = state "Spawn Pause"
+                sp.Actions[0].Enabled <- true
+            | "Enemy Damager", "Attack" ->
+                if
+                    __instance.FsmVariables.BoolVariables.Length = 1
+                    && __instance.FsmVariables.FloatVariables.Length = 1
+                then
+                    // set layer depending on isPlayer
+                    do
+                        let detect = state "Detect"
 
-                    shoot.Actions[fireN].Init shoot
+                        detect.Actions <-
+                            Array.append
+                                [| FsmLambda(fun fsm ->
+                                       MainClass.Instance.Logger.LogInfo "in damager"
 
-                    if not disableBallTint then
-                        setBallColor.Init shoot
-                        shoot.Actions <- shoot.Actions |> Array.insertAt fireN setBallColor
+                                       match isPlayer with
+                                       | Some d ->
+                                           fsm.GameObject.layer <- 3
 
-                // increase follow distance by ~2 times
-                // (for player safety)
-                do
-                    let offx = change.Actions[1] :?> Actions.SetFloatValue
-                    let offy = change.Actions[4] :?> Actions.RandomFloat
-                    let mult (x: FsmFloat) = x.Value <- x.Value * 1.4f
-                    mult offx.floatValue
-                    mult offy.min
-                    mult offy.max
-            else
-                MainClass.Instance.Logger.LogInfo "not updating grimmchild control"
-        | _ -> ()
+                                           let dmg =
+                                               fsm.GameObject.GetComponent<DamageHero>()
+                                               |> Option.ofObj
+                                               |> Option.defaultWith fsm.GameObject.AddComponent<DamageHero>
+
+                                           dmg.damageDealt <- d
+                                       | None ->
+                                           // have to restore layer back in case this is a reused ball
+                                           // no need to remove DamageHero as the ball wont collide with the player either way (surely)
+                                           // just set the damage value instead
+                                           // default lv4 is 11 damage
+                                           // likely final boss count is 20-30
+                                           // divide by 2 = end up at 10-15
+                                           // divide by 1.75 = end up at 11-17
+                                           // divide by 1.5 = end up at 13-20
+                                           // 1.5 seems excessive, 2 is fine but perhaps just a tiny bit conservative?
+                                           // try 1.75 (7/4) for now
+                                           (fsm.Variables.FindFsmInt "Damage").Value <-
+                                               Context.countBosses PlayerData.instance * 4 / 7 + 1
+
+                                           fsm.GameObject.layer <- 15) |]
+                                detect.Actions
+
+                        detect.Actions[0].Init detect
+            // never set nightmareLanterAppeared to true
+            | "Sycophant Dream", "Activate Lantern" ->
+                let init = state "Init"
+                let act = init.Actions[init.Actions.Length - 1] :?> Actions.PlayerDataBoolTest
+                act.isFalse <- act.isTrue
+            // never set nightmareLanterLit to true
+            | "grimm_brazier", "grimm_brazier" ->
+                let init = state "Init"
+                let act = init.Actions[init.Actions.Length - 1] :?> Actions.PlayerDataBoolTest
+                act.isFalse <- act.isTrue
+            // banker: act as if no grimmchild
+            | "Banker", "Conversation Control" ->
+                let g = state "Grimmchild?"
+                let act = g.Actions[g.Actions.Length - 1] :?> Actions.PlayerDataBoolTest
+                act.isTrue <- act.isFalse
+            // brumm torch npc: act as if no grimmchild
+            | "Brumm Torch NPC", "Conversation Control" ->
+                let chk = state "Check Active"
+                let act = chk.Actions[0] :?> Actions.PlayerDataBoolTest
+                act.isTrue <- act.isFalse
+            // queen npc: never read grimmchild state (keep at false)
+            | "Queen", "Conversation Control" ->
+                let chk = state "Convo Choice"
+
+                if chk.Actions.Length = 18 then
+                    chk.Actions <- Array.removeAt 4 chk.Actions
+            // flamebearer: act as if no grimmchild
+            | "Flamebearer Spawn", "Spawn Control" ->
+                let chk = state "State"
+                let act = chk.Actions[4] :?> Actions.PlayerDataBoolTest
+                act.isTrue <- act.isFalse
+            // hopefully the above is enough to never enable the grimm troupe content
+            | "Grimmchild", "Control" ->
+                let range =
+                    Seq.init __instance.gameObject.transform.childCount __instance.gameObject.transform.GetChild
+                    |> Seq.find (_.name >> (=) "Enemy Range")
+
+                range.GetComponent<UnityEngine.CircleCollider2D>().radius <- patchedGrimmRange
+                let shoot = state "Shoot"
+
+                if shoot.Actions.Length = 10 then
+                    let change = state "Change"
+                    let antic = state "Antic"
+                    let chk = state "Check For Target"
+
+                    do
+                        // treat lv1 as lv2 for target checking purposes
+                        let cmp = chk.Actions[0] :?> Actions.IntCompare
+                        cmp.equal <- cmp.greaterThan
+
+                    // give player more time to react to the sound
+                    // (the animation stops so dont make the delay too big)
+                    do
+                        let newState = FsmState __instance.Fsm
+                        newState.Name <- "Pre-Shoot Delay"
+                        newState.Transitions <- [| FsmTransition() |]
+                        newState.Transitions[0].ToState <- "Shoot"
+                        newState.Transitions[0].ToFsmState <- shoot
+                        newState.Transitions[0].FsmEvent <- FsmEvent.GetFsmEvent "FINISHED"
+                        newState.Actions <- [| CustomWait(fun () -> if isPlayer.IsSome then 0.4f else 0.0f) |]
+                        antic.Transitions[0].ToState <- "Pre-Shoot Delay"
+                        antic.Transitions[0].ToFsmState <- newState
+
+                    // slow down the ball when firing at player
+                    do
+                        let fireN = shoot.Actions |> Array.findIndex (fun x -> x :? Actions.FireAtTarget)
+
+                        shoot.Actions[fireN] <-
+                            CustomFire(
+                                shoot.Actions[fireN] :?> Actions.FireAtTarget,
+                                fun _ -> if isPlayer.IsSome then 0.4f else 1.0f
+                            )
+
+                        (shoot.Actions[fireN - 1] :?> Actions.SetFsmInt).setValue <- null
+
+                        let setBallColor =
+                            FsmLambda(fun fsm ->
+                                let ball = fsm.Variables.FindFsmGameObject "Flameball"
+                                let t = ball.Value.GetComponent<tk2dSpriteAnimator>()
+
+                                t.Library <- pickSpriteLib t.Library
+
+                                Seq.init ball.Value.transform.childCount ball.Value.transform.GetChild
+                                |> Seq.iter (fun child ->
+                                    let t = child.gameObject.GetComponent<tk2dSpriteAnimator>()
+
+                                    if t <> null then
+                                        t.Library <- pickSpriteLib t.Library))
+
+                        shoot.Actions[fireN].Init shoot
+
+                        if not disableBallTint then
+                            setBallColor.Init shoot
+                            shoot.Actions <- shoot.Actions |> Array.insertAt fireN setBallColor
+
+                    // increase follow distance by ~2 times
+                    // (for player safety)
+                    do
+                        let offx = change.Actions[1] :?> Actions.SetFloatValue
+                        let offy = change.Actions[4] :?> Actions.RandomFloat
+                        let mult (x: FsmFloat) = x.Value <- x.Value * 1.4f
+                        mult offx.floatValue
+                        mult offy.min
+                        mult offy.max
+                else
+                    MainClass.Instance.Logger.LogInfo "not updating grimmchild control"
+            | _ -> ()
+        with exc ->
+            MainClass.Instance.Logger.LogError $"fsm awake exception: {exc}"
 
     [<HarmonyPatch(typeof<GrimmEnemyRange>, nameof (Unchecked.defaultof<GrimmEnemyRange>.GetTarget))>]
     [<HarmonyPostfix>]

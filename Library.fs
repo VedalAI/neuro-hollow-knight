@@ -558,12 +558,12 @@ module Context =
             |> Array.toList }
 
 
-module Native =
+(*module Native =
     [<DllImport "libprofiler.so">]
     extern void profiler_reset()
 
     [<DllImport "libprofiler.so">]
-    extern void profiler_save()
+    extern void profiler_save()*)
 
 type WaypointPos =
     { x: float32
@@ -828,7 +828,7 @@ type Game(plugin: MainClass) =
         plugin.Logger.LogInfo $"{DateTime.UtcNow}.{DateTime.UtcNow.ToString fff} {error}"
 
     member this.Update() =
-        try
+        (*try
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F1 then
                 Native.profiler_reset ()
 
@@ -852,9 +852,9 @@ type Game(plugin: MainClass) =
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F7 then
                 showFm <- not showFm
-                PlayMakerFSM.BroadcastEvent(if showFm then "FIRST MAP UP" else "FIRST MAP DOWN")
+                PlayMakerFSM.BroadcastEvent(if showFm then "FIRST MAP UP" else "FIRST MAP DOWN")*)
 
-            (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F8 then
+        (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F8 then
                 animOffset <- animOffset + 1
 
             Array.zip
@@ -878,8 +878,8 @@ type Game(plugin: MainClass) =
                 if a.CurrentClip = null || a.CurrentClip.name <> n then
                     a.Play n
                     a.CurrentClip.wrapMode <- tk2dSpriteAnimationClip.WrapMode.Loop)*)
-        with exc ->
-            this.Context true $"Exception while handling player input: {exc}"
+        (*with exc ->
+            this.Context true $"Exception while handling player input: {exc}"*)
 
         if PlayerData.instance <> null then
             let gcLevel = Math.Min(4, 2 + Context.countBosses PlayerData.instance / 8)
@@ -999,8 +999,8 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
 
             let cnt = Seq.fold (fun x _ -> x + 1) 0 (harmony.GetPatchedMethods())
 
-            typeof<CheatManager>.GetMethod("Init", BindingFlags.NonPublic ||| BindingFlags.Static).Invoke(null, [||])
-            |> ignore
+            //typeof<CheatManager>.GetMethod("Init", BindingFlags.NonPublic ||| BindingFlags.Static).Invoke(null, [||])
+            //|> ignore
             // PerformanceHUD.Shared.enabled <- true
 
             game <-
