@@ -19,13 +19,13 @@ type Tactic =
 
 type Actions =
     | [<Action("map",
-               "Show a list of points of interest, in the current area or globally. You can then use the `pathfind_room` action to find the shortest path to the room that contains them.")>] ShowMap of
-        local: bool
+               "Show a list of points of interest. You can then use the `pathfind_room` action to find the shortest path to the room that contains them. Alternatively, you can skip using the map and use the `pathfind_pin` action if you know the name of the point of interest you are interested in.")>] ShowMap (*of
+        local: bool*)
     //| [<Action("pathfind_area", "Find the shortest path to an area.")>] PathfindArea of name: string
-    | [<Action("pathfind_room", "Pathfind to a room by its id.")>] PathfindRoom of roomId: int
-    | [<Action("pathfind_pin", "Find the nearest point of interest with a given name (example: Bench).")>] PathfindPin of
+    | [<Action("pathfind_room", "Find a path to a room by its id.")>] PathfindRoom of roomId: int
+    | [<Action("pathfind_pin", "Find a path to the nearest point of interest with a given name (example: Bench).")>] PathfindPin of
         name: string
-    | [<Action("unexplored_exits", "Find a list of unexplored rooms, in the current area or globally.")>] UnexploredRooms (*of
+    | [<Action("unexplored_exits", "Find a list of unexplored rooms.")>] UnexploredRooms (*of
         local: bool*)
     | [<Action("create_waypoint", "Store the current position as a waypoint on the map")>] CreateWaypoint of
         name: string
@@ -785,7 +785,8 @@ type Game(plugin: MainClass) =
                 Ok(Some $"The path is: {desc}")
 
 
-        | ShowMap local ->
+        | ShowMap ->
+            let local = false
             Context.dumpingLocal <- local
 
             Context.checkMap ()
