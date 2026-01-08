@@ -23,6 +23,8 @@ type Actions =
         local: bool
     //| [<Action("pathfind_area", "Find the shortest path to an area.")>] PathfindArea of name: string
     | [<Action("pathfind_room", "Pathfind to a room by its id.")>] PathfindRoom of roomId: int
+    | [<Action("pathfind_pin", "Find the nearest point of interest with a given name (example: Bench).")>] PathfindPin of
+        name: string
     | [<Action("unexplored_exits", "Find a list of unexplored rooms, in the current area or globally.")>] UnexploredRooms (*of
         local: bool*)
     | [<Action("create_waypoint", "Store the current position as a waypoint on the map")>] CreateWaypoint of
@@ -78,7 +80,12 @@ module Context =
     let getComp<'A> (o: UnityEngine.GameObject) = o.GetComponent<'A>()
 
     let mapActions: obj list =
-        [ ShowMap; CreateWaypoint; DeleteWaypoint; PathfindRoom; UnexploredRooms ]
+        [ ShowMap
+          CreateWaypoint
+          DeleteWaypoint
+          PathfindRoom
+          PathfindPin
+          UnexploredRooms ]
 
     let grubPin =
         mkPin
@@ -165,11 +172,9 @@ module Context =
 
         let nextArea =
             mkPin
-                (getComp<MapNextAreaDisplay>
-                 >> fun d ->
-                    false)
-                     //d.visitedString <> "" && not (PlayerData.instance.GetBool d.visitedString)
-                     //|| dumpingLocal && areaMap d.visitedString <> "")
+                (getComp<MapNextAreaDisplay> >> fun d -> false)
+                //d.visitedString <> "" && not (PlayerData.instance.GetBool d.visitedString)
+                //|| dumpingLocal && areaMap d.visitedString <> "")
                 (getComp<MapNextAreaDisplay>
                  >> fun d ->
                      if d.visitedString = "" then
@@ -673,6 +678,28 @@ type Game(plugin: MainClass) =
     override _.Name = "Hollow Knight"
 
     override this.HandleAction(action: Actions) =
+        let pathDesc path =
+            path
+            |> List.collect (fun x ->
+                match x with
+                | ByTram(dir, dist, Some sc) -> Some(dir, dist, $"take the tram to {sc}")
+                | ByStag(dir, dist, sc) -> Some(dir, dist, $"take the stag to {sc}")
+                | ByTram(dir, dist, None) -> Some(dir, dist, "take the tram")
+                | ByFoot(dir, dist, _) -> Some(dir, dist, "")
+                | UseDoor _ -> None
+                | ByElevator(dir, dist) -> Some(dir, dist, "take the elevator")
+                |> Option.toList)
+            |> List.collect (fun (dir, dist, desc) ->
+                let dir = dir.ToString().ToUpper()
+
+                List.append
+                    (if dist > 10f then
+                         [ $"walk {int (dist / 2f)} meters towards {dir}" ]
+                     else
+                         [])
+                    (if desc = "" then [] else [ desc ]))
+            |> String.concat "; "
+
         match action with
         | UnexploredRooms ->
             let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
@@ -694,6 +721,52 @@ type Game(plugin: MainClass) =
             |> ignore
 
             Ok(Some $"Unexplored room list, in order of closeness: {ans |> List.rev |> this.Serialize}")
+        | PathfindPin pin ->
+            let px, py = Context.playerPos ()
+
+            let mkExtra (area: UnityEngine.GameObject) =
+                let extra =
+                    this.SaveData.waypoints
+                    |> Option.defaultValue Map.empty
+                    |> Seq.filter (_.Value >> _.zone >> Context.areaFromZone >> fst >> (=) area)
+                    |> Seq.map (fun x -> Context.customWaypoint true (px, py) x.Key (x.Value.x, x.Value.y) x.Value.room)
+                    |> List.ofSeq
+
+                extra
+
+            let ctx = Context.allAreas mkExtra
+
+            let pins =
+                ctx.mappedAreas
+                |> List.collect (fun area -> area.pointsOfInterest |> List.filter (_.name >> (=) pin))
+
+            if List.isEmpty pins then
+                let uniq = System.Collections.Generic.HashSet<String>()
+
+                let names =
+                    ctx.mappedAreas
+                    |> List.collect (fun area -> area.pointsOfInterest |> List.map _.name)
+                    |> List.filter uniq.Add
+
+                Error(Some $"Pins with the given name were not found. Available names: {this.Serialize names}")
+            else
+                let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
+
+                match pins |> List.tryFind (_.roomId >> (=) (Some sA)) with
+                | Some x -> Ok(Some $"Pin found in the current room: {this.Serialize x}")
+                | None ->
+                    let rooms = pins |> List.collect (_.roomId >> Option.toList) |> Set.ofList
+
+                    match Pathfinding.pathfind sA rooms.Contains (Some(px, py)) with
+                    | None ->
+                        Error(
+                            Some
+                                "Path not found! Perhaps the target pin isn't reachable, or the map is incomplete, or pathfinding doesn't work in this room."
+                        )
+                    | Some path ->
+                        let desc = pathDesc path
+                        Ok(Some $"The path to pin `{pin}` is: {desc}")
+
         | PathfindRoom sB ->
             let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
             let hero = HeroController.instance
@@ -708,29 +781,7 @@ type Game(plugin: MainClass) =
             | Some [] -> Ok(Some "The player is already in the target room!")
             | Some path ->
                 this.LogDebug $"path: {path}"
-
-                let desc =
-                    path
-                    |> List.collect (fun x ->
-                        match x with
-                        | ByTram(dir, dist, Some sc) -> Some(dir, dist, $"take the tram to {sc}")
-                        | ByStag(dir, dist, sc) -> Some(dir, dist, $"take the stag to {sc}")
-                        | ByTram(dir, dist, None) -> Some(dir, dist, "take the tram")
-                        | ByFoot(dir, dist, _) -> Some(dir, dist, "")
-                        | UseDoor _ -> None
-                        | ByElevator(dir, dist) -> Some(dir, dist, "take the elevator")
-                        |> Option.toList)
-                    |> List.collect (fun (dir, dist, desc) ->
-                        let dir = dir.ToString().ToUpper()
-
-                        List.append
-                            (if dist > 10f then
-                                 [ $"walk {int (dist / 2f)} meters towards {dir}" ]
-                             else
-                                 [])
-                            (if desc = "" then [] else [ desc ]))
-                    |> String.concat "; "
-
+                let desc = pathDesc path
                 Ok(Some $"The path is: {desc}")
 
 
