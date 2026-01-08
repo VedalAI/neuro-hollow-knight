@@ -810,8 +810,11 @@ type Game(plugin: MainClass) =
                     let keys = Map.keys wp |> Seq.toArray
                     Error(Some $"Waypoint `{name}` not found! Existing user waypoints: {this.Serialize keys}"))
         | ShootPlayer dealDamage ->
-            playerShots <- dealDamage :: playerShots
-            Ok(Some "Queued a shot towards the player. Repeat the shoot_player action to queue more shots.")
+            if GameManager.instance.IsGameplayScene() then
+                playerShots <- dealDamage :: playerShots
+                Ok(Some "Queued a shot towards the player. Repeat the shoot_player action to queue more shots.")
+            else
+                Error(Some "The player hasn't started playing yet!")
         | SetTactic t ->
             tactic <- t
             Ok(Some $"Successfully set the tactic to {this.Serialize t}.")
