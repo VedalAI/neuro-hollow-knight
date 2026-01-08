@@ -591,6 +591,12 @@ type Game(plugin: MainClass) =
     let mutable _saveData: SaveData = saveData0
     let mutable hasMap = false
     let mutable showFm = false
+    (* let mutable animOffset = 0
+
+    let mutable healths: UnityEngine.GameObject array =
+        [| null; null; null; null; null; null; null; null; null; null; null |]
+
+    member _.Healths = healths*)
 
     member _.DequeuePlayerShot() =
         match playerShots with
@@ -626,6 +632,7 @@ type Game(plugin: MainClass) =
     member this.LoadData(s: string) =
         try
             this.LogDebug $"loading save data {s}"
+
             this.SaveData <-
                 TypeInfo.deserialize [] saveDataType (JsonValue.Parse s)
                 |> Result.map (fun x -> x :?> SaveData)
@@ -843,6 +850,31 @@ type Game(plugin: MainClass) =
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F7 then
                 showFm <- not showFm
                 PlayMakerFSM.BroadcastEvent(if showFm then "FIRST MAP UP" else "FIRST MAP DOWN")
+
+            (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F8 then
+                animOffset <- animOffset + 1
+
+            Array.zip
+                healths
+                ([| "Blue Appear"
+                    "Blue Idle"
+                    "Health Bound"
+                    "Health Empty"
+                    "Health Appear"
+                    "Health Break"
+                    "Blue Break Fast"
+                    "Blue Break"
+                    "Health Idle"
+                    "Health Max Up"
+                    "Health Refill" |]
+                 |> Array.permute (fun i -> (i + animOffset) % 11))
+            |> Array.filter (fst >> (<>) null)
+            |> Array.iter (fun (h, n) ->
+                let a = h.GetComponent<tk2dSpriteAnimator>()
+
+                if a.CurrentClip = null || a.CurrentClip.name <> n then
+                    a.Play n
+                    a.CurrentClip.wrapMode <- tk2dSpriteAnimationClip.WrapMode.Loop)*)
         with exc ->
             this.Context true $"Exception while handling player input: {exc}"
 

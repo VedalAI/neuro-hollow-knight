@@ -279,37 +279,35 @@ type public Patches() =
                     let ts =
                         UnityEngine.Vector2(float32 sc.textures[1].width, float32 sc.textures[1].height)
 
-                    let mutable startY = 0
-
-                    [| "Blue Appear", 143, 31, 9
-                       "Health Empty", 67, 59, 1
-                       "Health Appear", 119, 130, 5
-                       "Health Bound", 65, 70, 1
-                       "Blue Break", 127, 124, 5
-                       "Health Break", 127, 158, 6
-                       "Health Idle", 65, 70, 45
-                       "Blue Idle", 99, 149, 99
-                       "Blue Break Fast", 127, 124, 5
-                       "Health Refill", 119, 130, 6
-                       "Health Max Up", 126, 117, 14 |]
-                    |> Array.iter (fun (cname, cw, ch, clen) ->
+                    Generated.anims
+                    |> Array.iter (fun (cname, cdata) ->
                         //let hi = __instance.Library.clips |> Array.find (_.name >> (=) "Health Idle")
                         //let hiLen = 45
                         let c = __instance.Library.clips |> Array.find (_.name >> (=) cname)
                         let b = Array.length sc.spriteDefinitions
 
                         let cdefs =
-                            Array.init clen (fun i ->
+                            cdata
+                            |> Array.mapi (fun i (x, y, w, h) ->
+                                let ox, oy =
+                                    if cname = "Blue Idle" then 0, -23
+                                    else if cname = "Health Max Up" then
+                                        let x, y = [|4, 16; 2, 4; 0, 2; -4, 16; 0, 4; 0, 3; 0, 12; 0, 4; 0, 2; 0, 12; 0, 4; 0, 2; 0, 11; -1, 13|][i]
+                                        x, y - 14
+                                    else 0, 0
                                 let def =
                                     createDefinitionForRegionInTexture
                                         $"{cname}_{i}"
                                         ts
                                         // uv
-                                        (UnityEngine.Rect(float32 (cw * i), float32 startY, float32 cw, float32 ch))
+                                        (UnityEngine.Rect(float32 x, float32 y, float32 w, float32 h))
                                         // trim rect
-                                        (UnityEngine.Rect(0f, 0f, float32 cw, float32 ch))
+                                        (UnityEngine.Rect(0f, 0f, float32 w, float32 h))
                                         // anchor
-                                        (UnityEngine.Vector2(float32 cw / 2f, float32 ch / 2f))
+                                        (UnityEngine.Vector2(
+                                            float32 w / 2f + float32 ox,
+                                            float32 h / 2f + float32 oy
+                                        ))
 
                                 def.untrimmedBoundsData <-
                                     [| UnityEngine.Vector3(0f, -0.5f, 0f); UnityEngine.Vector3(126f, 167f, 0f) |]
@@ -320,7 +318,6 @@ type public Patches() =
 
                                 def)
 
-                        startY <- startY + ch
                         sc.spriteDefinitions <- Array.append sc.spriteDefinitions cdefs
 
                         c.frames |> Seq.iteri (fun i fr -> fr.spriteId <- b + i))
@@ -622,6 +619,10 @@ type public Patches() =
                 prefix = HarmonyMethod(typeof<Patches>.GetMethod "LanguageGet")
             )
             |> ignore
+
+        (*if n.StartsWith "Health " && n.Length <= 9 then
+            let n = int (n.Substring 7)
+            MainClass.Instance.Game.Healths[n - 1] <- __instance.gameObject*)
 
         match n, __instance.FsmName with
         | "First Map", _ ->
