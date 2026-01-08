@@ -1077,7 +1077,11 @@ module Generated =
         | 33 -> [ "left1", true, 1.5, 7; "left1 (1)", true, 1.5, 11 ]
         | 34 -> [ "left1", true, 1.5, 7; "left1 (1)", true, 1.5, 11 ]
         | 36 -> [ "left1", true, 11.5, 7 ]
-        | 37 -> [ "top2", true, 52.5, 42.5 ]
+        | 37 ->
+            [ "left1", true, -0.5, 9
+              "right1", true, 100.5, 18
+              "top1", true, 52.5, 25.5
+              "top2", true, 52.5, 42.5 ]
         | 39 ->
             [ "left1", true, 0.5, 34
               "left2", true, -0.5, 11

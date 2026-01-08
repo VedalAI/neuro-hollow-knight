@@ -23,8 +23,8 @@ type Actions =
         local: bool
     //| [<Action("pathfind_area", "Find the shortest path to an area.")>] PathfindArea of name: string
     | [<Action("pathfind_room", "Pathfind to a room by its id.")>] PathfindRoom of roomId: int
-    | [<Action("unexplored_exits", "Find a list of unexplored rooms, in the current area or globally.")>] UnexploredRooms of
-        local: bool
+    | [<Action("unexplored_exits", "Find a list of unexplored rooms, in the current area or globally.")>] UnexploredRooms (*of
+        local: bool*)
     | [<Action("create_waypoint", "Store the current position as a waypoint on the map")>] CreateWaypoint of
         name: string
     | [<Action("delete_waypoint", "Delete a named waypoint")>] DeleteWaypoint of name: string
@@ -76,7 +76,9 @@ module Context =
     let cnst x _ = x
     let mkPin (filter: UnityEngine.GameObject -> bool) (name: UnityEngine.GameObject -> string) = filter, name
     let getComp<'A> (o: UnityEngine.GameObject) = o.GetComponent<'A>()
-    let mapActions: obj list = [ ShowMap; CreateWaypoint; DeleteWaypoint; PathfindRoom ]
+
+    let mapActions: obj list =
+        [ ShowMap; CreateWaypoint; DeleteWaypoint; PathfindRoom; UnexploredRooms ]
 
     let grubPin =
         mkPin
@@ -657,19 +659,39 @@ type Game(plugin: MainClass) =
     override _.Name = "Hollow Knight"
 
     override this.HandleAction(action: Actions) =
-
         match action with
+        | UnexploredRooms ->
+            let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
+            let hero = HeroController.instance
+            let px, py = hero.transform.position.x, hero.transform.position.y
+            let visMap = PlayerData.instance.scenesVisited |> Set.ofSeq
+            let mutable ans = []
+
+            Pathfinding.pathfind
+                sA
+                (fun i ->
+                    match Generated.reachability i with
+                    | Reachability.Always
+                    | Reachability.Visited when visMap.Contains Generated.sceneNames[i] |> not -> ans <- i :: ans
+                    | _ -> ()
+
+                    false)
+                (Some(px, py))
+            |> ignore
+
+            Ok(Some $"Unexplored room list, in order of closeness: {this.Serialize ans}")
         | PathfindRoom sB ->
             let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
             let hero = HeroController.instance
             let px, py = hero.transform.position.x, hero.transform.position.y
 
-            match Pathfinding.pathfind sA sB (Some(px, py)) with
+            match Pathfinding.pathfind sA ((=) sB) (Some(px, py)) with
             | None ->
                 Error(
                     Some
-                        "Path not found! Perhaps the target area isn't reachable, or the map is incomplete, or you have to purchase map pins to see more transportation options."
+                        "Path not found! Perhaps the target area isn't reachable, or the map is incomplete, or pathfinding doesn't work in this room."
                 )
+            | Some [] -> Ok(Some "The player is already in the target room!")
             | Some path ->
                 this.LogDebug $"path: {path}"
 

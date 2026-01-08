@@ -1,3 +1,6 @@
+// TODO: UnexploredRooms local
+// TODO: area name reporting
+
 namespace HollowNeuro
 
 open System
@@ -138,7 +141,7 @@ module Pathfinding =
 
     let lowerTramStations = [| 329; 330; 331 |]
 
-    let pathfind sA sB (pos: (float32 * float32) option) =
+    let pathfind sA (target: int -> bool) (pos: (float32 * float32) option) =
         // find shortest path to target scene
         //let mutable q = Map.empty
         let mutable i = 0
@@ -148,7 +151,9 @@ module Pathfinding =
 
         let visS = System.Collections.Generic.HashSet<int>()
         let visD = System.Collections.Generic.HashSet<int * string>()
-        let reachable = reachability () |> Array.map ((<>) ResolvedReachability.No)
+
+        let reachable = reachability ()
+        let reachable = reachable |> Array.map ((<>) ResolvedReachability.No)
 
         let addElem s simpleSeg properSeg old chk =
             pushSeg simpleSeg old
@@ -259,10 +264,6 @@ module Pathfinding =
                     let bs = ByStag(dir, dist, n)
                     addElem s bs (fun () -> oldDist + dist + 50f, bs) old (fun () -> visS.Contains s |> not)))
 
-        if sA <> sB && reachable[sA] then
-            visS.Add sA |> ignore
-            visScene sA x0 y0 [] 0f
-
         let rec iter =
             fun () ->
                 if q.Count = 0 then
@@ -280,13 +281,15 @@ module Pathfinding =
                     //        |> String.concat ";")
                     // )
 
-                    if sA = sB then Some [] else None
+                    None
                 else
                     let oldDist, (s, m) = popElem ()
                     let x0, y0, d = sourcePos s (List.head m)
                     //UnityEngine.Debug.LogWarning $"pathfinding debug: {x0}/{y0} {Generated.sceneNames[s]}[{d}]: {m}"
 
-                    if s = sB then
+                    let added = visS.Add s
+
+                    if added && target s then
                         Some(List.rev m)
                     else
                         let dirDist =
@@ -298,7 +301,7 @@ module Pathfinding =
                                 enum<Dir> (int (angle * float32 (8. / Math.PI) + 16.5f) % 16), dist
 
                         // visit scene
-                        if visS.Add s && reachable[s] then
+                        if added && reachable[s] then
                             visScene s x0 y0 m oldDist
 
                         // visit doors
@@ -335,4 +338,12 @@ module Pathfinding =
 
                         iter ()
 
-        iter ()
+        if reachable[sA] then
+            if target sA then
+                Some []
+            else
+                visS.Add sA |> ignore
+                visScene sA x0 y0 [] 0f
+                iter ()
+        else
+            None
