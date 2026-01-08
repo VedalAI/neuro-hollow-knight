@@ -871,13 +871,13 @@ type public Patches() =
                                            // just set the damage value instead
                                            // default lv4 is 11 damage
                                            // likely final boss count is 20-30
-                                           // divide by 2 = end up at 10-15
-                                           // divide by 1.75 = end up at 11-17
-                                           // divide by 1.5 = end up at 13-20
+                                           // divide by 2 = end up at 11-16
+                                           // divide by 1.75 = end up at 12-18
+                                           // divide by 1.5 = end up at 14-21
                                            // 1.5 seems excessive, 2 is fine but perhaps just a tiny bit conservative?
                                            // try 1.75 (7/4) for now
                                            (fsm.Variables.FindFsmInt "Damage").Value <-
-                                               Context.countBosses PlayerData.instance * 4 / 7 + 1
+                                               Context.countBosses PlayerData.instance * 4 / 7 + 2
 
                                            fsm.GameObject.layer <- 15) |]
                                 detect.Actions
