@@ -723,6 +723,7 @@ type Game(plugin: MainClass) =
             Ok(Some $"Unexplored room list, in order of closeness: {ans |> List.rev |> this.Serialize}")
         | PathfindPin pin ->
             let px, py = Context.playerPos ()
+            let pin' = pin.ToLower()
 
             let mkExtra (area: UnityEngine.GameObject) =
                 let extra =
@@ -738,7 +739,7 @@ type Game(plugin: MainClass) =
 
             let pins =
                 ctx.mappedAreas
-                |> List.collect (fun area -> area.pointsOfInterest |> List.filter (_.name >> (=) pin))
+                |> List.collect (fun area -> area.pointsOfInterest |> List.filter (_.name.ToLower() >> (=) pin'))
 
             if List.isEmpty pins then
                 let uniq = System.Collections.Generic.HashSet<String>()
