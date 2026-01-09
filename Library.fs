@@ -499,7 +499,7 @@ module Context =
                Seq.filter (fun scene ->
                    if
                        scene.name = "Grub Pins"
-                       || pd.scenesMapped.Contains scene.name
+                       || pd.scenesVisited.Contains scene.name
                        || scene.activeSelf
                    then
                        logger.LogInfo $"including scene {scene.name}"
@@ -680,6 +680,12 @@ type Game(plugin: MainClass) =
     override _.Name = "Hollow Knight"
 
     override this.HandleAction(action: Actions) =
+        let pathfindHelp =
+            "Try to tell the player the entire path at once! If the player asks for directions again, make sure to call the `pathfind_room` action again as they might have gone the wrong way!"
+
+        let pathfindHelp' =
+            "Try to tell the player the entire path at once! If the player asks for directions again, make sure to call the `pathfind_pin` action again as they might have gone the wrong way!"
+
         let pathDesc path =
             path
             |> List.collect (fun x ->
@@ -712,17 +718,33 @@ type Game(plugin: MainClass) =
 
             Pathfinding.pathfind
                 sA
-                (fun i ->
+                (fun i m ->
                     match Generated.reachability i with
                     | Reachability.Always
-                    | Reachability.Visited when visMap.Contains Generated.sceneNames[i] |> not -> ans <- i :: ans
+                    | Reachability.Visited when visMap.Contains Generated.sceneNames[i] |> not ->
+                        ans <- (i, List.rev m) :: ans
                     | _ -> ()
 
                     false)
                 (Some(px, py))
             |> ignore
 
-            Ok(Some $"Unexplored room list, in order of closeness: {ans |> List.rev |> this.Serialize}")
+            if List.isEmpty ans then
+                Ok(Some "Unexplored rooms not found!")
+            else
+                let ans = ans |> List.rev
+
+                let firstPaths =
+                    List.take (min ans.Length 3) ans
+                    |> List.map (fun (x, y) -> $"Path to room {x}: " + pathDesc y)
+                    |> String.concat "\n"
+
+                let ans = ans |> List.map fst
+
+                Ok(
+                    Some
+                        $"Unexplored room list, in order of closeness: {ans |> this.Serialize}\n\nPaths to some of the closest unexplored rooms:\n{firstPaths}\n{pathfindHelp}"
+                )
         | PathfindPin pin ->
             let px, py = Context.playerPos ()
             let pin' = pin.ToLower()
@@ -760,7 +782,7 @@ type Game(plugin: MainClass) =
                 | None ->
                     let rooms = pins |> List.collect (_.roomId >> Option.toList) |> Set.ofList
 
-                    match Pathfinding.pathfind sA rooms.Contains (Some(px, py)) with
+                    match Pathfinding.pathfind sA (fun x _ -> rooms.Contains x) (Some(px, py)) with
                     | None ->
                         Error(
                             Some
@@ -768,14 +790,14 @@ type Game(plugin: MainClass) =
                         )
                     | Some path ->
                         let desc = pathDesc path
-                        Ok(Some $"The path to pin `{pin}` is: {desc}")
+                        Ok(Some $"The path to pin `{pin}` is: {desc}\n{pathfindHelp'}")
 
         | PathfindRoom sB ->
             let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
             let hero = HeroController.instance
             let px, py = hero.transform.position.x, hero.transform.position.y
 
-            match Pathfinding.pathfind sA ((=) sB) (Some(px, py)) with
+            match Pathfinding.pathfind sA (fun x _ -> x = sB) (Some(px, py)) with
             | None ->
                 Error(
                     Some
@@ -785,7 +807,7 @@ type Game(plugin: MainClass) =
             | Some path ->
                 this.LogDebug $"path: {path}"
                 let desc = pathDesc path
-                Ok(Some $"The path is: {desc}")
+                Ok(Some $"The path is: {desc}\n{pathfindHelp}")
 
 
         | ShowMap ->

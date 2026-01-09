@@ -70,7 +70,7 @@ module Pathfinding =
 
 
     let reachability () =
-        let visMap = PlayerData.instance.scenesMapped |> Set.ofSeq
+        let visMap = PlayerData.instance.scenesVisited |> Set.ofSeq
 
         Array.init Generated.sceneNames.Length (fun i ->
             match Generated.reachability i with
@@ -141,7 +141,7 @@ module Pathfinding =
 
     let lowerTramStations = [| 329; 330; 331 |]
 
-    let pathfind sA (target: int -> bool) (pos: (float32 * float32) option) =
+    let pathfind sA (target: int -> PathSeg list -> bool) (pos: (float32 * float32) option) =
         // find shortest path to target scene
         //let mutable q = Map.empty
         let mutable i = 0
@@ -289,7 +289,7 @@ module Pathfinding =
 
                     let added = visS.Add s
 
-                    if added && target s then
+                    if added && target s m then
                         Some(List.rev m)
                     else
                         let dirDist =
@@ -339,7 +339,7 @@ module Pathfinding =
                         iter ()
 
         if reachable[sA] then
-            if target sA then
+            if target sA [] then
                 Some []
             else
                 visS.Add sA |> ignore
