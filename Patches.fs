@@ -15,19 +15,27 @@ type CustomFire(fire: Actions.FireAtTarget, getSpeedScale: CustomFire -> float32
     override _.OnPreprocess() = base.Fsm.HandleFixedUpdate <- true
 
     override this.OnEnter() =
-        let obj = base.Fsm.GetOwnerDefaultTarget fire.gameObject
-        self <- FsmGameObject.op_Implicit obj
-        this.CacheRigidBody2d obj
-        speedScale <- getSpeedScale this
-        this.DoSetVelocity()
+        try
+            let obj = base.Fsm.GetOwnerDefaultTarget fire.gameObject
+            self <- FsmGameObject.op_Implicit obj
+            this.CacheRigidBody2d obj
+            speedScale <- getSpeedScale this
+            this.DoSetVelocity()
 
-        if not fire.everyFrame then
+            if not fire.everyFrame then
+                this.Finish()
+        with exc ->
+            MainClass.Instance.Logger.LogError $"CustomFire.OnEnter {exc}"
             this.Finish()
 
     override this.OnFixedUpdate() =
-        this.DoSetVelocity()
+        try
+            this.DoSetVelocity()
 
-        if not fire.everyFrame then
+            if not fire.everyFrame then
+                this.Finish()
+        with exc ->
+            MainClass.Instance.Logger.LogError $"CustomFire.OnFixedUpdate {exc}"
             this.Finish()
 
     member private this.DoSetVelocity() =
@@ -78,7 +86,11 @@ type FsmLambda(f: Fsm -> unit) =
     inherit FsmStateAction()
 
     override this.OnEnter() : unit =
-        f this.Fsm
+        try
+            f this.Fsm
+        with exc ->
+            MainClass.Instance.Logger.LogError $"FsmLambda {exc}"
+
         this.Finish()
 
 [<AutoOpen>]
@@ -542,14 +554,13 @@ type public Patches() =
 
     [<HarmonyPatch(typeof<HeroBox>, "Start")>]
     [<HarmonyPrefix>]
-    static member public HeroBoxStart(__instance: HeroBox) =
-        heroBox <- __instance.gameObject
-        Printf.ksprintf MainClass.Instance.Logger.LogInfo "hblayer %d" __instance.gameObject.layer
+    static member public HeroBoxStart(__instance: HeroBox) = heroBox <- __instance.gameObject
+    (*Printf.ksprintf MainClass.Instance.Logger.LogInfo "hblayer %d" __instance.gameObject.layer*)
 
-    [<HarmonyPatch(typeof<HeroBox>, "OnTriggerEnter2D")>]
+    (*[<HarmonyPatch(typeof<HeroBox>, "OnTriggerEnter2D")>]
     [<HarmonyPrefix>]
     static member public TriggerEnter(__instance: HeroBox, otherCollider: UnityEngine.Collider2D) =
-        MainClass.Instance.Logger.LogInfo $"theroenter {otherCollider.gameObject.name}"
+        MainClass.Instance.Logger.LogInfo $"theroenter {otherCollider.gameObject.name}"*)
 
     [<HarmonyPatch(typeof<Fsm>, nameof (Unchecked.defaultof<Fsm>.ProcessEvent))>]
     [<HarmonyPrefix>]
