@@ -1007,11 +1007,7 @@ type public Patches() =
 
             let inRange x =
                 distFast x < grimmRange * grimmRange
-                && UnityEngine.Physics2D.Linecast(
-                    __instance.transform.position,
-                    HeroController.instance.gameObject.transform.position,
-                    256
-                   )
+                && UnityEngine.Physics2D.Linecast(__instance.transform.position, x.transform.position, 256)
                    |> UnityEngine.RaycastHit2D.op_Implicit
                    |> not
 
