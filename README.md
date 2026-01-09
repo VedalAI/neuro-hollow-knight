@@ -1,4 +1,4 @@
-# Hollow Knight Neuro Integration
+# <img src="Assets/icon.png" width="29" style="vertical-align:middle;"> Hollow Knight Neuro Integration
 
 ## Prerequisites
 
