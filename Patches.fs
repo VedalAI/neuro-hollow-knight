@@ -242,7 +242,7 @@ module Stuff =
         )
 
     let disableMap = true
-    let disableBallTint = false
+    let disableBallTint = true
     let grimmRange = 7.81f * 1.2f
     let patchedGrimmRange = grimmRange * 2.f
 
