@@ -195,16 +195,18 @@ module Context =
                      else
                          "Unexplored area transition")
 
-        let text = mkPin (cnst true) (getComp<TMPro.TMP_Text> >> _.text >> stripHtml)
+        let getTmproText (x: UnityEngine.GameObject) =
+            let st = x.GetComponent<SetTextMeshProGameText>()
+
+            if st = null then
+                x.GetComponent<TMPro.TMP_Text>().text
+            else
+                Language.Language.Get(st.convName, st.sheetName)
+
+        let text = mkPin (cnst true) (getTmproText >> stripHtml)
 
         let textTrim =
-            mkPin
-                (cnst true)
-                (getComp<TMPro.TMP_Text>
-                 >> _.text
-                 >> stripHtml
-                 >> _.Trim()
-                 >> _.Replace("\n", ""))
+            mkPin (cnst true) (getTmproText >> stripHtml >> _.Trim() >> _.Replace("\n", ""))
 
         let genericPin =
             mkPin (
