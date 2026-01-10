@@ -693,7 +693,7 @@ type Game(plugin: MainClass) =
                 $"A beacon will be lit for the player to follow. "
             else
                 $"If you need to convey the path to the player, try to tell them the entire path at once, since they are unable to see it themselves. "
-            + "If the player asks for directions again, make sure to call the `pathfind_{kind}` action again as they might have gone the wrong way!"
+            + $"If the player asks for directions again, make sure to call the `pathfind_{kind}` action again as they might have gone the wrong way!"
 
         let pathfindHelp = pathfindHelp0 "room"
         let pathfindHelp' = pathfindHelp0 "pin"
