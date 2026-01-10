@@ -1226,7 +1226,7 @@ type public Patches() =
 
                     g.Context
                         true
-                        $"{aCtx}{hpCtx}Entities around you: {g.Serialize targets}. Your current targeting tactic: {g.Serialize g.Tactic}. If necessary, use the `set_tactic` action to change the tactic to help or hinder the player."
+                        $"{aCtx}Remember you can use the actions `map`, `pathfind_pin`, `pathfind_room`, `unexplored_exits` to help the player navigate, as their map and compass have been taken away.\n{hpCtx}Entities around you: {g.Serialize targets}. Your current targeting tactic: {g.Serialize g.Tactic}. If necessary, use the `set_tactic` action to change the tactic to help or hinder the player."
 
                     lastNamesCtx <- names
 
