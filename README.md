@@ -15,7 +15,8 @@
 4. Copy `./bin/Debug/netstandard2.1/FSharp.Core.dll` to `Hollow Knight/BepInEx/core`.
 5. Copy `./bin/Debug/netstandard2.1/HollowNeuro.dll` to `Hollow Knight/BepInEx/plugins`.
 
-Profiler (not included in this repo): F1 to reset/F2 to save trace.
+Extra tools that were used in the development are included [in a separate repo](https://github.com/chayleaf/neuro-hollow-night-integration-tools),
+however they are unlikely to be usable as-is and should be primarily used for reference.
 
 ## Disclaimer
 
