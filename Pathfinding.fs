@@ -68,18 +68,20 @@ module Pathfinding =
             let _, x, y = doors |> Array.find (fun (x, _, _) -> x = td)
             float32 x, float32 y, Some td
 
+    let mapSceneName i =
+        let name = Generated.fullSceneNames[i]
+
+        match [| "_boss_defeated"; "_boss"; "_preload" |] |> Array.tryFind name.EndsWith with
+        | Some x -> name.Substring(name.Length - x.Length)
+        | None -> name
 
     let reachability () =
         let visMap = PlayerData.instance.scenesVisited |> Set.ofSeq
 
-        Array.init Generated.sceneNames.Length (fun i ->
+        Array.init Generated.fullSceneNames.Length (fun i ->
             match Generated.reachability i with
             | Reachability.Always -> Yes
-            | Reachability.Visited ->
-                if Set.contains (Generated.sceneNames[i]) visMap then
-                    Yes
-                else
-                    No
+            | Reachability.Visited -> if Set.contains (mapSceneName i) visMap then Yes else No
             | Reachability.Passthru -> Passthru
             | Reachability.Never -> No)
 

@@ -30,7 +30,7 @@ type Dir =
     | See = 15
 
 module Generated =
-    let sceneNames =
+    let fullSceneNames =
         [| "Pre_Menu_Intro"
            "Menu_Title"
            "Quit_To_Menu"

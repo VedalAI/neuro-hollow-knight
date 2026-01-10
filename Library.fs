@@ -721,7 +721,7 @@ type Game(plugin: MainClass) =
                 (fun i m ->
                     match Generated.reachability i with
                     | Reachability.Always
-                    | Reachability.Visited when visMap.Contains Generated.sceneNames[i] |> not ->
+                    | Reachability.Visited when Pathfinding.mapSceneName i |> visMap.Contains |> not ->
                         ans <- (i, List.rev m) :: ans
                     | _ -> ()
 
