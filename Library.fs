@@ -18,7 +18,7 @@ type Tactic =
 
 type Actions =
     | [<Action("map",
-               "Show a list of map pins. You can then use the `pathfind_room` action to find the shortest path to the room that contains them. Alternatively, you can skip using the map and use the `pathfind_pin` action if you know the name of the pin you are interested in. If you are getting too much data, you can pass excludePinNames to exclude some of the most common pins, or set the radius to only search within a given range.")>] ShowMap of
+               "Show a list of map pins. You can then use the `pathfind_room` action to find the shortest path to the room that contains them. Alternatively, you can skip using the map and use the `pathfind_pin` action if you know the name of the pin you are interested in. If you are getting too much data, you can *optionally* pass excludePinNames to exclude some of the most common pins, or *optionally* pass a radius to only search within a given range.")>] ShowMap of
         excludePinNames: string list option *
         radius: int option
     (*of
