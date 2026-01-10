@@ -18,6 +18,9 @@
 Extra tools that were used in the development are included [in a separate repo](https://github.com/chayleaf/neuro-hollow-night-integration-tools),
 however they are unlikely to be usable as-is and should be primarily used for reference.
 
+For pathfinding, data from [Hollow Knight Randomizer](https://github.com/homothetyhk/RandomizerMod/) has been integrated -
+it allowed (mostly) accurately determining room transition reachability.
+
 ## Disclaimer
 
 Hollow Knight is owned by Team Cherry. This project is unaffiliated with Team Cherry and does not distribute or include any Team Cherry assets.
