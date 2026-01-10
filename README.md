@@ -2,8 +2,10 @@
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) - If on Windows, download and install the .NET SDK x64 for Windows.
+- [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) - If on Windows, download and install the .NET SDK x64 for Windows
 - [Hollow Knight](https://store.steampowered.com/app/367520/Hollow_Knight/)
+- Neuro Agent running locally (e.g. [neuro-api-tony](https://github.com/Pasu4/neuro-api-tony))
+- Environment variable `NEURO_SDK_WS_URL` pointing to the Neuro Agent (example value `ws://localhost:8000`)
 
 ## Installation
 
