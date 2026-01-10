@@ -20,15 +20,15 @@ type PathSeg =
     | ByElevator of direction: Dir * distance: float32
 
 module Pathfinding =
-    let pushSeg seg path =
-        match seg, List.tryHead path with
-        | ByTram(_, _, _), Some(ByTram(_, _, _)) -> None
-        | ByStag(_, _, _), Some(ByStag(_, _, _)) -> None
-        | UseDoor _, Some(UseDoor _) -> None
-        | ByElevator(_, _), Some(ByElevator(_, _)) -> None
-        | _ -> Some(seg :: path)
+    let followPath seg path =
+        match seg, List.tryHead path |> Option.map snd with
+        | ByTram(_, _, _), Some(ByTram(_, _, _)) -> false
+        | ByStag(_, _, _), Some(ByStag(_, _, _)) -> false
+        | UseDoor _, Some(UseDoor _) -> false
+        | ByElevator(_, _), Some(ByElevator(_, _)) -> false
+        | _ -> true
 
-    let sourcePos s seg =
+    let sourcePos s (_, seg) =
         match seg with
         | ByElevator(_, _) ->
             match s with
@@ -143,13 +143,17 @@ module Pathfinding =
 
     let lowerTramStations = [| 329; 330; 331 |]
 
-    let pathfind sA (target: int -> PathSeg list -> bool) (pos: (float32 * float32) option) =
+    let pathfind
+        sA
+        (target: int -> ((int * float32 * float32) * PathSeg) list -> bool)
+        (pos: (float32 * float32) option)
+        =
         // find shortest path to target scene
         //let mutable q = Map.empty
         let mutable i = 0
 
         let q =
-            System.Collections.Generic.SortedDictionary<float32 * int, int * PathSeg list>()
+            System.Collections.Generic.SortedDictionary<float32 * int, int * ((int * float32 * float32) * PathSeg) list>()
 
         let visS = System.Collections.Generic.HashSet<int>()
         let visD = System.Collections.Generic.HashSet<int * string>()
@@ -157,14 +161,12 @@ module Pathfinding =
         let reachable = reachability ()
         let reachable = reachable |> Array.map ((<>) ResolvedReachability.No)
 
-        let addElem s simpleSeg properSeg old chk =
-            pushSeg simpleSeg old
-            |> Option.iter (fun _path ->
-                if chk () then
-                    let dist, seg = properSeg ()
-                    let x = s, seg :: old
-                    q.Add((dist, i), x)
-                    i <- i + 1)
+        let addElem s sxy simpleSeg properSeg (old: ((int * float32 * float32) * PathSeg) list) chk =
+            if followPath simpleSeg old && chk () then
+                let dist, seg = properSeg ()
+                let w = s, (sxy, seg) :: old
+                q.Add((dist, i), w)
+                i <- i + 1
 
         let popElem () =
             let ret = q |> Seq.head
@@ -213,6 +215,7 @@ module Pathfinding =
             |> Array.iter (fun (door, x, y) ->
                 addElem
                     sA
+                    (sA, float32 x, float32 y)
                     (ByFoot(Dir.N, 0f, door))
                     (fun () ->
                         let dir, dist = dirDist (float32 x) (float32 y)
@@ -231,6 +234,7 @@ module Pathfinding =
 
                     addElem
                         s
+                        (sA, float32 tx, float32 ty)
                         bt
                         (fun () ->
                             // UnityEngine.Debug.LogWarning
@@ -244,6 +248,7 @@ module Pathfinding =
             |> Option.iter (fun (s, x, y) ->
                 addElem
                     s
+                    (sA, float32 x, float32 y)
                     (ByElevator(Dir.N, 0f))
                     (fun () ->
                         let dir, dist = dirDist (float32 x) (float32 y)
@@ -264,7 +269,9 @@ module Pathfinding =
                     // UnityEngine.Debug.LogWarning $"can stag {Generated.sceneNames[sA]} -> {Generated.sceneNames[s]}"
 
                     let bs = ByStag(dir, dist, n)
-                    addElem s bs (fun () -> oldDist + dist + 50f, bs) old (fun () -> visS.Contains s |> not)))
+
+                    addElem s (sA, x, y) bs (fun () -> oldDist + dist + 50f, bs) old (fun () ->
+                        visS.Contains s |> not)))
 
         let rec iter =
             fun () ->
@@ -318,6 +325,7 @@ module Pathfinding =
 
                                     addElem
                                         ts
+                                        (0, 0f, 0f)
                                         ud
                                         (fun () ->
                                             // UnityEngine.Debug.LogWarning
@@ -329,14 +337,19 @@ module Pathfinding =
 
                                 // within room
                                 Generated.doorDoors s d
-                                |> List.iter (fun (door, cond, dist, dir) ->
+                                |> List.iter (fun (door, cond, dist, dir, x, y) ->
                                     if cond then
                                         // UnityEngine.Debug.LogWarning $"can walk {Generated.sceneNames[s]}[{d} -> {door}]"
 
                                         let bf = ByFoot(dir, float32 dist, door)
 
-                                        addElem s bf (fun () -> oldDist + float32 dist, bf) m (fun () ->
-                                            visD.Contains((s, door)) |> not)))
+                                        addElem
+                                            s
+                                            (s, float32 x, float32 y)
+                                            bf
+                                            (fun () -> oldDist + float32 dist, bf)
+                                            m
+                                            (fun () -> visD.Contains((s, door)) |> not)))
 
                         iter ()
 
@@ -349,3 +362,75 @@ module Pathfinding =
                 iter ()
         else
             None
+
+type PathfindingBall() =
+    inherit UnityEngine.MonoBehaviour()
+    static let mutable path: (int * float32 * float32) list = List.empty
+    static let mutable object: UnityEngine.GameObject = null
+
+    do object <- base.gameObject
+    static member Waiting = object <> null && not object.activeSelf && path |> List.isEmpty |> not
+    static member Object = object
+
+    static member InitWith p =
+        UnityEngine.Debug.LogError $"ball init {p}"
+        path <- p
+        let h = HeroController.instance.gameObject.transform
+        let t = object.transform
+        t.localScale <- UnityEngine.Vector3(1f, 1f, 0f)
+        t.parent <- h.parent
+
+    static member Target =
+        let scene =
+            Generated.sceneIdx (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name)
+
+        let rec update () =
+            match path with
+            | [] -> None
+            | (s, x, y) :: r when
+                s = scene
+                && (GameManager.instance.sm.darknessLevel = 0 || PlayerData.instance.hasLantern)
+                ->
+                // position around the player
+                let h = HeroController.instance.gameObject.transform
+
+                // distance between hero and target
+                let dist =
+                    UnityEngine.Vector2.Distance(
+                        UnityEngine.Vector2(h.position.x, h.position.y),
+                        UnityEngine.Vector2(x, y)
+                    )
+
+                let dist = min dist 5.0f
+
+                let path = UnityEngine.Vector2(x - h.position.x, y - h.position.y).normalized * dist
+
+                Some(UnityEngine.Vector2(h.localPosition.x + path.x, h.localPosition.y + path.y))
+            | _ :: r ->
+                path <- r
+                update ()
+
+        update ()
+
+    member this.Update() =
+        match PathfindingBall.Target with
+        | None ->
+            let fadeStep = UnityEngine.Time.deltaTime / 0.5f
+            let t = this.gameObject.transform
+
+            if t.localScale.x <= fadeStep then
+                t.localScale <- UnityEngine.Vector3(1.0f, 1.0f, this.gameObject.transform.localScale.z)
+                this.gameObject.SetActive false
+            else
+                t.localScale <-
+                    UnityEngine.Vector3(
+                        t.localScale.x - fadeStep,
+                        t.localScale.y - fadeStep,
+                        this.gameObject.transform.localScale.z
+                    )
+        | Some target ->
+            let t = this.gameObject.transform
+            t.parent <- HeroController.instance.transform.parent
+            let current = UnityEngine.Vector2(t.localPosition.x, t.localPosition.y)
+            let interpolated = (target * 1f + current * 29f) / 30f
+            t.localPosition <- UnityEngine.Vector3(interpolated.x, interpolated.y, t.localPosition.z)

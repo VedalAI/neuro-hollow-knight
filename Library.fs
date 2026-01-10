@@ -22,9 +22,14 @@ type Actions =
                "Show a list of points of interest. You can then use the `pathfind_room` action to find the shortest path to the room that contains them. Alternatively, you can skip using the map and use the `pathfind_pin` action if you know the name of the point of interest you are interested in.")>] ShowMap (*of
         local: bool*)
     //| [<Action("pathfind_area", "Find the shortest path to an area.")>] PathfindArea of name: string
-    | [<Action("pathfind_room", "Find a path to a room by its id.")>] PathfindRoom of roomId: int
-    | [<Action("pathfind_pin", "Find a path to the nearest point of interest with a given name (example: Bench).")>] PathfindPin of
-        name: string
+    | [<Action("pathfind_room",
+               "Find a path to a room by its id. Setting showToPlayer to true will light an in-game beacon to help the player navigate to the target.")>] PathfindRoom of
+        roomId: int *
+        showToPlayer: bool
+    | [<Action("pathfind_pin",
+               "Find a path to the nearest point of interest with a given name (example: Bench). Setting showToPlayer to true will light an in-game beacon to help the player navigate to the target. Passing an empty name will list all available pins to target.")>] PathfindPin of
+        name: string *
+        showToPlayer: bool
     | [<Action("unexplored_exits", "Find a list of unexplored rooms.")>] UnexploredRooms (*of
         local: bool*)
     | [<Action("create_waypoint", "Store the current position as a waypoint on the map")>] CreateWaypoint of
@@ -680,15 +685,22 @@ type Game(plugin: MainClass) =
     override _.Name = "Hollow Knight"
 
     override this.HandleAction(action: Actions) =
-        let pathfindHelp =
-            "Try to tell the player the entire path at once! If the player asks for directions again, make sure to call the `pathfind_room` action again as they might have gone the wrong way!"
+        let roomIdHelp =
+            "Room IDs are internal, the player has no access to them. Don't use them when talking to the player."
 
-        let pathfindHelp' =
-            "Try to tell the player the entire path at once! If the player asks for directions again, make sure to call the `pathfind_pin` action again as they might have gone the wrong way!"
+        let pathfindHelp0 kind show =
+            if show then
+                $"A beacon will be lit for the player to follow. "
+            else
+                $"If you need to convey the path to the player, try to tell them the entire path at once, since they are unable to see it themselves. "
+            + "If the player asks for directions again, make sure to call the `pathfind_{kind}` action again as they might have gone the wrong way!"
+
+        let pathfindHelp = pathfindHelp0 "room"
+        let pathfindHelp' = pathfindHelp0 "pin"
 
         let pathDesc path =
             path
-            |> List.collect (fun x ->
+            |> List.collect (fun (_sceneId, x) ->
                 match x with
                 | ByTram(dir, dist, Some sc) -> Some(dir, dist, $"take the tram to {sc}")
                 | ByStag(dir, dist, sc) -> Some(dir, dist, $"take the stag to {sc}")
@@ -707,6 +719,10 @@ type Game(plugin: MainClass) =
                          [])
                     (if desc = "" then [] else [ desc ]))
             |> String.concat "; "
+
+        let showPath show path =
+            if show then
+                PathfindingBall.InitWith(path |> List.map fst |> List.filter (fun (s, x, y) -> s > 0))
 
         match action with
         | UnexploredRooms ->
@@ -743,9 +759,9 @@ type Game(plugin: MainClass) =
 
                 Ok(
                     Some
-                        $"Unexplored room list, in order of closeness: {ans |> this.Serialize}\n\nPaths to some of the closest unexplored rooms:\n{firstPaths}\n{pathfindHelp}"
+                        $"Unexplored room list, in order of closeness: {ans |> this.Serialize}\n\nPaths to some of the closest unexplored rooms:\n{firstPaths}\nNone of the paths are currently displayed to the player in-game! Use the `pathfind_room` action with showToPlayer set to true to display any of the paths.\n{pathfindHelp false}\n{roomIdHelp}"
                 )
-        | PathfindPin pin ->
+        | PathfindPin(pin, show) ->
             let px, py = Context.playerPos ()
             let pin' = pin.ToLower()
 
@@ -789,10 +805,11 @@ type Game(plugin: MainClass) =
                                 "Path not found! Perhaps the target pin isn't reachable, or the map is incomplete, or pathfinding doesn't work in this room."
                         )
                     | Some path ->
+                        showPath show path
                         let desc = pathDesc path
-                        Ok(Some $"The path to pin `{pin}` is: {desc}\n{pathfindHelp'}")
+                        Ok(Some $"The path to pin `{pin}` is: {desc}\n{pathfindHelp' show}\n{roomIdHelp}")
 
-        | PathfindRoom sB ->
+        | PathfindRoom(sB, show) ->
             let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
             let hero = HeroController.instance
             let px, py = hero.transform.position.x, hero.transform.position.y
@@ -806,8 +823,9 @@ type Game(plugin: MainClass) =
             | Some [] -> Ok(Some "The player is already in the target room!")
             | Some path ->
                 this.LogDebug $"path: {path}"
+                showPath show path
                 let desc = pathDesc path
-                Ok(Some $"The path is: {desc}\n{pathfindHelp}")
+                Ok(Some $"The path is: {desc}\n{pathfindHelp show}\n{roomIdHelp}")
 
 
         | ShowMap ->
@@ -847,10 +865,10 @@ type Game(plugin: MainClass) =
                         { ctx with
                             pointsOfInterest = ctx.pointsOfInterest |> Option.map (List.sortBy _.distanceMeters) }
 
-                    Ok(Some(this.Serialize ctx))
+                    Ok(Some $"Map data: {this.Serialize ctx}\n{roomIdHelp}")
                 else
                     let ctx = Context.allAreas mkExtra
-                    Ok(Some(this.Serialize ctx)))
+                    Ok(Some $"Map data: {this.Serialize ctx}\n{roomIdHelp}"))
         | CreateWaypoint name ->
             Context.checkMap ()
             |> Result.bind (fun () ->

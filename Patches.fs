@@ -5,6 +5,11 @@ open HutongGames.PlayMaker
 open System
 open System.Reflection
 
+type ShootMode =
+    | Player of dmg: int
+    | Enemy
+    | Path
+
 type CustomFire(fire: Actions.FireAtTarget, getSpeedScale: CustomFire -> float32) =
     inherit Actions.RigidBody2dActionBase()
     let mutable self: FsmGameObject = null
@@ -165,7 +170,7 @@ module Stuff =
     let findState name (x: PlayMakerFSM) =
         x.FsmStates |> Array.find (_.Name >> (=) name)
 
-    let mutable isPlayer = Option.None
+    let mutable shootMode = ShootMode.Enemy
     let mutable fsmInitialized = false
     let mutable heroBox: UnityEngine.GameObject = null
     let mutable lastNamesCtx = []
@@ -242,7 +247,7 @@ module Stuff =
 
                 origS)
 
-        if isPlayer.IsSome = sw.isPlayer then orig else sw.other
+        if shootMode.IsPlayer = sw.isPlayer then orig else sw.other
 
     let neuroSaveSlotPath (slotIndex: int) =
         System.IO.Path.Combine(
@@ -866,8 +871,8 @@ type public Patches() =
                                 [| FsmLambda(fun fsm ->
                                        MainClass.Instance.Logger.LogInfo "in damager"
 
-                                       match isPlayer with
-                                       | Some d ->
+                                       match shootMode with
+                                       | Player d ->
                                            fsm.GameObject.layer <- 3
 
                                            let dmg =
@@ -876,7 +881,7 @@ type public Patches() =
                                                |> Option.defaultWith fsm.GameObject.AddComponent<DamageHero>
 
                                            dmg.damageDealt <- d
-                                       | None ->
+                                       | _ ->
                                            // have to restore layer back in case this is a reused ball
                                            // no need to remove DamageHero as the ball wont collide with the player either way (surely)
                                            // just set the damage value instead
@@ -953,9 +958,54 @@ type public Patches() =
                         newState.Transitions[0].ToState <- "Shoot"
                         newState.Transitions[0].ToFsmState <- shoot
                         newState.Transitions[0].FsmEvent <- FsmEvent.GetFsmEvent "FINISHED"
-                        newState.Actions <- [| CustomWait(fun () -> if isPlayer.IsSome then 0.4f else 0.0f) |]
+                        newState.Actions <- [| CustomWait(fun () -> if shootMode.IsPlayer then 0.4f else 0.0f) |]
                         antic.Transitions[0].ToState <- "Pre-Shoot Delay"
                         antic.Transitions[0].ToFsmState <- newState
+
+                    // init pathfinding ball
+                    do
+                        let spawnI =
+                            shoot.Actions
+                            |> Array.findIndex (fun x -> x :? Actions.SpawnObjectFromGlobalPool)
+
+                        let sp = shoot.Actions[spawnI] :?> Actions.SpawnObjectFromGlobalPool
+
+                        let pathBall =
+                            UnityEngine.Object.Instantiate<UnityEngine.GameObject> sp.gameObject.Value
+
+                        pathBall.GetComponentsInChildren<tk2dSprite> true |> Array.iter _.ForceBuild()
+
+                        [| pathBall.GetComponent<PlayMakerFixedUpdate>() :> UnityEngine.MonoBehaviour
+                           pathBall.GetComponent<PlayMakerCollisionEnter2D>()
+                           pathBall.GetComponent<PlayMakerFSM>() |]
+                        |> Array.iter UnityEngine.Object.Destroy
+
+                        UnityEngine.Object.Destroy(pathBall.GetComponent<UnityEngine.CircleCollider2D>())
+                        UnityEngine.Object.Destroy(pathBall.GetComponent<UnityEngine.Rigidbody2D>())
+
+                        Array.init pathBall.transform.childCount (pathBall.transform.GetChild >> _.gameObject)
+                        |> Array.filter (_.name >> (=) "Enemy Damager")
+                        |> Array.iter UnityEngine.Object.Destroy
+
+                        Array.init pathBall.transform.childCount (pathBall.transform.GetChild >> _.gameObject)
+                        |> Array.filter (_.name >> (=) "Impact")
+                        |> Array.iter (fun x -> x.SetActive false)
+
+                        UnityEngine.Object.DontDestroyOnLoad pathBall
+                        pathBall.AddComponent<PathfindingBall>() |> ignore
+                        pathBall.SetActive false
+
+                        shoot.Actions[spawnI] <-
+                            FsmLambda(fun _ ->
+                                match shootMode with
+                                | Path ->
+                                    let pos = sp.spawnPoint.Value.transform.position
+
+                                    PathfindingBall.Object.SetActive true
+                                    PathfindingBall.Object.transform.position <- pos
+                                | _ -> sp.OnEnter())
+
+                        shoot.Actions[spawnI].Init shoot
 
                     // slow down the ball when firing at player
                     do
@@ -964,7 +1014,7 @@ type public Patches() =
                         shoot.Actions[fireN] <-
                             CustomFire(
                                 shoot.Actions[fireN] :?> Actions.FireAtTarget,
-                                fun _ -> if isPlayer.IsSome then 0.4f else 1.0f
+                                fun _ -> if shootMode.IsPlayer then 0.4f else 1.0f
                             )
 
                         (shoot.Actions[fireN - 1] :?> Actions.SetFsmInt).setValue <- null
@@ -1062,13 +1112,29 @@ type public Patches() =
                           currentlyInvincible = hm |> Option.map _.IsInvincible |> Option.defaultValue false })
 
             let mutable shot = Option.None
+            let mutable target = Option.None
 
             if
+                PathfindingBall.Waiting
+                && (target <- PathfindingBall.Target
+                    target.IsSome)
+            then
+                MainClass.Instance.Logger.LogInfo "path shot"
+                shootMode <- Path
+                let t = PathfindingBall.Object.transform
+                let p = t.localPosition
+                t.parent <- HeroController.instance.transform.parent
+                t.localPosition <- UnityEngine.Vector3(target.Value.x, target.Value.y, p.z)
+                __result <- PathfindingBall.Object
+            else if
                 inRange HeroController.instance.gameObject
                 && (shot <- MainClass.Instance.Game.DequeuePlayerShot()
                     shot.IsSome)
             then
-                isPlayer <- shot |> Option.map (fun x -> if x then 1 else 0)
+                shootMode <-
+                    match shot with
+                    | Some d -> Player(if d then 1 else 0)
+                    | None -> Enemy
 
                 __result <-
                     if heroBox = null then
@@ -1079,7 +1145,7 @@ type public Patches() =
                 __result <- null
             else
                 __result <- null
-                isPlayer <- Option.None
+                shootMode <- ShootMode.Enemy
                 __result <- targets0 |> List.tryFind inRange |> Option.defaultValue null
 
             let names = targets |> List.map _.name |> List.sort
@@ -1148,7 +1214,7 @@ type public Patches() =
 
                     g.Context
                         true
-                        $"{aCtx}{hpCtx}Entities around you: {g.Serialize targets}. Your current targeting tactic: {g.Serialize g.Tactic}. Use the `set_tactic` action to change the tactic to help or hinder the player."
+                        $"{aCtx}{hpCtx}Entities around you: {g.Serialize targets}. Your current targeting tactic: {g.Serialize g.Tactic}. If necessary, use the `set_tactic` action to change the tactic to help or hinder the player."
 
                     lastNamesCtx <- names
 

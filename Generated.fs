@@ -1846,151 +1846,198 @@ module Generated =
     let doorDoors s d =
         match s, d with
         | 7, "right1" ->
-            [ "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasSuperDash, 262.03053257206494, Dir.W ]
+            [ "left1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasSuperDash,
+              262.03053257206494,
+              Dir.W,
+              1.5,
+              49.0 ]
         | 7, "left1" ->
-            [ "right1", PlayerData.instance.hasDoubleJump && PlayerData.instance.hasSuperDash, 262.03053257206494, Dir.E ]
-        | 9, "door_stagExit" -> [ "left1", true, 36.03105882429769, Dir.Nww ]
-        | 30, "bot1" -> [ "left1", true, 31.084562084739105, Dir.W ]
-        | 30, "left1" -> [ "bot1", true, 31.084562084739105, Dir.E ]
-        | 31, "top2" -> [ "top1", PlayerData.instance.hasWalljump, 92.0, Dir.W ]
-        | 31, "top1" -> [ "top2", PlayerData.instance.hasWalljump, 92.0, Dir.E ]
-        | 35, "right1" -> [ "bot1", true, 41.512046444375635, Dir.W ]
+            [ "right1",
+              PlayerData.instance.hasDoubleJump && PlayerData.instance.hasSuperDash,
+              262.03053257206494,
+              Dir.E,
+              263.5,
+              53 ]
+        | 9, "door_stagExit" -> [ "left1", true, 36.03105882429769, Dir.Nww, 23, 21 ]
+        | 30, "bot1" -> [ "left1", true, 31.084562084739105, Dir.W, 13.5, 9 ]
+        | 30, "left1" -> [ "bot1", true, 31.084562084739105, Dir.E, 44, 3 ]
+        | 31, "top2" -> [ "top1", PlayerData.instance.hasWalljump, 92.0, Dir.W, 43.5, 56 ]
+        | 31, "top1" -> [ "top2", PlayerData.instance.hasWalljump, 92.0, Dir.E, 135.5, 56 ]
+        | 35, "right1" -> [ "bot1", true, 41.512046444375635, Dir.W, 135, 2.5 ]
         | 37, "right1" ->
-            [ "left1", true, 101.40019723846694, Dir.W
-              "top1", true, 48.58240422210494, Dir.W ]
+            [ "left1", true, 101.40019723846694, Dir.W, -0.5, 9
+              "top1", true, 48.58240422210494, Dir.W, 52.5, 25.5 ]
         | 37, "top1" ->
-            [ "left1", true, 55.509008277936296, Dir.Sww
-              "right1", true, 48.58240422210494, Dir.E ]
+            [ "left1", true, 55.509008277936296, Dir.Sww, -0.5, 9
+              "right1", true, 48.58240422210494, Dir.E, 100.5, 18 ]
         | 37, "left1" ->
-            [ "right1", true, 101.40019723846694, Dir.E
-              "top1", true, 55.509008277936296, Dir.Nee ]
+            [ "right1", true, 101.40019723846694, Dir.E, 100.5, 18
+              "top1", true, 55.509008277936296, Dir.Nee, 52.5, 25.5 ]
         | 38, "door1" ->
-            [ "left1", true, 47.08092819815684, Dir.W
-              "right1", true, 44.04717698105067, Dir.E ]
-        | 38, "right1" -> [ "left1", true, 91.02197536858887, Dir.W ]
-        | 38, "left1" -> [ "right1", true, 91.02197536858887, Dir.E ]
+            [ "left1", true, 47.08092819815684, Dir.W, -0.5, 7
+              "right1", true, 44.04717698105067, Dir.E, 90.5, 5 ]
+        | 38, "right1" -> [ "left1", true, 91.02197536858887, Dir.W, -0.5, 7 ]
+        | 38, "left1" -> [ "right1", true, 91.02197536858887, Dir.E, 90.5, 5 ]
         | 40, "door_Mender_House" ->
-            [ "left1", true, 59.35639887806423, Dir.Nww
-              "top1", true, 33.643148920314516, Dir.Ne
-              "door1", true, 27.950421036807228, Dir.E
+            [ "left1", true, 59.35639887806423, Dir.Nww, -0.5, 17
+              "top1", true, 33.643148920314516, Dir.Ne, 76.0, 30.5
+              "door1", true, 27.950421036807228, Dir.E, 85.050003, 2.82
               "right1",
               PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash,
               105.78423422906354,
-              Dir.Nee ]
+              Dir.Nee,
+              160.500003,
+              25 ]
         | 40, "door1" ->
-            [ "left1", true, 86.71721520724711, Dir.W
-              "top1", true, 29.121898191910656, Dir.Nnw
+            [ "left1", true, 86.71721520724711, Dir.W, -0.5, 17
+              "top1", true, 29.121898191910656, Dir.Nnw, 76.0, 30.5
               "right1",
               PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash,
               78.64257689063857,
-              Dir.Nee ]
+              Dir.Nee,
+              160.500003,
+              25 ]
         | 40, "door_charmshop" ->
-            [ "left1", true, 144.6954754709352, Dir.W
-              "top1", true, 70.87045172538414, Dir.Nww
-              "door1", true, 59.53911243795985, Dir.W
+            [ "left1", true, 144.6954754709352, Dir.W, -0.5, 17
+              "top1", true, 70.87045172538414, Dir.Nww, 76.0, 30.5
+              "door1", true, 59.53911243795985, Dir.W, 85.050003, 2.82
               "right1",
               PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash,
               21.76284366529394,
-              Dir.Ne ]
+              Dir.Ne,
+              160.500003,
+              25 ]
         | 40, "right1" ->
-            [ "left1", true, 161.198638226258, Dir.W
-              "top1", true, 84.67880789784424, Dir.W
-              "door1", true, 78.64257689063857, Dir.Sww ]
+            [ "left1", true, 161.198638226258, Dir.W, -0.5, 17
+              "top1", true, 84.67880789784424, Dir.W, 76.0, 30.5
+              "door1", true, 78.64257689063857, Dir.Sww, 85.050003, 2.82 ]
         | 40, "top1" ->
-            [ "left1", true, 77.68204425734432, Dir.W
-              "door1", PlayerData.instance.killedBigFly, 29.121898191910656, Dir.Sse
+            [ "left1", true, 77.68204425734432, Dir.W, -0.5, 17
+              "door1", PlayerData.instance.killedBigFly, 29.121898191910656, Dir.Sse, 85.050003, 2.82
               "right1",
               PlayerData.instance.killedBigFly
               && (PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump
                   || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash),
               84.67880789784424,
-              Dir.E ]
+              Dir.E,
+              160.500003,
+              25 ]
         | 40, "left1" ->
-            [ "top1", true, 77.68204425734432, Dir.E
-              "door1", PlayerData.instance.killedBigFly, 86.71721520724711, Dir.E
+            [ "top1", true, 77.68204425734432, Dir.E, 76.0, 30.5
+              "door1", PlayerData.instance.killedBigFly, 86.71721520724711, Dir.E, 85.050003, 2.82
               "right1",
               PlayerData.instance.killedBigFly
               && (PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump
                   || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash),
               161.198638226258,
-              Dir.E ]
-        | 41, "right1" -> [ "left1", true, 75.50662222613325, Dir.W ]
-        | 41, "left1" -> [ "right1", true, 75.50662222613325, Dir.E ]
+              Dir.E,
+              160.500003,
+              25 ]
+        | 41, "right1" -> [ "left1", true, 75.50662222613325, Dir.W, -0.5, 7 ]
+        | 41, "left1" -> [ "right1", true, 75.50662222613325, Dir.E, 75, 8 ]
         | 42, "door1" ->
-            [ "left1", true, 37.35751196212082, Dir.Sw
-              "right1", true, 39.86933282612088, Dir.Se ]
-        | 42, "right1" -> [ "left1", true, 61.0, Dir.W ]
-        | 42, "left1" -> [ "right1", true, 61.0, Dir.E ]
-        | 45, "right1" -> [ "left1", PlayerData.instance.killedMawlek, 87.09190547921202, Dir.W ]
-        | 45, "left1" -> [ "right1", PlayerData.instance.killedMawlek, 87.09190547921202, Dir.E ]
-        | 46, "right1" -> [ "left1", PlayerData.instance.killedFalseKnight, 76.0, Dir.W ]
-        | 46, "left1" -> [ "right1", PlayerData.instance.killedFalseKnight, 76.0, Dir.E ]
-        | 50, "right1" -> [ "left1", PlayerData.instance.blocker2Defeated, 121.1486689980538, Dir.W ]
-        | 51, "right1" -> [ "left1", true, 71.02816342831905, Dir.W ]
-        | 51, "left1" -> [ "right1", true, 71.02816342831905, Dir.E ]
-        | 52, "right1" -> [ "left1", true, 81.00617260431454, Dir.W ]
-        | 52, "left1" -> [ "right1", true, 81.00617260431454, Dir.E ]
-        | 54, "right1" -> [ "left1", true, 61.0, Dir.W ]
-        | 54, "left1" -> [ "right1", true, 61.0, Dir.E ]
+            [ "left1", true, 37.35751196212082, Dir.Sw, -0.5, 6
+              "right1", true, 39.86933282612088, Dir.Se, 60.5, 6 ]
+        | 42, "right1" -> [ "left1", true, 61.0, Dir.W, -0.5, 6 ]
+        | 42, "left1" -> [ "right1", true, 61.0, Dir.E, 60.5, 6 ]
+        | 45, "right1" -> [ "left1", PlayerData.instance.killedMawlek, 87.09190547921202, Dir.W, -0.5, 9 ]
+        | 45, "left1" -> [ "right1", PlayerData.instance.killedMawlek, 87.09190547921202, Dir.E, 86.5, 5 ]
+        | 46, "right1" -> [ "left1", PlayerData.instance.killedFalseKnight, 76.0, Dir.W, -0.5, 4 ]
+        | 46, "left1" -> [ "right1", PlayerData.instance.killedFalseKnight, 76.0, Dir.E, 75.5, 4 ]
+        | 50, "right1" -> [ "left1", PlayerData.instance.blocker2Defeated, 121.1486689980538, Dir.W, -0.5, 19 ]
+        | 51, "right1" -> [ "left1", true, 71.02816342831905, Dir.W, -0.5, 13 ]
+        | 51, "left1" -> [ "right1", true, 71.02816342831905, Dir.E, 70.5, 11 ]
+        | 52, "right1" -> [ "left1", true, 81.00617260431454, Dir.W, -0.5, 13 ]
+        | 52, "left1" -> [ "right1", true, 81.00617260431454, Dir.E, 80.5, 14 ]
+        | 54, "right1" -> [ "left1", true, 61.0, Dir.W, -0.5, 4 ]
+        | 54, "left1" -> [ "right1", true, 61.0, Dir.E, 60.5, 4 ]
         | 55, "right1" ->
-            [ "bot1", true, 24.13503677229434, Dir.Sw
-              "left1", true, 77.1621668954417, Dir.W ]
+            [ "bot1", true, 24.13503677229434, Dir.Sw, 58, -0.5
+              "left1", true, 77.1621668954417, Dir.W, -0.5, 10 ]
         | 55, "left1" ->
-            [ "bot1", true, 59.434838268476845, Dir.E
-              "right1", true, 77.1621668954417, Dir.E ]
+            [ "bot1", true, 59.434838268476845, Dir.E, 58, -0.5
+              "right1", true, 77.1621668954417, Dir.E, 76.5, 15 ]
         | 55, "bot1" ->
-            [ "left1", true, 59.434838268476845, Dir.W
-              "right1", true, 24.13503677229434, Dir.Ne ]
-        | 60, "right1" -> [ "left1", true, 71.0, Dir.W ]
-        | 60, "left1" -> [ "right1", true, 71.0, Dir.E ]
+            [ "left1", true, 59.434838268476845, Dir.W, -0.5, 10
+              "right1", true, 24.13503677229434, Dir.Ne, 76.5, 15 ]
+        | 60, "right1" -> [ "left1", true, 71.0, Dir.W, -0.5, 8 ]
+        | 60, "left1" -> [ "right1", true, 71.0, Dir.E, 70.5, 8 ]
         | 65, "bot1" ->
-            [ "right1", PlayerData.instance.hasWalljump && PlayerData.instance.hasAcidArmour, 49.924943665466465, Dir.N ]
-        | 65, "right1" -> [ "bot1", PlayerData.instance.hasAcidArmour, 49.924943665466465, Dir.S ]
-        | 66, "right2" -> [ "right1", true, 40.0, Dir.N ]
-        | 66, "right1" -> [ "right2", true, 40.0, Dir.S ]
-        | 69, "right1" -> [ "left1", true, 89.0, Dir.W ]
-        | 69, "left1" -> [ "right1", true, 89.0, Dir.E ]
-        | 70, "right1" -> [ "left1", true, 89.00140448330015, Dir.W ]
-        | 70, "left1" -> [ "right1", true, 89.00140448330015, Dir.E ]
-        | 71, "right1" -> [ "left1", true, 111.00450441310929, Dir.W ]
-        | 71, "left1" -> [ "right1", true, 111.00450441310929, Dir.E ]
-        | 72, "right1" -> [ "left1", true, 89.20201791439474, Dir.W ]
-        | 72, "left1" -> [ "right1", true, 89.20201791439474, Dir.E ]
-        | 73, "right1" -> [ "left1", true, 77.87810988975015, Dir.Sww ]
-        | 73, "left1" -> [ "right1", true, 77.87810988975015, Dir.Nee ]
-        | 74, "door_tram" -> [ "left1", true, 18.97689647966706, Dir.W ]
-        | 75, "door_tram" -> [ "right1", true, 23.102088650163218, Dir.E ]
-        | 77, "door_stagExit" -> [ "right1", true, 31.3253507562166, Dir.E ]
+            [ "right1",
+              PlayerData.instance.hasWalljump && PlayerData.instance.hasAcidArmour,
+              49.924943665466465,
+              Dir.N,
+              70.5,
+              49 ]
+        | 65, "right1" -> [ "bot1", PlayerData.instance.hasAcidArmour, 49.924943665466465, Dir.S, 64, -0.5 ]
+        | 66, "right2" -> [ "right1", true, 40.0, Dir.N, 60.5, 45 ]
+        | 66, "right1" -> [ "right2", true, 40.0, Dir.S, 60.5, 5 ]
+        | 69, "right1" -> [ "left1", true, 89.0, Dir.W, -0.5, 7 ]
+        | 69, "left1" -> [ "right1", true, 89.0, Dir.E, 88.5, 7 ]
+        | 70, "right1" -> [ "left1", true, 89.00140448330015, Dir.W, -0.5, 4.5 ]
+        | 70, "left1" -> [ "right1", true, 89.00140448330015, Dir.E, 88.5, 4 ]
+        | 71, "right1" -> [ "left1", true, 111.00450441310929, Dir.W, -0.5, 4 ]
+        | 71, "left1" -> [ "right1", true, 111.00450441310929, Dir.E, 110.5, 5 ]
+        | 72, "right1" -> [ "left1", true, 89.20201791439474, Dir.W, -0.5, 10 ]
+        | 72, "left1" -> [ "right1", true, 89.20201791439474, Dir.E, 88.5, 4 ]
+        | 73, "right1" -> [ "left1", true, 77.87810988975015, Dir.Sww, -0.5, 9 ]
+        | 73, "left1" -> [ "right1", true, 77.87810988975015, Dir.Nee, 70.5, 41 ]
+        | 74, "door_tram" -> [ "left1", true, 18.97689647966706, Dir.W, -0.5, 11 ]
+        | 75, "door_tram" -> [ "right1", true, 23.102088650163218, Dir.E, 55.5, 11 ]
+        | 77, "door_stagExit" -> [ "right1", true, 31.3253507562166, Dir.E, 47.5, 7 ]
         | 81, "left1" ->
-            [ "right1", PlayerData.instance.hasSuperDash || PlayerData.instance.hasAcidArmour, 261.5530538915575, Dir.E ]
+            [ "right1",
+              PlayerData.instance.hasSuperDash || PlayerData.instance.hasAcidArmour,
+              261.5530538915575,
+              Dir.E,
+              260.5,
+              28 ]
         | 81, "right1" ->
             [ "left1",
               (PlayerData.instance.hasSuperDash || PlayerData.instance.hasAcidArmour)
               && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump),
               261.5530538915575,
-              Dir.W ]
-        | 85, "left1" -> [ "left2", true, 54.45410911951457, Dir.Sse ]
-        | 85, "left2" -> [ "left1", PlayerData.instance.hasWalljump, 54.45410911951457, Dir.Nnw ]
-        | 86, "left1" -> [ "left2", true, 134.4107510580906, Dir.N ]
-        | 86, "left2" -> [ "left1", true, 134.4107510580906, Dir.S ]
-        | 87, "door1" -> [ "right1", true, 74.72928876953132, Dir.Nee ]
-        | 87, "right1" -> [ "door1", true, 74.72928876953132, Dir.Sww ]
+              Dir.W,
+              -0.5,
+              45 ]
+        | 85, "left1" -> [ "left2", true, 54.45410911951457, Dir.Sse, 38, 5 ]
+        | 85, "left2" -> [ "left1", PlayerData.instance.hasWalljump, 54.45410911951457, Dir.Nnw, 10.5, 52 ]
+        | 86, "left1" -> [ "left2", true, 134.4107510580906, Dir.N, 21, 141 ]
+        | 86, "left2" -> [ "left1", true, 134.4107510580906, Dir.S, 10.5, 7 ]
+        | 87, "door1" -> [ "right1", true, 74.72928876953132, Dir.Nee, 80.5, 33 ]
+        | 87, "right1" -> [ "door1", true, 74.72928876953132, Dir.Sww, 11.75, 3.71 ]
         | 88, "bot1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 56.08029957123981, Dir.Nw
-              "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 97.2753822917186, Dir.W ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              56.08029957123981,
+              Dir.Nw,
+              52,
+              35.5
+              "left1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              97.2753822917186,
+              Dir.W,
+              -0.5,
+              18 ]
         | 88, "left1" ->
-            [ "top1", true, 55.339859052946636, Dir.Nee
-              "bot1", true, 97.2753822917186, Dir.E ]
+            [ "top1", true, 55.339859052946636, Dir.Nee, 52, 35.5
+              "bot1", true, 97.2753822917186, Dir.E, 95, -0.5 ]
         | 88, "top1" ->
-            [ "left1", true, 55.339859052946636, Dir.Sww
-              "bot1", true, 56.08029957123981, Dir.Se ]
+            [ "left1", true, 55.339859052946636, Dir.Sww, -0.5, 18
+              "bot1", true, 56.08029957123981, Dir.Se, 95, -0.5 ]
         | 89, "bot1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 77.10382610480494, Dir.N ]
-        | 89, "top1" -> [ "bot1", true, 77.10382610480494, Dir.S ]
-        | 91, "door1" -> [ "right1", true, 115.21041477460967, Dir.See ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              77.10382610480494,
+              Dir.N,
+              11,
+              76.5 ]
+        | 89, "top1" -> [ "bot1", true, 77.10382610480494, Dir.S, 7, -0.5 ]
+        | 91, "door1" -> [ "right1", true, 115.21041477460967, Dir.See, 150.5, 9 ]
         | 91, "bot1" ->
             [ "right1",
               PlayerData.instance.hasDash
@@ -1998,27 +2045,38 @@ module Generated =
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasWalljump,
               135.83261758502633,
-              Dir.E ]
+              Dir.E,
+              150.5,
+              9 ]
         | 92, "right1" ->
             [ "top1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump,
               56.26944108483752,
-              Dir.Nww ]
-        | 92, "top1" -> [ "right1", true, 56.26944108483752, Dir.See ]
-        | 95, "right1" -> [ "left1", true, 101.0, Dir.W ]
-        | 95, "left1" -> [ "right1", true, 101.0, Dir.E ]
+              Dir.Nww,
+              9,
+              167.5 ]
+        | 92, "top1" -> [ "right1", true, 56.26944108483752, Dir.See, 63.5, 153.5 ]
+        | 95, "right1" -> [ "left1", true, 101.0, Dir.W, -0.5, 19 ]
+        | 95, "left1" -> [ "right1", true, 101.0, Dir.E, 100.5, 19 ]
         | 96, "left1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 31.784430150625635, Dir.Nee ]
-        | 96, "top1" -> [ "left1", true, 31.784430150625635, Dir.Sww ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              31.784430150625635,
+              Dir.Nee,
+              31,
+              29.5 ]
+        | 96, "top1" -> [ "left1", true, 31.784430150625635, Dir.Sww, 1, 19 ]
         | 97, "right1" ->
-            [ "top1", true, 106.74502330319667, Dir.Nw
-              "bot1", true, 83.6211695684771, Dir.W ]
-        | 97, "top1" -> [ "right1", true, 106.74502330319667, Dir.Se; "bot1", true, 71.0, Dir.S ]
-        | 98, "right1" -> [ "left1", true, 91.0, Dir.W ]
-        | 99, "top1" -> [ "right1", PlayerData.instance.killedMageKnight, 20.112185361118765, Dir.Se ]
-        | 100, "left1" -> [ "right1", true, 81.0, Dir.E ]
-        | 101, "right2" -> [ "left2", true, 71.17583859709698, Dir.W ]
+            [ "top1", true, 106.74502330319667, Dir.Nw, 7, 70.5
+              "bot1", true, 83.6211695684771, Dir.W, 7, -0.5 ]
+        | 97, "top1" ->
+            [ "right1", true, 106.74502330319667, Dir.Se, 90.5, 4
+              "bot1", true, 71.0, Dir.S, 7, -0.5 ]
+        | 98, "right1" -> [ "left1", true, 91.0, Dir.W, -0.5, 23 ]
+        | 99, "top1" -> [ "right1", PlayerData.instance.killedMageKnight, 20.112185361118765, Dir.Se, 50.5, 75 ]
+        | 100, "left1" -> [ "right1", true, 81.0, Dir.E, 80.5, 41 ]
+        | 101, "right2" -> [ "left2", true, 71.17583859709698, Dir.W, -0.5, 4 ]
         | 101, "right1" ->
             [ "left1",
               (PlayerData.instance.hasWalljump
@@ -2026,22 +2084,24 @@ module Generated =
                || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash)
               && PlayerData.instance.mageLordDefeated,
               74.94664769020693,
-              Dir.Sww ]
-        | 101, "left2" -> [ "right2", true, 71.17583859709698, Dir.E ]
+              Dir.Sww,
+              -0.5,
+              19 ]
+        | 101, "left2" -> [ "right2", true, 71.17583859709698, Dir.E, 70.5, 9 ]
         | 104, "left2" ->
-            [ "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 50.5, Dir.N
-              "left3", true, 45.0, Dir.S ]
+            [ "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 50.5, Dir.N, -0.5, 99.5
+              "left3", true, 45.0, Dir.S, -0.5, 4 ]
         | 104, "left3" ->
-            [ "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 95.5, Dir.N
-              "left2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 45.0, Dir.N ]
+            [ "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 95.5, Dir.N, -0.5, 99.5
+              "left2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 45.0, Dir.N, -0.5, 49 ]
         | 104, "left1" ->
-            [ "left3", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 95.5, Dir.S
-              "left2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 50.5, Dir.S ]
-        | 105, "right1" -> [ "left1", true, 81.02468759581859, Dir.W ]
-        | 107, "door_stagExit" -> [ "left1", true, 32.35454373036344, Dir.W ]
-        | 108, "left1" -> [ "bot1", true, 22.7705950734714, Dir.Sse ]
-        | 108, "bot1" -> [ "left1", true, 22.7705950734714, Dir.Nnw ]
-        | 111, "top1" -> [ "left2", true, 70.71421356417676, Dir.W ]
+            [ "left3", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 95.5, Dir.S, -0.5, 4
+              "left2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 50.5, Dir.S, -0.5, 49 ]
+        | 105, "right1" -> [ "left1", true, 81.02468759581859, Dir.W, -0.5, 8 ]
+        | 107, "door_stagExit" -> [ "left1", true, 32.35454373036344, Dir.W, -0.5, 7 ]
+        | 108, "left1" -> [ "bot1", true, 22.7705950734714, Dir.Sse, 7, -0.5 ]
+        | 108, "bot1" -> [ "left1", true, 22.7705950734714, Dir.Nnw, -0.5, 21 ]
+        | 111, "top1" -> [ "left2", true, 70.71421356417676, Dir.W, -0.5, 85 ]
         | 111, "left2" ->
             [ "top1",
               PlayerData.instance.hasWalljump
@@ -2050,21 +2110,25 @@ module Generated =
                  && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash)
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump,
               70.71421356417676,
-              Dir.E ]
+              Dir.E,
+              70,
+              90.5 ]
         | 113, "bot1" ->
             [ "top1",
               PlayerData.instance.hasWalljump && PlayerData.instance.killedBlackKnight,
               97.73944955850733,
-              Dir.Nne ]
-        | 113, "top1" -> [ "bot1", PlayerData.instance.killedBlackKnight, 97.73944955850733, Dir.Ssw ]
+              Dir.Nne,
+              52,
+              124.5 ]
+        | 113, "top1" -> [ "bot1", PlayerData.instance.killedBlackKnight, 97.73944955850733, Dir.Ssw, 19, 32.5 ]
         | 116, "door_Ruin_House_02" ->
-            [ "door_Ruin_Elevator", PlayerData.instance.bathHouseOpened, 16.52458506164074, Dir.Sww
-              "door_Ruin_House_01", true, 41.35669353321177, Dir.See
-              "right1", true, 67.7607327292142, Dir.E ]
+            [ "door_Ruin_Elevator", PlayerData.instance.bathHouseOpened, 16.52458506164074, Dir.Sww, 68.70495, 32.68663
+              "door_Ruin_House_01", true, 41.35669353321177, Dir.See, 122.26, 24.68
+              "right1", true, 67.7607327292142, Dir.E, 150.5, 51 ]
         | 116, "right1" ->
-            [ "door_Ruin_Elevator", PlayerData.instance.bathHouseOpened, 83.82010334794035, Dir.Sww
-              "door_Ruin_House_01", true, 38.603626772623315, Dir.Sw
-              "door_Ruin_House_02", true, 67.7607327292142, Dir.W ]
+            [ "door_Ruin_Elevator", PlayerData.instance.bathHouseOpened, 83.82010334794035, Dir.Sww, 68.70495, 32.68663
+              "door_Ruin_House_01", true, 38.603626772623315, Dir.Sw, 122.26, 24.68
+              "door_Ruin_House_02", true, 67.7607327292142, Dir.W, 83.7, 39.63 ]
         | 116, "door_Ruin_Elevator" ->
             [ "door_Ruin_House_01",
               PlayerData.instance.hasWalljump
@@ -2072,89 +2136,134 @@ module Generated =
               || PlayerData.instance.hasDash
               || PlayerData.instance.hasDoubleJump,
               54.150249348081495,
-              Dir.E
+              Dir.E,
+              122.26,
+              24.68
               "door_Ruin_House_02",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDash
               || PlayerData.instance.hasDoubleJump,
               16.52458506164074,
-              Dir.Nee
+              Dir.Nee,
+              83.7,
+              39.63
               "right1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDash
               || PlayerData.instance.hasDoubleJump,
               83.82010334794035,
-              Dir.Nee ]
+              Dir.Nee,
+              150.5,
+              51 ]
         | 117, "bot1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 85.00588214941364, Dir.N
-              "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 58.27949896833363, Dir.N ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              85.00588214941364,
+              Dir.N,
+              10,
+              84.5
+              "left1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              58.27949896833363,
+              Dir.N,
+              -0.5,
+              57 ]
         | 117, "left1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 29.436372059070052, Dir.Nne
-              "bot1", true, 58.27949896833363, Dir.S ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              29.436372059070052,
+              Dir.Nne,
+              10,
+              84.5
+              "bot1", true, 58.27949896833363, Dir.S, 9, -0.5 ]
         | 117, "top1" ->
-            [ "bot1", true, 85.00588214941364, Dir.S
-              "left1", true, 29.436372059070052, Dir.Ssw ]
+            [ "bot1", true, 85.00588214941364, Dir.S, 9, -0.5
+              "left1", true, 29.436372059070052, Dir.Ssw, -0.5, 57 ]
         | 118, "top1" ->
-            [ "right2", true, 54.20332093147061, Dir.Se
+            [ "right2", true, 54.20332093147061, Dir.Se, 55.5, 6
               "left2",
               PlayerData.instance.hasDash
               || PlayerData.instance.hasSuperDash
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasAcidArmour,
               48.76474136094644,
-              Dir.Ssw
-              "right1", true, 37.12142238654117, Dir.See
-              "left1", true, 24.041630560342615, Dir.Sww ]
+              Dir.Ssw,
+              -0.5,
+              6
+              "right1", true, 37.12142238654117, Dir.See, 55.5, 32
+              "left1", true, 24.041630560342615, Dir.Sww, -0.5, 42 ]
         | 118, "right1" ->
-            [ "right2", true, 26.0, Dir.S
+            [ "right2", true, 26.0, Dir.S, 55.5, 6
               "left2",
               PlayerData.instance.hasDash
               || PlayerData.instance.hasSuperDash
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasAcidArmour,
               61.741396161732524,
-              Dir.Sww
-              "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 56.88585061331157, Dir.W
-              "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 37.12142238654117, Dir.Nww ]
+              Dir.Sww,
+              -0.5,
+              6
+              "left1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              56.88585061331157,
+              Dir.W,
+              -0.5,
+              42
+              "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              37.12142238654117,
+              Dir.Nww,
+              22.5,
+              49 ]
         | 118, "left2" ->
             [ "right2",
               PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasSuperDash
               || PlayerData.instance.hasAcidArmour,
               56.0,
-              Dir.E
+              Dir.E,
+              55.5,
+              6
               "right1",
               (PlayerData.instance.hasDoubleJump
                || PlayerData.instance.hasSuperDash
                || PlayerData.instance.hasAcidArmour)
               && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump),
               61.741396161732524,
-              Dir.Nee
+              Dir.Nee,
+              55.5,
+              32
               "left1",
               (PlayerData.instance.hasDoubleJump
                || PlayerData.instance.hasSuperDash
                || PlayerData.instance.hasAcidArmour)
               && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump),
               36.0,
-              Dir.N
+              Dir.N,
+              -0.5,
+              42
               "top1",
               (PlayerData.instance.hasDoubleJump
                || PlayerData.instance.hasSuperDash
                || PlayerData.instance.hasAcidArmour)
               && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump),
               48.76474136094644,
-              Dir.Nne ]
+              Dir.Nne,
+              22.5,
+              49 ]
         | 118, "left1" ->
-            [ "right2", true, 66.57326790837296, Dir.See
+            [ "right2", true, 66.57326790837296, Dir.See, 55.5, 6
               "left2",
               PlayerData.instance.hasDash
               || PlayerData.instance.hasSuperDash
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasAcidArmour,
               36.0,
-              Dir.S
-              "right1", true, 56.88585061331157, Dir.E
-              "top1", true, 24.041630560342615, Dir.Nee ]
+              Dir.S,
+              -0.5,
+              6
+              "right1", true, 56.88585061331157, Dir.E, 55.5, 32
+              "top1", true, 24.041630560342615, Dir.Nee, 22.5, 49 ]
         | 118, "right2" ->
             [ "left2",
               PlayerData.instance.hasDash
@@ -2162,31 +2271,47 @@ module Generated =
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasAcidArmour,
               56.0,
-              Dir.W
-              "right1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 26.0, Dir.N
-              "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 66.57326790837296, Dir.Nww
-              "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 54.20332093147061, Dir.Nw ]
-        | 119, "left1" -> [ "right1", PlayerData.instance.hasAcidArmour, 131.03434664239754, Dir.E ]
+              Dir.W,
+              -0.5,
+              6
+              "right1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 26.0, Dir.N, 55.5, 32
+              "left1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              66.57326790837296,
+              Dir.Nww,
+              -0.5,
+              42
+              "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              54.20332093147061,
+              Dir.Nw,
+              22.5,
+              49 ]
+        | 119, "left1" -> [ "right1", PlayerData.instance.hasAcidArmour, 131.03434664239754, Dir.E, 130.5, 10 ]
         | 119, "top1" ->
-            [ "right1", true, 30.37268509697488, Dir.See
-              "left1", PlayerData.instance.hasAcidArmour, 103.38520203588132, Dir.W ]
-        | 119, "right1" -> [ "left1", PlayerData.instance.hasAcidArmour, 131.03434664239754, Dir.W ]
-        | 120, "door_stagExit" -> [ "left1", true, 32.37857470612318, Dir.W ]
+            [ "right1", true, 30.37268509697488, Dir.See, 130.5, 10
+              "left1", PlayerData.instance.hasAcidArmour, 103.38520203588132, Dir.W, -0.5, 7 ]
+        | 119, "right1" -> [ "left1", PlayerData.instance.hasAcidArmour, 131.03434664239754, Dir.W, -0.5, 7 ]
+        | 120, "door_stagExit" -> [ "left1", true, 32.37857470612318, Dir.W, -0.5, 7 ]
         | 123, "right2" ->
             [ "left1",
               (PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump
                || PlayerData.instance.hasWalljump)
               && PlayerData.instance.bathHouseWall,
               87.66413177577246,
-              Dir.Nnw
+              Dir.Nnw,
+              -0.5,
+              93
               "right1",
               PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasWalljump,
               129.0,
-              Dir.N ]
+              Dir.N,
+              30.5,
+              140 ]
         | 123, "right1" ->
-            [ "left1", PlayerData.instance.bathHouseWall, 56.302753041036986, Dir.Ssw
-              "right2", true, 129.0, Dir.S ]
+            [ "left1", PlayerData.instance.bathHouseWall, 56.302753041036986, Dir.Ssw, -0.5, 93
+              "right2", true, 129.0, Dir.S, 30.5, 11 ]
         | 123, "left1" ->
             [ "right1",
               PlayerData.instance.cityLift2
@@ -2195,12 +2320,14 @@ module Generated =
               || PlayerData.instance.hasWalljump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump,
               56.302753041036986,
-              Dir.Nne
-              "right2", true, 87.66413177577246, Dir.Sse ]
-        | 128, "right1" -> [ "left1", true, 171.01827387738422, Dir.W ]
-        | 128, "left1" -> [ "right1", true, 171.01827387738422, Dir.E ]
-        | 129, "left1" -> [ "right1", true, 46.0, Dir.E ]
-        | 129, "right1" -> [ "left1", true, 46.0, Dir.W ]
+              Dir.Nne,
+              30.5,
+              140
+              "right2", true, 87.66413177577246, Dir.Sse, 30.5, 11 ]
+        | 128, "right1" -> [ "left1", true, 171.01827387738422, Dir.W, -0.5, 7 ]
+        | 128, "left1" -> [ "right1", true, 171.01827387738422, Dir.E, 170.5, 9.5 ]
+        | 129, "left1" -> [ "right1", true, 46.0, Dir.E, 45.5, 7 ]
+        | 129, "right1" -> [ "left1", true, 46.0, Dir.W, -0.5, 7 ]
         | 130, "right1" ->
             [ "left1",
               PlayerData.instance.hasWalljump
@@ -2208,8 +2335,10 @@ module Generated =
               || PlayerData.instance.hasDash
               || PlayerData.instance.hasSuperDash,
               47.0,
-              Dir.W
-              "right2", true, 51.0, Dir.S ]
+              Dir.W,
+              -0.5,
+              62
+              "right2", true, 51.0, Dir.S, 46.5, 11 ]
         | 130, "right2" ->
             [ "left1",
               PlayerData.instance.hasWalljump
@@ -2217,18 +2346,22 @@ module Generated =
               || PlayerData.instance.hasDash
               || PlayerData.instance.hasSuperDash,
               69.35416353759881,
-              Dir.Nw
-              "right1", true, 51.0, Dir.N ]
-        | 130, "left1" -> [ "right1", true, 47.0, Dir.E; "right2", true, 69.35416353759881, Dir.Se ]
+              Dir.Nw,
+              -0.5,
+              62
+              "right1", true, 51.0, Dir.N, 46.5, 62 ]
+        | 130, "left1" ->
+            [ "right1", true, 47.0, Dir.E, 46.5, 62
+              "right2", true, 69.35416353759881, Dir.Se, 46.5, 11 ]
         | 131, "right1" ->
-            [ "bot1", true, 40.03123780249619, Dir.Sww
-              "left1", true, 81.88406438373708, Dir.W ]
+            [ "bot1", true, 40.03123780249619, Dir.Sww, 45, -0.5
+              "left1", true, 81.88406438373708, Dir.W, -0.5, 30 ]
         | 131, "left1" ->
-            [ "bot1", true, 54.77681991499689, Dir.Se
-              "right1", true, 81.88406438373708, Dir.E ]
+            [ "bot1", true, 54.77681991499689, Dir.Se, 45, -0.5
+              "right1", true, 81.88406438373708, Dir.E, 80.5, 18 ]
         | 131, "bot1" ->
-            [ "right1", true, 40.03123780249619, Dir.Nee
-              "left1", true, 54.77681991499689, Dir.Nw ]
+            [ "right1", true, 40.03123780249619, Dir.Nee, 80.5, 18
+              "left1", true, 54.77681991499689, Dir.Nw, -0.5, 30 ]
         | 132, "left1" ->
             [ "right1",
               PlayerData.instance.hasDash
@@ -2237,7 +2370,9 @@ module Generated =
               || PlayerData.instance.hasWalljump
                  && (PlayerData.instance.hasAcidArmour || PlayerData.instance.hasDash),
               99.72462083156798,
-              Dir.Nee ]
+              Dir.Nee,
+              95.5,
+              33 ]
         | 132, "right1" ->
             [ "left1",
               PlayerData.instance.hornet1Defeated
@@ -2246,27 +2381,29 @@ module Generated =
                   || PlayerData.instance.hasDoubleJump
                   || PlayerData.instance.hasAcidArmour),
               99.72462083156798,
-              Dir.Sww ]
+              Dir.Sww,
+              -0.5,
+              6 ]
         | 134, "bot1" ->
-            [ "right1", true, 21.319005605327842, Dir.Ne
-              "top1", true, 86.28441342444185, Dir.N ]
+            [ "right1", true, 21.319005605327842, Dir.Ne, 31.5, 13
+              "top1", true, 86.28441342444185, Dir.N, 22, 85.5 ]
         | 134, "top1" ->
-            [ "right1", true, 73.11976476986233, Dir.S
-              "bot1", true, 86.28441342444185, Dir.S ]
+            [ "right1", true, 73.11976476986233, Dir.S, 31.5, 13
+              "bot1", true, 86.28441342444185, Dir.S, 15, -0.5 ]
         | 134, "right1" ->
-            [ "bot1", true, 21.319005605327842, Dir.Sw
-              "top1", true, 73.11976476986233, Dir.N ]
-        | 135, "left1" -> [ "bot1", true, 104.96904305555995, Dir.E ]
-        | 135, "bot1" -> [ "left1", true, 104.96904305555995, Dir.W ]
+            [ "bot1", true, 21.319005605327842, Dir.Sw, 15, -0.5
+              "top1", true, 73.11976476986233, Dir.N, 22, 85.5 ]
+        | 135, "left1" -> [ "bot1", true, 104.96904305555995, Dir.E, 103, -0.5 ]
+        | 135, "bot1" -> [ "left1", true, 104.96904305555995, Dir.W, -0.5, 17 ]
         | 136, "left1" ->
-            [ "right1", true, 77.07788269017254, Dir.Nee
-              "top1", true, 57.554322166106694, Dir.Ne ]
+            [ "right1", true, 77.07788269017254, Dir.Nee, 70.5, 44
+              "top1", true, 57.554322166106694, Dir.Ne, 36, 58.5 ]
         | 136, "top1" ->
-            [ "right1", true, 37.42325480232846, Dir.See
-              "left1", true, 57.554322166106694, Dir.Sw ]
+            [ "right1", true, 37.42325480232846, Dir.See, 70.5, 44
+              "left1", true, 57.554322166106694, Dir.Sw, -0.5, 14 ]
         | 136, "right1" ->
-            [ "top1", true, 37.42325480232846, Dir.Nww
-              "left1", true, 77.07788269017254, Dir.Sww ]
+            [ "top1", true, 37.42325480232846, Dir.Nww, 36, 58.5
+              "left1", true, 77.07788269017254, Dir.Sww, -0.5, 14 ]
         | 138, "right1" ->
             [ "left1",
               PlayerData.instance.hasWalljump
@@ -2275,25 +2412,29 @@ module Generated =
                   && (PlayerData.instance.hasDash || PlayerData.instance.hasDoubleJump)
                   || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasDash),
               251.01792764661252,
-              Dir.W ]
+              Dir.W,
+              -0.5,
+              11 ]
         | 138, "left1" ->
             [ "right1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump,
               251.01792764661252,
-              Dir.E ]
+              Dir.E,
+              250.5,
+              14 ]
         | 139, "top1" ->
-            [ "right1", true, 137.07114940788964, Dir.E
-              "left1", true, 45.96194077712559, Dir.Sww ]
+            [ "right1", true, 137.07114940788964, Dir.E, 180.5, 13
+              "left1", true, 45.96194077712559, Dir.Sww, -0.5, 14 ]
         | 139, "left1" ->
-            [ "right1", true, 181.00276240985937, Dir.E
-              "top1", true, 45.96194077712559, Dir.Nee ]
+            [ "right1", true, 181.00276240985937, Dir.E, 180.5, 13
+              "top1", true, 45.96194077712559, Dir.Nee, 44, 25.5 ]
         | 139, "right1" ->
-            [ "left1", true, 181.00276240985937, Dir.W
-              "top1", true, 137.07114940788964, Dir.W ]
-        | 141, "left1" -> [ "right1", true, 38.58756276314948, Dir.Nee ]
-        | 141, "right1" -> [ "left1", true, 38.58756276314948, Dir.Sww ]
-        | 144, "door1" -> [ "right1", true, 32.944878205875945, Dir.Se ]
+            [ "left1", true, 181.00276240985937, Dir.W, -0.5, 14
+              "top1", true, 137.07114940788964, Dir.W, 44, 25.5 ]
+        | 141, "left1" -> [ "right1", true, 38.58756276314948, Dir.Nee, 32.5, 28 ]
+        | 141, "right1" -> [ "left1", true, 38.58756276314948, Dir.Sww, -0.5, 8 ]
+        | 144, "door1" -> [ "right1", true, 32.944878205875945, Dir.Se, 57.5, 8 ]
         | 144, "right1" ->
             [ "door1",
               PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump
@@ -2302,48 +2443,62 @@ module Generated =
               || PlayerData.instance.hasDash
                  && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump),
               32.944878205875945,
-              Dir.Nw ]
-        | 145, "door_stagExit" -> [ "right1", true, 31.432534100832534, Dir.E ]
-        | 146, "left1" -> [ "right1", true, 81.02468759581859, Dir.E ]
-        | 146, "right1" -> [ "left1", true, 81.02468759581859, Dir.W ]
-        | 147, "right1" -> [ "left1", true, 91.0, Dir.W; "bot1", true, 27.613402542968153, Dir.Sww ]
+              Dir.Nw,
+              36.95,
+              33.75 ]
+        | 145, "door_stagExit" -> [ "right1", true, 31.432534100832534, Dir.E, 47.5, 7 ]
+        | 146, "left1" -> [ "right1", true, 81.02468759581859, Dir.E, 80.5, 7 ]
+        | 146, "right1" -> [ "left1", true, 81.02468759581859, Dir.W, -0.5, 9 ]
+        | 147, "right1" ->
+            [ "left1", true, 91.0, Dir.W, -0.5, 14
+              "bot1", true, 27.613402542968153, Dir.Sww, 67, -0.5 ]
         | 147, "bot1" ->
-            [ "left1", true, 69.03984356876832, Dir.Nww
-              "right1", true, 27.613402542968153, Dir.Nee ]
-        | 147, "left1" -> [ "right1", true, 91.0, Dir.E; "bot1", true, 69.03984356876832, Dir.See ]
-        | 148, "bot2" -> [ "bot1", true, 156.0, Dir.W; "right1", true, 22.102036105300343, Dir.Ne ]
+            [ "left1", true, 69.03984356876832, Dir.Nww, -0.5, 14
+              "right1", true, 27.613402542968153, Dir.Nee, 90.5, 14 ]
+        | 147, "left1" ->
+            [ "right1", true, 91.0, Dir.E, 90.5, 14
+              "bot1", true, 69.03984356876832, Dir.See, 67, -0.5 ]
+        | 148, "bot2" ->
+            [ "bot1", true, 156.0, Dir.W, 7, -0.5
+              "right1", true, 22.102036105300343, Dir.Ne, 180.5, 13 ]
         | 148, "right1" ->
-            [ "bot1", true, 174.02442357324446, Dir.W
-              "bot2", true, 22.102036105300343, Dir.Sw ]
-        | 148, "bot1" -> [ "bot2", true, 156.0, Dir.E; "right1", true, 174.02442357324446, Dir.E ]
+            [ "bot1", true, 174.02442357324446, Dir.W, 7, -0.5
+              "bot2", true, 22.102036105300343, Dir.Sw, 163, -0.5 ]
+        | 148, "bot1" ->
+            [ "bot2", true, 156.0, Dir.E, 163, -0.5
+              "right1", true, 174.02442357324446, Dir.E, 180.5, 13 ]
         | 150, "top1" ->
-            [ "left1", true, 18.560711193270585, Dir.Ssw
-              "bot1", true, 122.98373876248843, Dir.S ]
+            [ "left1", true, 18.560711193270585, Dir.Ssw, -0.5, 104
+              "bot1", true, 122.98373876248843, Dir.S, 30, -0.5 ]
         | 150, "left1" ->
-            [ "bot1", true, 108.8600018372221, Dir.Sse
-              "top1", true, 18.560711193270585, Dir.Nne ]
-        | 151, "right1" -> [ "left1", true, 151.02979838429238, Dir.W ]
-        | 151, "left1" -> [ "right1", true, 151.02979838429238, Dir.E ]
-        | 153, "left1" -> [ "right1", true, 91.06728281880382, Dir.E ]
-        | 153, "right1" -> [ "left1", true, 91.06728281880382, Dir.W ]
+            [ "bot1", true, 108.8600018372221, Dir.Sse, 30, -0.5
+              "top1", true, 18.560711193270585, Dir.Nne, 8, 120.5 ]
+        | 151, "right1" -> [ "left1", true, 151.02979838429238, Dir.W, -0.5, 7 ]
+        | 151, "left1" -> [ "right1", true, 151.02979838429238, Dir.E, 150.5, 10 ]
+        | 153, "left1" -> [ "right1", true, 91.06728281880382, Dir.E, 90.5, 11 ]
+        | 153, "right1" -> [ "left1", true, 91.06728281880382, Dir.W, -0.5, 14.5 ]
         | 154, "door_SlugShrine" ->
             [ "left1",
               PlayerData.instance.hasAcidArmour
               && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump),
               78.8132476173898,
-              Dir.W
-              "right1", true, 32.86362731044764, Dir.E ]
+              Dir.W,
+              -0.5,
+              22
+              "right1", true, 32.86362731044764, Dir.E, 110.5, 19.5 ]
         | 154, "right1" ->
             [ "left1",
               PlayerData.instance.hasAcidArmour
               && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump),
               111.02814958378798,
-              Dir.W
-              "door_SlugShrine", true, 32.86362731044764, Dir.W ]
+              Dir.W,
+              -0.5,
+              22
+              "door_SlugShrine", true, 32.86362731044764, Dir.W, 77.98, 14.76 ]
         | 154, "left1" ->
-            [ "door_SlugShrine", PlayerData.instance.hasAcidArmour, 78.8132476173898, Dir.E
-              "right1", PlayerData.instance.hasAcidArmour, 111.02814958378798, Dir.E ]
-        | 155, "left1" -> [ "left2", true, 41.0, Dir.S ]
+            [ "door_SlugShrine", PlayerData.instance.hasAcidArmour, 78.8132476173898, Dir.E, 77.98, 14.76
+              "right1", PlayerData.instance.hasAcidArmour, 111.02814958378798, Dir.E, 110.5, 19.5 ]
+        | 155, "left1" -> [ "left2", true, 41.0, Dir.S, -0.5, 18 ]
         | 155, "left2" ->
             [ "left1",
               (PlayerData.instance.hasWalljump
@@ -2351,38 +2506,40 @@ module Generated =
               && PlayerData.instance.defeatedDoubleBlockers
               || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump,
               41.0,
-              Dir.N ]
-        | 156, "left1" -> [ "right1", true, 86.0, Dir.E ]
-        | 156, "right1" -> [ "left1", true, 86.0, Dir.W ]
+              Dir.N,
+              -0.5,
+              59 ]
+        | 156, "left1" -> [ "right1", true, 86.0, Dir.E, 85.5, 15 ]
+        | 156, "right1" -> [ "left1", true, 86.0, Dir.W, -0.5, 15 ]
         | 158, "bot1" ->
-            [ "right1", true, 117.52659273543158, Dir.N
-              "top1", true, 134.18271125595876, Dir.N ]
+            [ "right1", true, 117.52659273543158, Dir.N, 36.5, 116
+              "top1", true, 134.18271125595876, Dir.N, 14, 133.5 ]
         | 158, "top1" ->
-            [ "right1", true, 28.50438562747845, Dir.Se
-              "bot1", true, 134.18271125595876, Dir.S ]
+            [ "right1", true, 28.50438562747845, Dir.Se, 36.5, 116
+              "bot1", true, 134.18271125595876, Dir.S, 21, -0.5 ]
         | 158, "right1" ->
-            [ "bot1", true, 117.52659273543158, Dir.S
-              "top1", true, 28.50438562747845, Dir.Nw ]
+            [ "bot1", true, 117.52659273543158, Dir.S, 21, -0.5
+              "top1", true, 28.50438562747845, Dir.Nw, 14, 133.5 ]
         | 159, "top1" ->
-            [ "left1", true, 77.61765263134411, Dir.Sww
-              "bot1", true, 73.49829930005184, Dir.Sw ]
+            [ "left1", true, 77.61765263134411, Dir.Sww, -0.5, 4
+              "bot1", true, 73.49829930005184, Dir.Sw, 7, -0.5 ]
         | 159, "bot1" ->
-            [ "left1", true, 8.74642784226795, Dir.Nww
-              "top1", true, 73.49829930005184, Dir.Ne ]
+            [ "left1", true, 8.74642784226795, Dir.Nww, -0.5, 4
+              "top1", true, 73.49829930005184, Dir.Ne, 68, 40.5 ]
         | 159, "left1" ->
-            [ "top1", true, 77.61765263134411, Dir.Nee
-              "bot1", true, 8.74642784226795, Dir.See ]
-        | 160, "left1" -> [ "door1", true, 103.66777946883978, Dir.E ]
-        | 160, "door1" -> [ "left1", true, 103.66777946883978, Dir.W ]
-        | 161, "left1" -> [ "right1", PlayerData.instance.hasLantern, 121.69634341261039, Dir.E ]
-        | 161, "right1" -> [ "left1", PlayerData.instance.hasLantern, 121.69634341261039, Dir.W ]
-        | 166, "door_stagExit" -> [ "right1", true, 31.39294347460907, Dir.E ]
-        | 168, "top1" -> [ "right1", true, 8.74642784226795, Dir.See ]
-        | 168, "right1" -> [ "top1", true, 8.74642784226795, Dir.Nww ]
-        | 169, "right1" -> [ "bot1", PlayerData.instance.notchShroomOgres, 69.03984356876832, Dir.Sww ]
-        | 169, "bot1" -> [ "right1", PlayerData.instance.notchShroomOgres, 69.03984356876832, Dir.Nee ]
-        | 170, "right1" -> [ "top1", true, 104.1849317319928, Dir.Nnw ]
-        | 170, "top1" -> [ "right1", true, 104.1849317319928, Dir.Sse ]
+            [ "top1", true, 77.61765263134411, Dir.Nee, 68, 40.5
+              "bot1", true, 8.74642784226795, Dir.See, 7, -0.5 ]
+        | 160, "left1" -> [ "door1", true, 103.66777946883978, Dir.E, 103.16, 3.73 ]
+        | 160, "door1" -> [ "left1", true, 103.66777946883978, Dir.W, -0.5, 5 ]
+        | 161, "left1" -> [ "right1", PlayerData.instance.hasLantern, 121.69634341261039, Dir.E, 120.5, 17 ]
+        | 161, "right1" -> [ "left1", PlayerData.instance.hasLantern, 121.69634341261039, Dir.W, -0.5, 4 ]
+        | 166, "door_stagExit" -> [ "right1", true, 31.39294347460907, Dir.E, 47.5, 7 ]
+        | 168, "top1" -> [ "right1", true, 8.74642784226795, Dir.See, 36.5, 72 ]
+        | 168, "right1" -> [ "top1", true, 8.74642784226795, Dir.Nww, 29, 76.5 ]
+        | 169, "right1" -> [ "bot1", PlayerData.instance.notchShroomOgres, 69.03984356876832, Dir.Sww, 8, -0.5 ]
+        | 169, "bot1" -> [ "right1", PlayerData.instance.notchShroomOgres, 69.03984356876832, Dir.Nee, 75.5, 14 ]
+        | 170, "right1" -> [ "top1", true, 104.1849317319928, Dir.Nnw, 13, 160.5 ]
+        | 170, "top1" -> [ "right1", true, 104.1849317319928, Dir.Sse, 36.5, 59 ]
         | 171, "right1" ->
             [ "left1",
               PlayerData.instance.hasWalljump
@@ -2390,28 +2547,40 @@ module Generated =
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasAcidArmour,
               71.56814934033156,
-              Dir.W ]
-        | 171, "left1" -> [ "right1", true, 71.56814934033156, Dir.E ]
-        | 172, "left2" -> [ "right1", true, 31.064449134018133, Dir.E; "left1", true, 49.0, Dir.N ]
-        | 172, "left1" -> [ "right1", true, 56.302753041036986, Dir.Sse; "left2", true, 49.0, Dir.S ]
+              Dir.W,
+              -0.5,
+              14 ]
+        | 171, "left1" -> [ "right1", true, 71.56814934033156, Dir.E, 70.5, 5 ]
+        | 172, "left2" ->
+            [ "right1", true, 31.064449134018133, Dir.E, 30.5, 13
+              "left1", true, 49.0, Dir.N, -0.5, 60 ]
+        | 172, "left1" ->
+            [ "right1", true, 56.302753041036986, Dir.Sse, 30.5, 13
+              "left2", true, 49.0, Dir.S, -0.5, 11 ]
         | 172, "right1" ->
-            [ "left1", true, 56.302753041036986, Dir.Nnw
-              "left2", true, 31.064449134018133, Dir.W ]
-        | 173, "right1" -> [ "left1", true, 71.00704190430693, Dir.W ]
-        | 173, "left1" -> [ "right1", true, 71.00704190430693, Dir.E ]
-        | 174, "right2" -> [ "right1", true, 51.0, Dir.N; "bot1", true, 65.3490627323759, Dir.W ]
+            [ "left1", true, 56.302753041036986, Dir.Nnw, -0.5, 60
+              "left2", true, 31.064449134018133, Dir.W, -0.5, 11 ]
+        | 173, "right1" -> [ "left1", true, 71.00704190430693, Dir.W, -0.5, 11 ]
+        | 173, "left1" -> [ "right1", true, 71.00704190430693, Dir.E, 70.5, 12 ]
+        | 174, "right2" ->
+            [ "right1", true, 51.0, Dir.N, 70.5, 61
+              "bot1", true, 65.3490627323759, Dir.W, 6, -0.5 ]
         | 174, "bot1" ->
-            [ "right1", true, 89.12070466507768, Dir.Ne
-              "right2", true, 65.3490627323759, Dir.E ]
-        | 174, "right1" -> [ "right2", true, 51.0, Dir.S; "bot1", true, 89.12070466507768, Dir.Sw ]
-        | 176, "left1" -> [ "bot1", true, 91.89396062854185, Dir.E ]
+            [ "right1", true, 89.12070466507768, Dir.Ne, 70.5, 61
+              "right2", true, 65.3490627323759, Dir.E, 70.5, 10 ]
+        | 174, "right1" ->
+            [ "right2", true, 51.0, Dir.S, 70.5, 10
+              "bot1", true, 89.12070466507768, Dir.Sw, 6, -0.5 ]
+        | 176, "left1" -> [ "bot1", true, 91.89396062854185, Dir.E, 91, -0.5 ]
         | 176, "bot1" ->
             [ "left1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasDash,
               91.89396062854185,
-              Dir.W ]
+              Dir.W,
+              -0.5,
+              8 ]
         | 178, "top1" ->
             [ "bot3",
               PlayerData.instance.hasWalljump
@@ -2419,24 +2588,30 @@ module Generated =
               || PlayerData.instance.hasWalljump
                  && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash),
               48.877397639399746,
-              Dir.Sse ]
-        | 179, "top3" -> [ "left1", PlayerData.instance.defeatedMantisLords, 114.76606641337848, Dir.Ssw ]
-        | 179, "right1" -> [ "left1", PlayerData.instance.defeatedMantisLords, 95.15382283439799, Dir.Sw ]
+              Dir.Sse,
+              60,
+              -0.5 ]
+        | 179, "top3" -> [ "left1", PlayerData.instance.defeatedMantisLords, 114.76606641337848, Dir.Ssw, 7, 10 ]
+        | 179, "right1" -> [ "left1", PlayerData.instance.defeatedMantisLords, 95.15382283439799, Dir.Sw, 7, 10 ]
         | 182, "right1" ->
             [ "left1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDash
               || PlayerData.instance.hasDoubleJump,
               46.09772228646444,
-              Dir.W ]
+              Dir.W,
+              -0.5,
+              34 ]
         | 182, "bot1" ->
-            [ "left1", PlayerData.instance.hasWalljump, 35.531676008879735, Dir.Nnw
+            [ "left1", PlayerData.instance.hasWalljump, 35.531676008879735, Dir.Nnw, -0.5, 34
               "right1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasWalljump
                  && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash),
               53.033008588991066,
-              Dir.Ne ]
+              Dir.Ne,
+              45.5,
+              37 ]
         | 182, "left1" ->
             [ "right1",
               PlayerData.instance.hasWalljump
@@ -2444,31 +2619,50 @@ module Generated =
                  && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash)
               || PlayerData.instance.hasDoubleJump,
               46.09772228646444,
-              Dir.E ]
+              Dir.E,
+              45.5,
+              37 ]
         | 184, "left1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 50.798622028555066, Dir.E ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              50.798622028555066,
+              Dir.E,
+              50,
+              25.5 ]
         | 184, "top1" ->
             [ "left1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasDash,
               50.798622028555066,
-              Dir.W ]
+              Dir.W,
+              -0.5,
+              20 ]
         | 188, "top2" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 83.54190565219349, Dir.W
-              "right1", PlayerData.instance.defeatedMantisLords, 76.17250159998686, Dir.See ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              83.54190565219349,
+              Dir.W,
+              12,
+              35.5
+              "right1", PlayerData.instance.defeatedMantisLords, 76.17250159998686, Dir.See, 168.5, 6 ]
         | 188, "right1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 159.25608308632985, Dir.W ]
-        | 188, "top1" -> [ "right1", PlayerData.instance.defeatedMantisLords, 159.25608308632985, Dir.E ]
-        | 190, "left1" -> [ "left2", true, 15.0, Dir.S ]
-        | 190, "left2" -> [ "left1", true, 15.0, Dir.N ]
-        | 191, "bot1" -> [ "right1", true, 92.4040042422405, Dir.Nee ]
-        | 192, "top1" -> [ "bot1", true, 141.02216137898327, Dir.S ]
-        | 195, "left1" -> [ "right1", true, 82.13403679352427, Dir.Se ]
-        | 195, "right1" -> [ "left1", true, 82.13403679352427, Dir.Nw ]
-        | 199, "right1" -> [ "left1", PlayerData.instance.hasAcidArmour, 101.04454463255303, Dir.W ]
-        | 199, "left1" -> [ "right1", PlayerData.instance.hasAcidArmour, 101.04454463255303, Dir.E ]
-        | 200, "left2" -> [ "left1", true, 17.0, Dir.N ]
-        | 200, "left1" -> [ "left2", true, 17.0, Dir.S ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              159.25608308632985,
+              Dir.W,
+              12,
+              35.5 ]
+        | 188, "top1" -> [ "right1", PlayerData.instance.defeatedMantisLords, 159.25608308632985, Dir.E, 168.5, 6 ]
+        | 190, "left1" -> [ "left2", true, 15.0, Dir.S, -0.5, 5 ]
+        | 190, "left2" -> [ "left1", true, 15.0, Dir.N, -0.5, 20 ]
+        | 191, "bot1" -> [ "right1", true, 92.4040042422405, Dir.Nee, 94.5, 32 ]
+        | 192, "top1" -> [ "bot1", true, 141.02216137898327, Dir.S, 17.5, -0.5 ]
+        | 195, "left1" -> [ "right1", true, 82.13403679352427, Dir.Se, 60.5, 8 ]
+        | 195, "right1" -> [ "left1", true, 82.13403679352427, Dir.Nw, -0.5, 63 ]
+        | 199, "right1" -> [ "left1", PlayerData.instance.hasAcidArmour, 101.04454463255303, Dir.W, -0.5, 12 ]
+        | 199, "left1" -> [ "right1", PlayerData.instance.hasAcidArmour, 101.04454463255303, Dir.E, 100.5, 9 ]
+        | 200, "left2" -> [ "left1", true, 17.0, Dir.N, -0.5, 84 ]
+        | 200, "left1" -> [ "left2", true, 17.0, Dir.S, -0.5, 67 ]
         | 201, "right1" ->
             [ "right2",
               PlayerData.instance.hasDoubleJump
@@ -2476,8 +2670,10 @@ module Generated =
                   || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash)
                  && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash),
               30.0,
-              Dir.S
-              "left1", true, 74.96665925596525, Dir.W ]
+              Dir.S,
+              73.5,
+              30
+              "left1", true, 74.96665925596525, Dir.W, -0.5, 48 ]
         | 201, "left1" ->
             [ "right2",
               PlayerData.instance.hasDoubleJump
@@ -2485,63 +2681,91 @@ module Generated =
                   || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash)
                  && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash),
               76.15773105863909,
-              Dir.See
-              "right1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 74.96665925596525, Dir.E ]
+              Dir.See,
+              73.5,
+              30
+              "right1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              74.96665925596525,
+              Dir.E,
+              73.5,
+              60 ]
         | 202, "right1" ->
-            [ "left1", true, 151.11915828246265, Dir.W
+            [ "left1", true, 151.11915828246265, Dir.W, -0.5, 8
               "top1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump,
               144.95689014324225,
-              Dir.W ]
+              Dir.W,
+              6,
+              25.5 ]
         | 202, "top1" ->
-            [ "left1", true, 18.66815470259447, Dir.Ssw
-              "right1", true, 144.95689014324225, Dir.E ]
+            [ "left1", true, 18.66815470259447, Dir.Ssw, -0.5, 8
+              "right1", true, 144.95689014324225, Dir.E, 150.5, 14 ]
         | 202, "left1" ->
             [ "top1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump,
               18.66815470259447,
-              Dir.Nne
-              "right1", true, 151.11915828246265, Dir.E ]
+              Dir.Nne,
+              6,
+              25.5
+              "right1", true, 151.11915828246265, Dir.E, 150.5, 14 ]
         | 205, "right1" ->
-            [ "left3", true, 41.773197148410844, Dir.Sw
-              "left1", true, 31.25699921617557, Dir.W ]
-        | 205, "left1" -> [ "left3", true, 24.0, Dir.S; "right1", true, 31.25699921617557, Dir.E ]
+            [ "left3", true, 41.773197148410844, Dir.Sw, -0.5, 36
+              "left1", true, 31.25699921617557, Dir.W, -0.5, 60 ]
+        | 205, "left1" ->
+            [ "left3", true, 24.0, Dir.S, -0.5, 36
+              "right1", true, 31.25699921617557, Dir.E, 30.5, 64 ]
         | 205, "left3" ->
-            [ "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 24.0, Dir.N
-              "right1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 41.773197148410844, Dir.Ne ]
+            [ "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 24.0, Dir.N, -0.5, 60
+              "right1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              41.773197148410844,
+              Dir.Ne,
+              30.5,
+              64 ]
         | 206, "right1" ->
             [ "top1",
               PlayerData.instance.hasDash
               && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump),
               69.16104394816492,
-              Dir.Nww ]
-        | 206, "top1" -> [ "right1", PlayerData.instance.hasDash, 69.16104394816492, Dir.See ]
+              Dir.Nww,
+              9,
+              26 ]
+        | 206, "top1" -> [ "right1", PlayerData.instance.hasDash, 69.16104394816492, Dir.See, 75.5, 7 ]
         | 208, "right1" ->
             [ "left1",
               PlayerData.instance.hasShadowDash
               && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump)
               && PlayerData.instance.killedTraitorLord,
               103.36827366266692,
-              Dir.Nww ]
+              Dir.Nww,
+              -0.5,
+              28 ]
         | 208, "left1" ->
             [ "right1",
               PlayerData.instance.hasShadowDash && PlayerData.instance.killedTraitorLord,
               103.36827366266692,
-              Dir.See ]
+              Dir.See,
+              100.5,
+              6 ]
         | 210, "top1" ->
-            [ "left1", true, 35.16390194503448, Dir.Sww
-              "right1", true, 72.63952092353033, Dir.See ]
-        | 210, "right1" -> [ "left1", true, 101.0, Dir.W; "top1", true, 72.63952092353033, Dir.Nww ]
-        | 210, "left1" -> [ "top1", true, 35.16390194503448, Dir.Nee; "right1", true, 101.0, Dir.E ]
-        | 211, "left1" -> [ "right1", PlayerData.instance.hasShadowDash, 101.07917688624102, Dir.E ]
-        | 211, "right1" -> [ "left1", PlayerData.instance.hasShadowDash, 101.07917688624102, Dir.W ]
-        | 212, "right1" -> [ "left1", true, 101.0, Dir.W ]
-        | 212, "left1" -> [ "right1", true, 101.0, Dir.E ]
-        | 214, "left1" -> [ "right1", true, 76.16429609731846, Dir.E ]
-        | 214, "right1" -> [ "left1", true, 76.16429609731846, Dir.W ]
-        | 219, "left1" -> [ "right1", true, 117.39250401963491, Dir.See ]
+            [ "left1", true, 35.16390194503448, Dir.Sww, -0.5, 13
+              "right1", true, 72.63952092353033, Dir.See, 100.5, 13 ]
+        | 210, "right1" ->
+            [ "left1", true, 101.0, Dir.W, -0.5, 13
+              "top1", true, 72.63952092353033, Dir.Nww, 30, 30.5 ]
+        | 210, "left1" ->
+            [ "top1", true, 35.16390194503448, Dir.Nee, 30, 30.5
+              "right1", true, 101.0, Dir.E, 100.5, 13 ]
+        | 211, "left1" -> [ "right1", PlayerData.instance.hasShadowDash, 101.07917688624102, Dir.E, 100.5, 16 ]
+        | 211, "right1" -> [ "left1", PlayerData.instance.hasShadowDash, 101.07917688624102, Dir.W, -0.5, 20 ]
+        | 212, "right1" -> [ "left1", true, 101.0, Dir.W, -0.5, 16 ]
+        | 212, "left1" -> [ "right1", true, 101.0, Dir.E, 100.5, 16 ]
+        | 214, "left1" -> [ "right1", true, 76.16429609731846, Dir.E, 75.5, 9 ]
+        | 214, "right1" -> [ "left1", true, 76.16429609731846, Dir.W, -0.5, 4 ]
+        | 219, "left1" -> [ "right1", true, 117.39250401963491, Dir.See, 109.5, 7 ]
         | 220, "door_stagExit" ->
             [ "top1",
               PlayerData.instance.hasWalljump
@@ -2549,8 +2773,10 @@ module Generated =
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasDash,
               139.1916912031749,
-              Dir.W
-              "right1", true, 31.230064040920556, Dir.E ]
+              Dir.W,
+              19,
+              35.5
+              "right1", true, 31.230064040920556, Dir.E, 187.5, 14 ]
         | 220, "right1" ->
             [ "top1",
               PlayerData.instance.hasWalljump
@@ -2558,7 +2784,9 @@ module Generated =
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasDash,
               169.8661237563276,
-              Dir.W ]
+              Dir.W,
+              19,
+              35.5 ]
         | 220, "top1" ->
             [ "right1",
               PlayerData.instance.hasDash
@@ -2566,71 +2794,98 @@ module Generated =
               || PlayerData.instance.hasWalljump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash,
               169.8661237563276,
-              Dir.E ]
-        | 224, "right2" -> [ "bot1", true, 43.982951242498494, Dir.Sw ]
-        | 224, "door1" -> [ "right1", true, 57.494992625445214, Dir.E ]
+              Dir.E,
+              187.5,
+              14 ]
+        | 224, "right2" -> [ "bot1", true, 43.982951242498494, Dir.Sw, 62, -0.5 ]
+        | 224, "door1" -> [ "right1", true, 57.494992625445214, Dir.E, 95.5, 95 ]
         | 224, "bot1" ->
-            [ "right2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 43.982951242498494, Dir.Ne ]
-        | 227, "left1" -> [ "bot1", true, 68.90936075744717, Dir.E ]
-        | 227, "bot1" -> [ "left1", true, 68.90936075744717, Dir.W ]
-        | 230, "right1" -> [ "right2", true, 52.0, Dir.S; "right4", true, 112.0, Dir.S ]
-        | 230, "right2" -> [ "right4", true, 60.0, Dir.S ]
-        | 231, "bot1" -> [ "bot2", true, 33.53356527421443, Dir.E ]
-        | 231, "door1" -> [ "left1", true, 124.55380845241145, Dir.W ]
-        | 231, "left1" -> [ "door1", true, 124.55380845241145, Dir.E ]
-        | 233, "door_stagExit" -> [ "right1", true, 172.4869299396334, Dir.Nee ]
-        | 234, "left1" -> [ "right1", PlayerData.instance.hasLantern, 86.14522621712709, Dir.E ]
+            [ "right2",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              43.982951242498494,
+              Dir.Ne,
+              95.5,
+              28 ]
+        | 227, "left1" -> [ "bot1", true, 68.90936075744717, Dir.E, 68, -0.5 ]
+        | 227, "bot1" -> [ "left1", true, 68.90936075744717, Dir.W, -0.5, 7 ]
+        | 230, "right1" ->
+            [ "right2", true, 52.0, Dir.S, 140.5, 92
+              "right4", true, 112.0, Dir.S, 140.5, 32 ]
+        | 230, "right2" -> [ "right4", true, 60.0, Dir.S, 140.5, 32 ]
+        | 231, "bot1" -> [ "bot2", true, 33.53356527421443, Dir.E, 221.5, -2 ]
+        | 231, "door1" -> [ "left1", true, 124.55380845241145, Dir.W, -0.5, 25 ]
+        | 231, "left1" -> [ "door1", true, 124.55380845241145, Dir.E, 122.54, 5.64 ]
+        | 233, "door_stagExit" -> [ "right1", true, 172.4869299396334, Dir.Nee, 180.5, 58 ]
+        | 234, "left1" -> [ "right1", PlayerData.instance.hasLantern, 86.14522621712709, Dir.E, 85.5, 49 ]
         | 234, "right1" ->
             [ "left1",
               PlayerData.instance.hasLantern
               && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump),
               86.14522621712709,
-              Dir.W ]
-        | 239, "left1" -> [ "right1", true, 111.0, Dir.E ]
-        | 239, "right1" -> [ "left1", true, 111.0, Dir.W ]
+              Dir.W,
+              -0.5,
+              44 ]
+        | 239, "left1" -> [ "right1", true, 111.0, Dir.E, 110.5, 6 ]
+        | 239, "right1" -> [ "left1", true, 111.0, Dir.W, -0.5, 6 ]
         | 241, "right1" ->
-            [ "left1", true, 111.0, Dir.W
+            [ "left1", true, 111.0, Dir.W, -0.5, 8
               "top1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasDash,
               104.94045930907679,
-              Dir.Nww ]
+              Dir.Nww,
+              8,
+              30.5 ]
         | 241, "top1" ->
-            [ "left1", true, 24.052026941611388, Dir.Ssw
-              "right1", true, 104.94045930907679, Dir.See ]
+            [ "left1", true, 24.052026941611388, Dir.Ssw, -0.5, 8
+              "right1", true, 104.94045930907679, Dir.See, 110.5, 8 ]
         | 241, "left1" ->
-            [ "right1", true, 111.0, Dir.E
+            [ "right1", true, 111.0, Dir.E, 110.5, 8
               "top1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasDash,
               24.052026941611388,
-              Dir.Nne ]
-        | 244, "door_stagExit" -> [ "left1", true, 32.30458171838788, Dir.W ]
-        | 246, "door_Mansion" -> [ "bot1", true, 42.573467089256425, Dir.W ]
-        | 246, "bot1" -> [ "door_Mansion", true, 42.573467089256425, Dir.E ]
-        | 250, "right1" -> [ "top1", PlayerData.instance.hasWalljump, 51.79285665031424, Dir.Nw ]
-        | 250, "top1" -> [ "right1", true, 51.79285665031424, Dir.Se ]
-        | 251, "top1" -> [ "left1", true, 29.129023327259016, Dir.Sw ]
+              Dir.Nne,
+              8,
+              30.5 ]
+        | 244, "door_stagExit" -> [ "left1", true, 32.30458171838788, Dir.W, -0.5, 7 ]
+        | 246, "door_Mansion" -> [ "bot1", true, 42.573467089256425, Dir.W, 20.5, -0.5 ]
+        | 246, "bot1" -> [ "door_Mansion", true, 42.573467089256425, Dir.E, 62.95, 2.74 ]
+        | 250, "right1" -> [ "top1", PlayerData.instance.hasWalljump, 51.79285665031424, Dir.Nw, 12, 80.5 ]
+        | 250, "top1" -> [ "right1", true, 51.79285665031424, Dir.Se, 45.5, 41 ]
+        | 251, "top1" -> [ "left1", true, 29.129023327259016, Dir.Sw, -0.5, 67 ]
         | 252, "left1" ->
-            [ "right1", true, 50.91168824543142, Dir.Se
-              "top1", true, 16.446884203398525, Dir.Nee ]
+            [ "right1", true, 50.91168824543142, Dir.Se, 35.5, 33
+              "top1", true, 16.446884203398525, Dir.Nee, 15, 74.5 ]
         | 252, "top1" ->
-            [ "right1", true, 46.28714724413247, Dir.Sse
-              "left1", true, 16.446884203398525, Dir.Sww ]
+            [ "right1", true, 46.28714724413247, Dir.Sse, 35.5, 33
+              "left1", true, 16.446884203398525, Dir.Sww, -0.5, 69 ]
         | 252, "right1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 46.28714724413247, Dir.Nnw
-              "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 50.91168824543142, Dir.Nw ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              46.28714724413247,
+              Dir.Nnw,
+              15,
+              74.5
+              "left1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              50.91168824543142,
+              Dir.Nw,
+              -0.5,
+              69 ]
         | 253, "right1" ->
             [ "left1",
               PlayerData.instance.hasSuperDash
               && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump),
               151.08275877809487,
-              Dir.W ]
-        | 253, "left1" -> [ "right1", true, 151.08275877809487, Dir.E ]
-        | 254, "right1" -> [ "left1", PlayerData.instance.hasLantern, 121.00413216084813, Dir.W ]
-        | 254, "left1" -> [ "right1", PlayerData.instance.hasLantern, 121.00413216084813, Dir.E ]
+              Dir.W,
+              -0.5,
+              16 ]
+        | 253, "left1" -> [ "right1", true, 151.08275877809487, Dir.E, 150.5, 11 ]
+        | 254, "right1" -> [ "left1", PlayerData.instance.hasLantern, 121.00413216084813, Dir.W, -0.5, 7.0 ]
+        | 254, "left1" -> [ "right1", PlayerData.instance.hasLantern, 121.00413216084813, Dir.E, 120.5, 6.0 ]
         | 255, "bot1" ->
             [ "right1",
               PlayerData.instance.hasWalljump
@@ -2638,13 +2893,17 @@ module Generated =
               && (PlayerData.instance.hasWalljump
                   || PlayerData.instance.hasDash && PlayerData.instance.hasDoubleJump),
               155.92466129512675,
-              Dir.E
+              Dir.E,
+              187.5,
+              11
               "left1",
               PlayerData.instance.hasSuperDash
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasDash,
               34.4746283518764,
-              Dir.Nww ]
+              Dir.Nww,
+              -0.5,
+              11 ]
         | 255, "left1" ->
             [ "bot1",
               PlayerData.instance.hasSuperDash
@@ -2652,7 +2911,9 @@ module Generated =
               || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasDash,
               34.4746283518764,
-              Dir.See ]
+              Dir.See,
+              32,
+              -0.5 ]
         | 255, "right1" ->
             [ "bot1",
               PlayerData.instance.hasSuperDash
@@ -2662,21 +2923,32 @@ module Generated =
               && (PlayerData.instance.hasSuperDash && PlayerData.instance.hasWalljump
                   || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasDash),
               155.92466129512675,
-              Dir.W ]
+              Dir.W,
+              32,
+              -0.5 ]
         | 257, "bot1" ->
-            [ "right1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 71.43178564196754, Dir.Nee ]
+            [ "right1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              71.43178564196754,
+              Dir.Nee,
+              100.5,
+              16 ]
         | 257, "top1" ->
-            [ "right1", true, 36.76955262170047, Dir.Sse
-              "bot1", true, 75.03665770808293, Dir.Sw ]
-        | 257, "right1" -> [ "bot1", true, 71.43178564196754, Dir.Sww ]
-        | 259, "left1" -> [ "right1", true, 76.0, Dir.E ]
-        | 259, "right1" -> [ "left1", true, 76.0, Dir.W ]
-        | 262, "left1" -> [ "right1", true, 61.0, Dir.E ]
-        | 262, "right1" -> [ "left1", true, 61.0, Dir.W ]
-        | 263, "left2" -> [ "bot1", true, 72.2530276182251, Dir.Sse; "left3", true, 56.0, Dir.S ]
-        | 263, "right2" -> [ "bot1", true, 36.776351096866584, Dir.W; "left3", true, 76.0, Dir.W ]
-        | 263, "left3" -> [ "bot1", true, 39.75550276376844, Dir.E ]
-        | 263, "bot1" -> [ "left3", true, 39.75550276376844, Dir.W ]
+            [ "right1", true, 36.76955262170047, Dir.Sse, 100.5, 16
+              "bot1", true, 75.03665770808293, Dir.Sw, 31, -0.5 ]
+        | 257, "right1" -> [ "bot1", true, 71.43178564196754, Dir.Sww, 31, -0.5 ]
+        | 259, "left1" -> [ "right1", true, 76.0, Dir.E, 75.5, 12 ]
+        | 259, "right1" -> [ "left1", true, 76.0, Dir.W, -0.5, 12 ]
+        | 262, "left1" -> [ "right1", true, 61.0, Dir.E, 60.5, 7 ]
+        | 262, "right1" -> [ "left1", true, 61.0, Dir.W, -0.5, 7 ]
+        | 263, "left2" ->
+            [ "bot1", true, 72.2530276182251, Dir.Sse, 39, 59.5
+              "left3", true, 56.0, Dir.S, -0.5, 64 ]
+        | 263, "right2" ->
+            [ "bot1", true, 36.776351096866584, Dir.W, 39, 59.5
+              "left3", true, 76.0, Dir.W, -0.5, 64 ]
+        | 263, "left3" -> [ "bot1", true, 39.75550276376844, Dir.E, 39, 59.5 ]
+        | 263, "bot1" -> [ "left3", true, 39.75550276376844, Dir.W, -0.5, 64 ]
         | 264, "right1" ->
             [ "left1",
               PlayerData.instance.hasDash
@@ -2684,79 +2956,103 @@ module Generated =
               || PlayerData.instance.hasSuperDash
               || PlayerData.instance.hasWalljump,
               181.62048342629197,
-              Dir.W
-              "right2", true, 22.0, Dir.S ]
+              Dir.W,
+              -0.5,
+              13
+              "right2", true, 22.0, Dir.S, 180.5, 6 ]
         | 264, "top1" ->
-            [ "left1", true, 42.9563732174866, Dir.Sw
+            [ "left1", true, 42.9563732174866, Dir.Sw, -0.5, 13
               "right1",
               PlayerData.instance.hasDash
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasSuperDash && PlayerData.instance.hasWalljump,
               148.52693358445129,
-              Dir.E
+              Dir.E,
+              180.5,
+              28
               "right2",
               PlayerData.instance.hasDash
               || PlayerData.instance.hasSuperDash && PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump,
               151.96792424719106,
-              Dir.See ]
+              Dir.See,
+              180.5,
+              6 ]
         | 264, "right2" ->
             [ "left1",
               PlayerData.instance.hasDash
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash,
               181.13530854032848,
-              Dir.W
+              Dir.W,
+              -0.5,
+              13
               "right1",
               PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasDash,
               22.0,
-              Dir.N ]
+              Dir.N,
+              180.5,
+              28 ]
         | 264, "left1" ->
             [ "right1",
               PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasDash && PlayerData.instance.hasWalljump
               || PlayerData.instance.hasSuperDash && PlayerData.instance.hasWalljump,
               181.62048342629197,
-              Dir.E
+              Dir.E,
+              180.5,
+              28
               "right2",
               PlayerData.instance.hasDash
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash,
               181.13530854032848,
-              Dir.E ]
+              Dir.E,
+              180.5,
+              6 ]
         | 266, "left1" ->
             [ "top1",
               (PlayerData.instance.hasWalljump
                || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump)
               && PlayerData.instance.hasDoubleJump,
               109.69275272323145,
-              Dir.N ]
-        | 266, "top1" -> [ "left1", true, 109.69275272323145, Dir.S ]
+              Dir.N,
+              6,
+              130.5 ]
+        | 266, "top1" -> [ "left1", true, 109.69275272323145, Dir.S, -0.5, 21 ]
         | 267, "left1" ->
             [ "door1",
               PlayerData.instance.hasSuperDash
               || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasDash,
               81.71268934504603,
-              Dir.E
-              "bot1", true, 53.57704732439069, Dir.Sse ]
+              Dir.E,
+              81.2,
+              47.56
+              "bot1", true, 53.57704732439069, Dir.Sse, 20, -0.5 ]
         | 267, "door1" ->
             [ "left1",
               PlayerData.instance.hasSuperDash
               || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasDash,
               81.71268934504603,
-              Dir.W
-              "bot1", true, 77.81518874872695, Dir.Sw ]
-        | 268, "right2" -> [ "right1", true, 44.0, Dir.N; "left1", true, 46.87216658103186, Dir.W ]
+              Dir.W,
+              -0.5,
+              49
+              "bot1", true, 77.81518874872695, Dir.Sw, 20, -0.5 ]
+        | 268, "right2" ->
+            [ "right1", true, 44.0, Dir.N, 45.5, 57
+              "left1", true, 46.87216658103186, Dir.W, -0.5, 4 ]
         | 268, "left1" ->
-            [ "right1", true, 70.178344238091, Dir.Ne
-              "right2", true, 46.87216658103186, Dir.E ]
-        | 268, "right1" -> [ "right2", true, 44.0, Dir.S; "left1", true, 70.178344238091, Dir.Sw ]
-        | 269, "left1" -> [ "right1", PlayerData.instance.hasSuperDash, 181.01104938649465, Dir.E ]
-        | 269, "right1" -> [ "left1", PlayerData.instance.hasSuperDash, 181.01104938649465, Dir.W ]
-        | 272, "left1" -> [ "right1", PlayerData.instance.hasLantern, 101.00495037373169, Dir.E ]
-        | 272, "right1" -> [ "left1", PlayerData.instance.hasLantern, 101.00495037373169, Dir.W ]
+            [ "right1", true, 70.178344238091, Dir.Ne, 45.5, 57
+              "right2", true, 46.87216658103186, Dir.E, 45.5, 13 ]
+        | 268, "right1" ->
+            [ "right2", true, 44.0, Dir.S, 45.5, 13
+              "left1", true, 70.178344238091, Dir.Sw, -0.5, 4 ]
+        | 269, "left1" -> [ "right1", PlayerData.instance.hasSuperDash, 181.01104938649465, Dir.E, 180.5, 11 ]
+        | 269, "right1" -> [ "left1", PlayerData.instance.hasSuperDash, 181.01104938649465, Dir.W, -0.5, 9 ]
+        | 272, "left1" -> [ "right1", PlayerData.instance.hasLantern, 101.00495037373169, Dir.E, 100.5, 8 ]
+        | 272, "right1" -> [ "left1", PlayerData.instance.hasLantern, 101.00495037373169, Dir.W, -0.5, 9 ]
         | 273, "bot1" ->
             [ "left1",
               (PlayerData.instance.hasWalljump
@@ -2767,7 +3063,9 @@ module Generated =
               && (PlayerData.instance.hasSuperDash
                   || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasDash),
               174.27134015666488,
-              Dir.Nww
+              Dir.Nww,
+              -3.5,
+              40
               "bot2",
               (PlayerData.instance.hasWalljump
                || PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump)
@@ -2775,60 +3073,83 @@ module Generated =
                   || PlayerData.instance.hasSuperDash
                   || PlayerData.instance.hasDash),
               150.50747489742827,
-              Dir.W ]
-        | 276, "bot1" -> [ "top1", PlayerData.instance.hasWalljump, 66.27216610312357, Dir.N ]
-        | 276, "top1" -> [ "bot1", PlayerData.instance.hasDash, 66.27216610312357, Dir.S ]
-        | 278, "top1" -> [ "right2", true, 69.38659812961002, Dir.Se ]
-        | 278, "top2" -> [ "right2", true, 56.68553607402862, Dir.Sse ]
+              Dir.W,
+              15.5,
+              -2 ]
+        | 276, "bot1" -> [ "top1", PlayerData.instance.hasWalljump, 66.27216610312357, Dir.N, 38, 65.5 ]
+        | 276, "top1" -> [ "bot1", PlayerData.instance.hasDash, 66.27216610312357, Dir.S, 32, -0.5 ]
+        | 278, "top1" -> [ "right2", true, 69.38659812961002, Dir.Se, 60.5, 37 ]
+        | 278, "top2" -> [ "right2", true, 56.68553607402862, Dir.Sse, 60.5, 37 ]
         | 278, "right1" ->
             [ "top1",
               PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasWalljump,
               54.39209501388966,
-              Dir.Nww ]
-        | 279, "left1" -> [ "right1", true, 38.8329756778952, Dir.Se ]
-        | 280, "top1" -> [ "left1", true, 81.50153372789987, Dir.Sw ]
+              Dir.Nww,
+              9,
+              83.5 ]
+        | 279, "left1" -> [ "right1", true, 38.8329756778952, Dir.Se, 31.5, 45 ]
+        | 280, "top1" -> [ "left1", true, 81.50153372789987, Dir.Sw, -0.5, 48 ]
         | 280, "left1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 81.50153372789987, Dir.Ne ]
-        | 281, "door_stagExit" -> [ "left1", true, 32.354934708634474, Dir.W ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              81.50153372789987,
+              Dir.Ne,
+              48,
+              113.5 ]
+        | 281, "door_stagExit" -> [ "left1", true, 32.354934708634474, Dir.W, -0.5, 7 ]
         | 282, "door1" ->
-            [ "door2", true, 26.461725189412732, Dir.Ssw
+            [ "door2", true, 26.461725189412732, Dir.Ssw, 19.82, 94.49
               "right1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasDash
               || PlayerData.instance.hasSuperDash,
               47.74030791689555,
-              Dir.Nee ]
-        | 282, "right1" -> [ "door2", true, 71.28395682059183, Dir.Sw ]
-        | 283, "left1" -> [ "right1", true, 83.18653737234169, Dir.See ]
+              Dir.Nee,
+              75.5,
+              139 ]
+        | 282, "right1" -> [ "door2", true, 71.28395682059183, Dir.Sw, 19.82, 94.49 ]
+        | 283, "left1" -> [ "right1", true, 83.18653737234169, Dir.See, 80.5, 4 ]
         | 284, "bot1" ->
             [ "left1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump,
               73.98986417070923,
-              Dir.W ]
-        | 288, "right1" -> [ "left1", true, 121.0, Dir.W ]
+              Dir.W,
+              -0.5,
+              8 ]
+        | 288, "right1" -> [ "left1", true, 121.0, Dir.W, -0.5, 6 ]
         | 288, "top1" ->
-            [ "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 154.8628425413921, Dir.S
+            [ "left1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              154.8628425413921,
+              Dir.S,
+              -0.5,
+              6
               "right1",
               PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
               183.47343131908772,
-              Dir.Sse ]
-        | 288, "left1" -> [ "right1", true, 121.0, Dir.E ]
-        | 289, "right1" -> [ "right2", PlayerData.instance.hasWalljump, 48.0, Dir.S ]
+              Dir.Sse,
+              120.5,
+              6 ]
+        | 288, "left1" -> [ "right1", true, 121.0, Dir.E, 120.5, 6 ]
+        | 289, "right1" -> [ "right2", PlayerData.instance.hasWalljump, 48.0, Dir.S, 125.5, 5 ]
         | 289, "right2" ->
             [ "right1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasDash,
               48.0,
-              Dir.N ]
+              Dir.N,
+              125.5,
+              53 ]
         | 291, "top1" ->
-            [ "bot1", true, 74.81310045707235, Dir.Se
-              "top2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 59.0, Dir.E ]
-        | 291, "top2" -> [ "bot1", true, 46.0, Dir.S ]
-        | 291, "bot1" -> [ "top2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 46.0, Dir.N ]
+            [ "bot1", true, 74.81310045707235, Dir.Se, 73, -0.5
+              "top2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 59.0, Dir.E, 73, 45.5 ]
+        | 291, "top2" -> [ "bot1", true, 46.0, Dir.S, 73, -0.5 ]
+        | 291, "bot1" ->
+            [ "top2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 46.0, Dir.N, 73, 45.5 ]
         | 297, "top1" ->
             [ "door1",
               PlayerData.instance.hasLantern
@@ -2836,8 +3157,10 @@ module Generated =
                   || PlayerData.instance.hasDoubleJump
                   || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash),
               126.97146647967803,
-              Dir.See
-              "right1", PlayerData.instance.hasLantern, 151.03807466993214, Dir.See
+              Dir.See,
+              195.93,
+              38.72
+              "right1", PlayerData.instance.hasLantern, 151.03807466993214, Dir.See, 210.5, 8
               "left1",
               PlayerData.instance.hasLantern
               && (PlayerData.instance.hasDash
@@ -2845,7 +3168,9 @@ module Generated =
                   || PlayerData.instance.hasWalljump
                   || PlayerData.instance.hasDoubleJump),
               74.7295122424869,
-              Dir.W ]
+              Dir.W,
+              -0.5,
+              57 ]
         | 297, "right1" ->
             [ "door1",
               (PlayerData.instance.hasWalljump
@@ -2855,19 +3180,25 @@ module Generated =
                   || PlayerData.instance.hasDoubleJump
                   || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash),
               34.00004852937713,
-              Dir.Nnw
+              Dir.Nnw,
+              195.93,
+              38.72
               "top1",
               PlayerData.instance.hasLantern
               && (PlayerData.instance.hasWalljump
                   || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump),
               151.03807466993214,
-              Dir.Nww
+              Dir.Nww,
+              73,
+              70.5
               "left1",
               PlayerData.instance.hasLantern
               && (PlayerData.instance.hasWalljump
                   || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump),
               216.61486560252507,
-              Dir.Nww ]
+              Dir.Nww,
+              -0.5,
+              57 ]
         | 297, "left1" ->
             [ "door1",
               PlayerData.instance.hasLantern
@@ -2875,17 +3206,21 @@ module Generated =
                   || PlayerData.instance.hasDoubleJump
                   || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash),
               197.27874518051863,
-              Dir.E
-              "right1", PlayerData.instance.hasLantern, 216.61486560252507, Dir.See
+              Dir.E,
+              195.93,
+              38.72
+              "right1", PlayerData.instance.hasLantern, 216.61486560252507, Dir.See, 210.5, 8
               "top1",
               PlayerData.instance.hasLantern
               && (PlayerData.instance.hasDoubleJump
                   || PlayerData.instance.hasWalljump
                      && (PlayerData.instance.hasDash || PlayerData.instance.hasWalljump)),
               74.7295122424869,
-              Dir.E ]
+              Dir.E,
+              73,
+              70.5 ]
         | 297, "door1" ->
-            [ "right1", PlayerData.instance.hasLantern, 34.00004852937713, Dir.Sse
+            [ "right1", PlayerData.instance.hasLantern, 34.00004852937713, Dir.Sse, 210.5, 8
               "top1",
               PlayerData.instance.hasLantern
               && (PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump
@@ -2894,7 +3229,9 @@ module Generated =
                      && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash)
                      && PlayerData.instance.hasDash),
               126.97146647967803,
-              Dir.Nww
+              Dir.Nww,
+              73,
+              70.5
               "left1",
               PlayerData.instance.hasLantern
               && (PlayerData.instance.hasWalljump
@@ -2903,116 +3240,197 @@ module Generated =
                          || PlayerData.instance.hasDash
                          || PlayerData.instance.hasSuperDash)),
               197.27874518051863,
-              Dir.W ]
+              Dir.W,
+              -0.5,
+              57 ]
         | 299, "left1" ->
             [ "right1",
               PlayerData.instance.hasLantern
               && (PlayerData.instance.hasWalljump
                   || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump),
               121.03718436910205,
-              Dir.E ]
+              Dir.E,
+              120.5,
+              88 ]
         | 299, "left2" ->
             [ "right1",
               PlayerData.instance.hasLantern
               && (PlayerData.instance.hasWalljump
                   || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump),
               146.16771189288008,
-              Dir.Ne
+              Dir.Ne,
+              120.5,
+              88
               "left1",
               PlayerData.instance.hasLantern
               && (PlayerData.instance.hasWalljump
                   || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump),
               85.0,
-              Dir.N ]
+              Dir.N,
+              -0.5,
+              91 ]
         | 299, "right1" ->
             [ "left1",
               PlayerData.instance.hasLantern
               && (PlayerData.instance.hasWalljump
                   || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump),
               121.03718436910205,
-              Dir.W ]
+              Dir.W,
+              -0.5,
+              91 ]
         | 301, "right1" ->
-            [ "left1", true, 41.0, Dir.W
-              "bot1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 121.22087279012636, Dir.Ssw ]
+            [ "left1", true, 41.0, Dir.W, -0.5, 116
+              "bot1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              121.22087279012636,
+              Dir.Ssw,
+              7,
+              -0.5 ]
         | 301, "bot1" ->
             [ "left1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump,
               116.74116668939025,
-              Dir.N
+              Dir.N,
+              -0.5,
+              116
               "right1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump,
               121.22087279012636,
-              Dir.Nne ]
+              Dir.Nne,
+              40.5,
+              116 ]
         | 301, "left1" ->
-            [ "bot1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 116.74116668939025, Dir.S
-              "right1", true, 41.0, Dir.E ]
+            [ "bot1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              116.74116668939025,
+              Dir.S,
+              7,
+              -0.5
+              "right1", true, 41.0, Dir.E, 40.5, 116 ]
         | 306, "right1" ->
             [ "top1",
               PlayerData.instance.hasDash
               || PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump,
               55.2675311552814,
-              Dir.Nnw
-              "bot1", true, 39.85599076675927, Dir.Ssw ]
+              Dir.Nnw,
+              23,
+              85.5
+              "bot1", true, 39.85599076675927, Dir.Ssw, 36, -0.5 ]
         | 306, "bot1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 86.97700845625813, Dir.N ]
-        | 306, "top1" -> [ "bot1", true, 86.97700845625813, Dir.S ]
-        | 308, "top2" -> [ "right1", true, 48.654393429576324, Dir.See ]
-        | 309, "left2" -> [ "right2", PlayerData.instance.hasDoubleJump, 56.61271941887264, Dir.Ne ]
-        | 309, "right2" -> [ "left2", true, 56.61271941887264, Dir.Sw ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              86.97700845625813,
+              Dir.N,
+              23,
+              85.5 ]
+        | 306, "top1" -> [ "bot1", true, 86.97700845625813, Dir.S, 36, -0.5 ]
+        | 308, "top2" -> [ "right1", true, 48.654393429576324, Dir.See, 80.5, 132 ]
+        | 309, "left2" -> [ "right2", PlayerData.instance.hasDoubleJump, 56.61271941887264, Dir.Ne, 45.5, 127 ]
+        | 309, "right2" -> [ "left2", true, 56.61271941887264, Dir.Sw, -0.5, 94 ]
         | 310, "left1" ->
-            [ "right1", PlayerData.instance.hasWalljump, 352.00568177232594, Dir.E
-              "top1", PlayerData.instance.hasWalljump, 137.6971314152913, Dir.Nee
-              "door1", PlayerData.instance.hasWalljump, 329.7207644356055, Dir.E ]
+            [ "right1", PlayerData.instance.hasWalljump, 352.00568177232594, Dir.E, 351.5, 16
+              "top1", PlayerData.instance.hasWalljump, 137.6971314152913, Dir.Nee, 134, 43.5
+              "door1", PlayerData.instance.hasWalljump, 329.7207644356055, Dir.E, 329.22, 14.71 ]
         | 310, "bot1" ->
-            [ "right1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 132.45754036671525, Dir.E
-              "top1", PlayerData.instance.hasWalljump, 93.7683315410912, Dir.Nww
-              "door1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 110.14881978487108, Dir.E
-              "left1", PlayerData.instance.hasWalljump, 220.18401395196702, Dir.W ]
+            [ "right1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              132.45754036671525,
+              Dir.E,
+              351.5,
+              16
+              "top1", PlayerData.instance.hasWalljump, 93.7683315410912, Dir.Nww, 134, 43.5
+              "door1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              110.14881978487108,
+              Dir.E,
+              329.22,
+              14.71
+              "left1", PlayerData.instance.hasWalljump, 220.18401395196702, Dir.W, -0.5, 14 ]
         | 310, "door1" ->
-            [ "right1", true, 22.31731390647178, Dir.E
-              "top1", PlayerData.instance.hasWalljump, 197.33147873565437, Dir.W
-              "left1", PlayerData.instance.hasWalljump, 329.7207644356055, Dir.W ]
+            [ "right1", true, 22.31731390647178, Dir.E, 351.5, 16
+              "top1", PlayerData.instance.hasWalljump, 197.33147873565437, Dir.W, 134, 43.5
+              "left1", PlayerData.instance.hasWalljump, 329.7207644356055, Dir.W, -0.5, 14 ]
         | 310, "top1" ->
-            [ "right1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 219.23161268393753, Dir.E
-              "door1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 197.33147873565437, Dir.E
-              "left1", true, 137.6971314152913, Dir.Sww ]
+            [ "right1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              219.23161268393753,
+              Dir.E,
+              351.5,
+              16
+              "door1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              197.33147873565437,
+              Dir.E,
+              329.22,
+              14.71
+              "left1", true, 137.6971314152913, Dir.Sww, -0.5, 14 ]
         | 310, "right1" ->
-            [ "top1", PlayerData.instance.hasWalljump, 219.23161268393753, Dir.W
-              "door1", true, 22.31731390647178, Dir.W
-              "left1", PlayerData.instance.hasWalljump, 352.00568177232594, Dir.W ]
+            [ "top1", PlayerData.instance.hasWalljump, 219.23161268393753, Dir.W, 134, 43.5
+              "door1", true, 22.31731390647178, Dir.W, 329.22, 14.71
+              "left1", PlayerData.instance.hasWalljump, 352.00568177232594, Dir.W, -0.5, 14 ]
         | 312, "right1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 118.49261580368626, Dir.Nww ]
-        | 312, "top1" -> [ "right1", true, 118.49261580368626, Dir.See ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              118.49261580368626,
+              Dir.Nww,
+              6,
+              40.5 ]
+        | 312, "top1" -> [ "right1", true, 118.49261580368626, Dir.See, 120.5, 10 ]
         | 313, "bot1" ->
-            [ "right1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 87.70689824637512, Dir.E
-              "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 86.89361311396829, Dir.W ]
+            [ "right1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              87.70689824637512,
+              Dir.E,
+              171.5,
+              14
+              "left1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              86.89361311396829,
+              Dir.W,
+              -0.5,
+              15 ]
         | 313, "right1" ->
-            [ "left1", true, 172.00290695217916, Dir.W
-              "bot1", true, 87.70689824637512, Dir.W ]
+            [ "left1", true, 172.00290695217916, Dir.W, -0.5, 15
+              "bot1", true, 87.70689824637512, Dir.W, 85, -0.5 ]
         | 315, "top1" ->
-            [ "bot1", true, 100.72239075796404, Dir.Ssw
-              "left1", true, 89.74686624055461, Dir.Sww
-              "right1", true, 34.15406271587613, Dir.See ]
+            [ "bot1", true, 100.72239075796404, Dir.Ssw, 37, 38.5
+              "left1", true, 89.74686624055461, Dir.Sww, -0.5, 87
+              "right1", true, 34.15406271587613, Dir.See, 110.5, 120 ]
         | 315, "left1" ->
-            [ "bot1", true, 61.30660649554826, Dir.Se
-              "top1", PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump, 89.74686624055461, Dir.Nee
-              "right1", PlayerData.instance.hasDoubleJump, 115.80155439371269, Dir.Nee ]
+            [ "bot1", true, 61.30660649554826, Dir.Se, 37, 38.5
+              "top1",
+              PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump,
+              89.74686624055461,
+              Dir.Nee,
+              78,
+              130.5
+              "right1", PlayerData.instance.hasDoubleJump, 115.80155439371269, Dir.Nee, 110.5, 120 ]
         | 315, "right1" ->
-            [ "bot1", true, 109.74743732771167, Dir.Sw
-              "top1", PlayerData.instance.hasWalljump, 34.15406271587613, Dir.Nww
-              "left1", true, 115.80155439371269, Dir.Sww ]
+            [ "bot1", true, 109.74743732771167, Dir.Sw, 37, 38.5
+              "top1", PlayerData.instance.hasWalljump, 34.15406271587613, Dir.Nww, 78, 130.5
+              "left1", true, 115.80155439371269, Dir.Sww, -0.5, 87 ]
         | 315, "bot1" ->
-            [ "top1", PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump, 100.72239075796404, Dir.Nne
-              "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 61.30660649554826, Dir.Nw
-              "right1", PlayerData.instance.hasDoubleJump, 109.74743732771167, Dir.Ne ]
-        | 316, "left1" -> [ "right1", true, 121.0, Dir.E ]
-        | 316, "right1" -> [ "left1", true, 121.0, Dir.W ]
-        | 318, "left1" -> [ "door1", PlayerData.instance.hasDash, 87.68741072696811, Dir.E ]
-        | 321, "bot1" -> [ "left1", true, 42.573465914816005, Dir.W ]
-        | 324, "left1" -> [ "left2", PlayerData.instance.hornetOutskirtsDefeated, 77.28195132112025, Dir.Sse ]
+            [ "top1",
+              PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump,
+              100.72239075796404,
+              Dir.Nne,
+              78,
+              130.5
+              "left1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              61.30660649554826,
+              Dir.Nw,
+              -0.5,
+              87
+              "right1", PlayerData.instance.hasDoubleJump, 109.74743732771167, Dir.Ne, 110.5, 120 ]
+        | 316, "left1" -> [ "right1", true, 121.0, Dir.E, 120.5, 12 ]
+        | 316, "right1" -> [ "left1", true, 121.0, Dir.W, -0.5, 12 ]
+        | 318, "left1" -> [ "door1", PlayerData.instance.hasDash, 87.68741072696811, Dir.E, 136.68, 6.86 ]
+        | 321, "bot1" -> [ "left1", true, 42.573465914816005, Dir.W, -0.5, 4 ]
+        | 324, "left1" -> [ "left2", PlayerData.instance.hornetOutskirtsDefeated, 77.28195132112025, Dir.Sse, 16, 7.5 ]
         | 327, "right1" ->
             [ "left1",
               PlayerData.instance.dungDefenderWallBroken
@@ -3022,7 +3440,9 @@ module Generated =
                      || PlayerData.instance.hasWalljump && PlayerData.instance.hasDash
                      || PlayerData.instance.hasDoubleJump),
               41.773197148410844,
-              Dir.Sw ]
+              Dir.Sw,
+              -0.5,
+              133 ]
         | 327, "left1" ->
             [ "right1",
               PlayerData.instance.hasWalljump
@@ -3032,10 +3452,12 @@ module Generated =
                  && (PlayerData.instance.hasDoubleJump || PlayerData.instance.hasDash)
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash,
               41.773197148410844,
-              Dir.Ne ]
-        | 327, "right2" -> [ "left2", PlayerData.instance.hasSuperDash, 31.0, Dir.W ]
-        | 327, "left2" -> [ "right2", PlayerData.instance.hasSuperDash, 31.0, Dir.E ]
-        | 328, "right1" -> [ "bot1", true, 163.20079656668347, Dir.W ]
+              Dir.Ne,
+              30.5,
+              161 ]
+        | 327, "right2" -> [ "left2", PlayerData.instance.hasSuperDash, 31.0, Dir.W, -0.5, 51 ]
+        | 327, "left2" -> [ "right2", PlayerData.instance.hasSuperDash, 31.0, Dir.E, 30.5, 51 ]
+        | 328, "right1" -> [ "bot1", true, 163.20079656668347, Dir.W, 9, -0.5 ]
         | 328, "bot1" ->
             [ "right1",
               (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump)
@@ -3044,36 +3466,49 @@ module Generated =
                   || PlayerData.instance.hasDash
                   || PlayerData.instance.hasSuperDash),
               163.20079656668347,
-              Dir.E ]
+              Dir.E,
+              170.5,
+              23 ]
         | 329, "door_tram_arrive" ->
-            [ "top1", true, 35.64172017584163, Dir.Nww
-              "bot1", true, 67.10215784230039, Dir.W
-              "bot2", true, 18.10238059187233, Dir.W ]
-        | 330, "door_tram_arrive" -> [ "left1", true, 32.84000152253346, Dir.W ]
+            [ "top1", true, 35.64172017584163, Dir.Nww, 47, 22.5
+              "bot1", true, 67.10215784230039, Dir.W, 14, 0
+              "bot2", true, 18.10238059187233, Dir.W, 62.5, 7 ]
+        | 330, "door_tram_arrive" -> [ "left1", true, 32.84000152253346, Dir.W, -0.5, 10 ]
         | 331, "door_tram_arrive" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 96.81427838908887, Dir.E
-              "right1", true, 106.08003817872616, Dir.E ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              96.81427838908887,
+              Dir.E,
+              140,
+              25.5
+              "right1", true, 106.08003817872616, Dir.E, 150.5, 10 ]
         | 334, "top1" ->
             [ "left1",
               PlayerData.instance.hasKingsBrand
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasDash
               || PlayerData.instance.hasDoubleJump,
               158.24190342636808,
-              Dir.Sw ]
+              Dir.Sw,
+              0.5,
+              140 ]
         | 337, "left1" ->
             [ "left2",
               PlayerData.instance.hasShadowDash
               && (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump),
               31.0,
-              Dir.N ]
-        | 337, "left2" -> [ "left1", PlayerData.instance.hasShadowDash, 31.0, Dir.S ]
+              Dir.N,
+              -0.5,
+              42 ]
+        | 337, "left2" -> [ "left1", PlayerData.instance.hasShadowDash, 31.0, Dir.S, -0.5, 11 ]
         | 340, "left1" ->
             [ "right1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasDash,
               101.00495037373169,
-              Dir.E ]
+              Dir.E,
+              100.5,
+              9 ]
         | 340, "right1" ->
             [ "left1",
               PlayerData.instance.hasWalljump
@@ -3081,29 +3516,45 @@ module Generated =
               || PlayerData.instance.hasDash
               || PlayerData.instance.hasSuperDash,
               101.00495037373169,
-              Dir.W ]
+              Dir.W,
+              -0.5,
+              8 ]
         | 342, "left1" ->
             [ "right1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasSuperDash,
               201.08953229842672,
-              Dir.E ]
+              Dir.E,
+              200.5,
+              12 ]
         | 342, "right1" ->
-            [ "left1", PlayerData.instance.hasDoubleJump || PlayerData.instance.hasSuperDash, 201.08953229842672, Dir.W ]
+            [ "left1",
+              PlayerData.instance.hasDoubleJump || PlayerData.instance.hasSuperDash,
+              201.08953229842672,
+              Dir.W,
+              -0.5,
+              18 ]
         | 343, "bot1" ->
-            [ "right1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 83.117386869415, Dir.Nee
+            [ "right1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              83.117386869415,
+              Dir.Nee,
+              160.5,
+              32
               "left1",
               (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump)
               && PlayerData.instance.killedInfectedKnight,
               89.33784192602819,
-              Dir.Nww
-              "bot2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 34.5, Dir.E ]
-        | 343, "bot2" -> [ "right1", PlayerData.instance.hasDoubleJump, 53.10602602341847, Dir.Ne ]
-        | 343, "right1" -> [ "bot2", true, 53.10602602341847, Dir.Sw ]
-        | 344, "top2" -> [ "top1", PlayerData.instance.hasWalljump, 35.5, Dir.W ]
-        | 344, "top1" -> [ "top2", PlayerData.instance.hasWalljump, 35.5, Dir.E ]
-        | 346, "door_stagExit" -> [ "left1", true, 36.12560864539171, Dir.W ]
+              Dir.Nww,
+              -0.5,
+              28.5
+              "bot2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 34.5, Dir.E, 118.5, -0.5 ]
+        | 343, "bot2" -> [ "right1", PlayerData.instance.hasDoubleJump, 53.10602602341847, Dir.Ne, 160.5, 32 ]
+        | 343, "right1" -> [ "bot2", true, 53.10602602341847, Dir.Sw, 118.5, -0.5 ]
+        | 344, "top2" -> [ "top1", PlayerData.instance.hasWalljump, 35.5, Dir.W, 83, 70.5 ]
+        | 344, "top1" -> [ "top2", PlayerData.instance.hasWalljump, 35.5, Dir.E, 118.5, 70.5 ]
+        | 346, "door_stagExit" -> [ "left1", true, 36.12560864539171, Dir.W, -0.5, 7 ]
         | 349, "top1" ->
             [ "right1",
               PlayerData.instance.hasWalljump
@@ -3111,17 +3562,22 @@ module Generated =
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash
               || PlayerData.instance.hasDash,
               75.73803535872844,
-              Dir.E ]
-        | 350, "top1" -> [ "bot2", true, 161.68178623456632, Dir.See ]
-        | 350, "top2" -> [ "bot2", true, 67.20863039818622, Dir.Se ]
-        | 350, "bot1" -> [ "bot2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 211.0, Dir.E ]
+              Dir.E,
+              152.5,
+              41 ]
+        | 350, "top1" -> [ "bot2", true, 161.68178623456632, Dir.See, 220, -0.5 ]
+        | 350, "top2" -> [ "bot2", true, 67.20863039818622, Dir.Se, 220, -0.5 ]
+        | 350, "bot1" ->
+            [ "bot2", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 211.0, Dir.E, 220, -0.5 ]
         | 353, "left1" ->
             [ "right2",
               PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash
               || PlayerData.instance.hasAcidArmour,
               131.7459676802292,
-              Dir.E
-              "right1", PlayerData.instance.hasDoubleJump, 131.4610208388783, Dir.E ]
+              Dir.E,
+              130.5,
+              9
+              "right1", PlayerData.instance.hasDoubleJump, 131.4610208388783, Dir.E, 130.5, 34 ]
         | 353, "right1" ->
             [ "right2",
               (PlayerData.instance.hasDoubleJump
@@ -3133,7 +3589,9 @@ module Generated =
               && (PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash
                   || PlayerData.instance.hasAcidArmour),
               25.0,
-              Dir.S
+              Dir.S,
+              130.5,
+              9
               "left1",
               PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasDash
@@ -3142,7 +3600,9 @@ module Generated =
                  && PlayerData.instance.hasDash
                  && PlayerData.instance.hasSuperDash,
               131.4610208388783,
-              Dir.W ]
+              Dir.W,
+              -0.5,
+              23 ]
         | 353, "right2" ->
             [ "left1",
               PlayerData.instance.hasDoubleJump
@@ -3150,62 +3610,93 @@ module Generated =
               && (PlayerData.instance.hasAcidArmour
                   || PlayerData.instance.hasSuperDash && PlayerData.instance.hasWalljump),
               131.7459676802292,
-              Dir.W
+              Dir.W,
+              -0.5,
+              23
               "right1",
               PlayerData.instance.hasDoubleJump
               && PlayerData.instance.hasWalljump
               && (PlayerData.instance.hasAcidArmour
                   || PlayerData.instance.hasSuperDash && PlayerData.instance.hasWalljump),
               25.0,
-              Dir.N ]
+              Dir.N,
+              130.5,
+              34 ]
         | 354, "bot1" ->
             [ "right1",
               (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump)
               && PlayerData.instance.defeatedDungDefender,
               112.98893751159889,
-              Dir.E ]
-        | 354, "bot2" -> [ "right1", true, 17.92344832893492, Dir.Nee ]
+              Dir.E,
+              120.5,
+              10 ]
+        | 354, "bot2" -> [ "right1", true, 17.92344832893492, Dir.Nee, 120.5, 10 ]
         | 356, "top1" ->
             [ "right1",
               PlayerData.instance.hasAcidArmour
               && (PlayerData.instance.hasDoubleJump || PlayerData.instance.hasWalljump)
               || PlayerData.instance.hasSuperDash,
               57.554322166106694,
-              Dir.Se ]
+              Dir.Se,
+              140.5,
+              18 ]
         | 356, "right1" ->
             [ "top1",
               (PlayerData.instance.hasAcidArmour || PlayerData.instance.hasSuperDash)
               && (PlayerData.instance.hasWalljump && PlayerData.instance.hasDash
                   || PlayerData.instance.hasDoubleJump),
               57.554322166106694,
-              Dir.Nw ]
+              Dir.Nw,
+              93,
+              50.5 ]
         | 357, "door1" ->
             [ "right1",
               (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump)
               && PlayerData.instance.waterwaysAcidDrained,
               47.00206910339161,
-              Dir.Se ]
+              Dir.Se,
+              110.5,
+              50 ]
         | 357, "top1" ->
             [ "right1",
               (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump)
               && PlayerData.instance.waterwaysAcidDrained,
               111.58180855318666,
-              Dir.See
-              "door1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 71.4591106857621, Dir.E ]
-        | 357, "right1" -> [ "door1", PlayerData.instance.hasWalljump, 47.00206910339161, Dir.Nw ]
+              Dir.See,
+              110.5,
+              50
+              "door1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              71.4591106857621,
+              Dir.E,
+              81.11,
+              86.68 ]
+        | 357, "right1" -> [ "door1", PlayerData.instance.hasWalljump, 47.00206910339161, Dir.Nw, 81.11, 86.68 ]
         | 358, "left2" ->
-            [ "left1", true, 48.00260409602796, Dir.S
-              "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 25.59785147234041, Dir.Nee ]
+            [ "left1", true, 48.00260409602796, Dir.S, -0.5, 7
+              "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              25.59785147234041,
+              Dir.Nee,
+              25,
+              60.5 ]
         | 358, "top1" ->
             [ "left1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasSuperDash,
               59.26634795564849,
-              Dir.Ssw ]
+              Dir.Ssw,
+              -0.5,
+              7 ]
         | 358, "left1" ->
-            [ "top1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 59.26634795564849, Dir.Nne ]
-        | 359, "left1" -> [ "right1", true, 51.178608812667036, Dir.Nee ]
+            [ "top1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              59.26634795564849,
+              Dir.Nne,
+              25,
+              60.5 ]
+        | 359, "left1" -> [ "right1", true, 51.178608812667036, Dir.Nee, 50.5, 20 ]
         | 359, "right1" ->
             [ "left1",
               PlayerData.instance.hasWalljump
@@ -3213,20 +3704,26 @@ module Generated =
               || PlayerData.instance.hasWalljump
                  && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash),
               51.178608812667036,
-              Dir.Sww ]
+              Dir.Sww,
+              1,
+              7 ]
         | 363, "bot2" ->
             [ "bot1",
               (PlayerData.instance.hasWalljump
                || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump)
               && (PlayerData.instance.hasAcidArmour || PlayerData.instance.hasSuperDash),
               241.0,
-              Dir.W ]
+              Dir.W,
+              8,
+              -0.5 ]
         | 363, "bot1" ->
             [ "bot2",
               PlayerData.instance.hasWalljump
               && (PlayerData.instance.hasAcidArmour || PlayerData.instance.hasSuperDash),
               241.0,
-              Dir.E ]
+              Dir.E,
+              249,
+              -0.5 ]
         | 365, "top1" ->
             [ "right1",
               PlayerData.instance.hasDash
@@ -3234,56 +3731,78 @@ module Generated =
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.whitePalaceOrb_1,
               148.99077152629286,
-              Dir.Se ]
+              Dir.Se,
+              200.5,
+              24 ]
         | 368, "right2" ->
             [ "top1",
               PlayerData.instance.hasDash
               && PlayerData.instance.hasDoubleJump
               && PlayerData.instance.hasWalljump,
               189.50593658247226,
-              Dir.Nww ]
+              Dir.Nww,
+              19,
+              78.5 ]
         | 368, "top1" ->
             [ "right2",
               PlayerData.instance.hasDoubleJump
               && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash),
               189.50593658247226,
-              Dir.See ]
+              Dir.See,
+              200.5,
+              24 ]
         | 369, "right1" ->
             [ "left1",
               (PlayerData.instance.hasDash || PlayerData.instance.hasDoubleJump)
               && (PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump
                   || PlayerData.instance.hasWalljump),
               106.0,
-              Dir.W ]
-        | 369, "left1" -> [ "right1", PlayerData.instance.hasDash || PlayerData.instance.hasDoubleJump, 106.0, Dir.E ]
-        | 369, "left2" -> [ "right2", true, 108.0, Dir.E ]
-        | 369, "right2" -> [ "left2", true, 108.0, Dir.W ]
-        | 370, "top1" -> [ "left1", true, 70.26023057178222, Dir.Ssw; "bot1", true, 76.0, Dir.S ]
+              Dir.W,
+              50.5,
+              115 ]
+        | 369, "left1" ->
+            [ "right1", PlayerData.instance.hasDash || PlayerData.instance.hasDoubleJump, 106.0, Dir.E, 156.5, 115 ]
+        | 369, "left2" -> [ "right2", true, 108.0, Dir.E, 156.5, 19 ]
+        | 369, "right2" -> [ "left2", true, 108.0, Dir.W, 48.5, 19 ]
+        | 370, "top1" ->
+            [ "left1", true, 70.26023057178222, Dir.Ssw, -0.5, 8
+              "bot1", true, 76.0, Dir.S, 19, -0.5 ]
         | 370, "bot1" ->
-            [ "left1", true, 21.27204738618265, Dir.Nww
+            [ "left1", true, 21.27204738618265, Dir.Nww, -0.5, 8
               "top1",
               PlayerData.instance.hasWalljump
               && (PlayerData.instance.hasDoubleJump || PlayerData.instance.hasWalljump),
               76.0,
-              Dir.N ]
+              Dir.N,
+              19,
+              75.5 ]
         | 370, "left1" ->
-            [ "bot1", true, 21.27204738618265, Dir.See
+            [ "bot1", true, 21.27204738618265, Dir.See, 19, -0.5
               "top1",
               PlayerData.instance.hasWalljump
               && (PlayerData.instance.hasDoubleJump || PlayerData.instance.hasWalljump),
               70.26023057178222,
-              Dir.Nne ]
+              Dir.Nne,
+              19,
+              75.5 ]
         | 371, "bot1" ->
             [ "top1",
               (PlayerData.instance.hasWalljump
                || PlayerData.instance.hasWalljump && PlayerData.instance.hasDash)
               && PlayerData.instance.hasDoubleJump,
               142.41137595009747,
-              Dir.N ]
-        | 371, "top1" -> [ "bot1", true, 142.41137595009747, Dir.S ]
+              Dir.N,
+              31,
+              140.5 ]
+        | 371, "top1" -> [ "bot1", true, 142.41137595009747, Dir.S, 51, -0.5 ]
         | 372, "left1" ->
-            [ "right1", PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump, 154.9653187006693, Dir.E ]
-        | 372, "right1" -> [ "left1", true, 154.9653187006693, Dir.W ]
+            [ "right1",
+              PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump,
+              154.9653187006693,
+              Dir.E,
+              154,
+              21 ]
+        | 372, "right1" -> [ "left1", true, 154.9653187006693, Dir.W, -0.5, 9 ]
         | 375, "bot1" ->
             [ "right1",
               (PlayerData.instance.hasDash
@@ -3292,14 +3811,18 @@ module Generated =
               && PlayerData.instance.hasWalljump
               && PlayerData.instance.hasSuperDash,
               40.697051490249265,
-              Dir.E ]
+              Dir.E,
+              74.5,
+              136 ]
         | 376, "left1" ->
             [ "right1",
               PlayerData.instance.hasSuperDash
               && (PlayerData.instance.hasDoubleJump
                   || PlayerData.instance.hasDash && PlayerData.instance.hasWalljump),
               193.32873557751316,
-              Dir.See ]
+              Dir.See,
+              175.5,
+              151 ]
         | 377, "right1" ->
             [ "bot1",
               (PlayerData.instance.hasDash
@@ -3310,7 +3833,9 @@ module Generated =
               && PlayerData.instance.hasDash
               && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash),
               183.92525655820083,
-              Dir.W ]
+              Dir.W,
+              17,
+              68.5 ]
         | 377, "bot1" ->
             [ "right1",
               (PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump)
@@ -3321,25 +3846,38 @@ module Generated =
                   || PlayerData.instance.hasWalljump && PlayerData.instance.hasSuperDash
                   || PlayerData.instance.hasWalljump && PlayerData.instance.hasDash),
               183.92525655820083,
-              Dir.E ]
-        | 378, "right1" -> [ "left1", true, 119.4026800369238, Dir.Sw; "right2", true, 96.0, Dir.S ]
+              Dir.E,
+              200.5,
+              81 ]
+        | 378, "right1" ->
+            [ "left1", true, 119.4026800369238, Dir.Sw, -0.5, 19
+              "right2", true, 96.0, Dir.S, 70.5, 19 ]
         | 378, "right2" ->
             [ "left1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump && PlayerData.instance.hasWalljump,
               71.0,
-              Dir.W ]
-        | 378, "left1" -> [ "right2", PlayerData.instance.hasWalljump, 71.0, Dir.E ]
+              Dir.W,
+              -0.5,
+              19 ]
+        | 378, "left1" -> [ "right2", PlayerData.instance.hasWalljump, 71.0, Dir.E, 70.5, 19 ]
         | 379, "left2" ->
-            [ "left1", PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump, 96.00520819205592, Dir.N ]
-        | 379, "left1" -> [ "left2", true, 96.00520819205592, Dir.S ]
+            [ "left1",
+              PlayerData.instance.hasWalljump || PlayerData.instance.hasDoubleJump,
+              96.00520819205592,
+              Dir.N,
+              135.5,
+              115 ]
+        | 379, "left1" -> [ "left2", true, 96.00520819205592, Dir.S, 134.5, 19 ]
         | 380, "bot1" ->
             [ "right1",
               PlayerData.instance.hasDash
               && PlayerData.instance.hasWalljump
               && PlayerData.instance.hasDoubleJump,
               53.2024435529046,
-              Dir.Ne ]
+              Dir.Ne,
+              120.5,
+              34 ]
         | 381, "right1" ->
             [ "top1",
               PlayerData.instance.hasDash
@@ -3347,7 +3885,9 @@ module Generated =
               && PlayerData.instance.hasDoubleJump
               && PlayerData.instance.hasSuperDash,
               224.7187130614627,
-              Dir.W ]
+              Dir.W,
+              78,
+              44.5 ]
         | 381, "top1" ->
             [ "right1",
               PlayerData.instance.hasDash
@@ -3355,7 +3895,9 @@ module Generated =
               && PlayerData.instance.hasDoubleJump
               && PlayerData.instance.hasSuperDash,
               224.7187130614627,
-              Dir.E ]
+              Dir.E,
+              300.5,
+              13 ]
         | 382, "left1" ->
             [ "top1",
               PlayerData.instance.hasDash
@@ -3363,17 +3905,26 @@ module Generated =
               && PlayerData.instance.hasSuperDash
               && PlayerData.instance.hasDoubleJump,
               151.16629915427578,
-              Dir.Nnw ]
+              Dir.Nnw,
+              18,
+              168.5 ]
         | 382, "top1" ->
             [ "left1",
               PlayerData.instance.hasDash
               && PlayerData.instance.hasWalljump
               && PlayerData.instance.hasDoubleJump,
               151.16629915427578,
-              Dir.Sse ]
-        | 384, "right1" -> [ "left1", true, 121.59358535712317, Dir.W ]
+              Dir.Sse,
+              87,
+              34 ]
+        | 384, "right1" -> [ "left1", true, 121.59358535712317, Dir.W, -0.5, 39 ]
         | 384, "left1" ->
-            [ "right1", PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump, 121.59358535712317, Dir.E ]
+            [ "right1",
+              PlayerData.instance.hasWalljump && PlayerData.instance.hasDoubleJump,
+              121.59358535712317,
+              Dir.E,
+              120.5,
+              51 ]
         | 385, "left3" ->
             [ "left2",
               PlayerData.instance.hasWalljump
@@ -3381,7 +3932,9 @@ module Generated =
                  && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash)
               || PlayerData.instance.hasDoubleJump,
               42.0,
-              Dir.N ]
+              Dir.N,
+              93.5,
+              51 ]
         | 385, "left1" ->
             [ "left2",
               PlayerData.instance.hasWalljump
@@ -3389,28 +3942,36 @@ module Generated =
                  && (PlayerData.instance.hasDash || PlayerData.instance.hasSuperDash)
               || PlayerData.instance.hasDoubleJump,
               23.0,
-              Dir.S
-              "left3", true, 65.0, Dir.S ]
-        | 385, "left2" -> [ "left3", true, 42.0, Dir.S ]
+              Dir.S,
+              93.5,
+              51
+              "left3", true, 65.0, Dir.S, 93.5, 9 ]
+        | 385, "left2" -> [ "left3", true, 42.0, Dir.S, 93.5, 9 ]
         | 386, "bot1" ->
             [ "right1",
               PlayerData.instance.hasWalljump
               || PlayerData.instance.hasDoubleJump
               || PlayerData.instance.hasWalljump && PlayerData.instance.hasDash,
               72.50689622373861,
-              Dir.Nee ]
+              Dir.Nee,
+              140.5,
+              144 ]
         | 388, "left1" ->
             [ "right1",
               PlayerData.instance.hasWalljump && PlayerData.instance.hasDash
               || PlayerData.instance.hasDoubleJump,
               125.54282137979854,
-              Dir.See ]
+              Dir.See,
+              220.5,
+              104 ]
         | 388, "right1" ->
             [ "left1",
               PlayerData.instance.hasWalljump && PlayerData.instance.hasDash
               || PlayerData.instance.hasDoubleJump,
               125.54282137979854,
-              Dir.Nww ]
+              Dir.Nww,
+              101.5,
+              144 ]
         | _ -> []
 
     let sceneDoorsAll s =
