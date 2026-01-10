@@ -834,7 +834,7 @@ type Game(plugin: MainClass) =
                 let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
 
                 match pins |> List.tryFind (fst >> (=) sA) with
-                | Some x -> Ok(Some $"Pin found in the current room: {this.Serialize x}")
+                | Some x -> Ok(Some $"Pin found in the current room: {this.Serialize(snd x)}")
                 | None ->
                     let rooms = pins |> List.map fst |> Set.ofList
 
