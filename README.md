@@ -13,10 +13,6 @@
 4. Copy `./bin/Debug/netstandard2.1/FSharp.Core.dll` to `Hollow Knight/BepInEx/core`.
 5. Copy `./bin/Debug/netstandard2.1/HollowNeuro.dll` to `Hollow Knight/BepInEx/plugins`.
 
-Cheat menu: hold home+end for 5 seconds, then toggle with home.
-
-Debug tools: press F10 to save player data to hero.json or F5 to load it from hero.json (can be used for creating arbitrary save files or comparing data after certain milestones or actions) - note that it wont change the active scene or any game objects and also not sure if it will work on windows due to game folder permissions.
-
 Profiler (not included in this repo): F1 to reset/F2 to save trace.
 
 ## Disclaimer
