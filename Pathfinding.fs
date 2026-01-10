@@ -81,7 +81,11 @@ module Pathfinding =
         Array.init Generated.fullSceneNames.Length (fun i ->
             match Generated.reachability i with
             | Reachability.Always -> Yes
-            | Reachability.Visited -> if Set.contains (mapSceneName i) visMap then Yes else No
+            | Reachability.Visited ->
+                if Set.contains (mapSceneName i) visMap || PlayerData.instance.mapAllRooms then
+                    Yes
+                else
+                    No
             | Reachability.Passthru -> Passthru
             | Reachability.Never -> No)
 
