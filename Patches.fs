@@ -10,6 +10,12 @@ type ShootMode =
     | Enemy
     | Path
 
+module ShootMode =
+    let isPlayer x =
+        match x with
+        | Player _ -> true
+        | _ -> false
+
 type CustomFire(fire: Actions.FireAtTarget, getSpeedScale: CustomFire -> float32) =
     inherit Actions.RigidBody2dActionBase()
     let mutable self: FsmGameObject = null
@@ -247,7 +253,10 @@ module Stuff =
 
                 origS)
 
-        if shootMode.IsPlayer = sw.isPlayer then orig else sw.other
+        if ShootMode.isPlayer shootMode = sw.isPlayer then
+            orig
+        else
+            sw.other
 
     let neuroSaveSlotPath (slotIndex: int) =
         System.IO.Path.Combine(
@@ -958,7 +967,10 @@ type public Patches() =
                         newState.Transitions[0].ToState <- "Shoot"
                         newState.Transitions[0].ToFsmState <- shoot
                         newState.Transitions[0].FsmEvent <- FsmEvent.GetFsmEvent "FINISHED"
-                        newState.Actions <- [| CustomWait(fun () -> if shootMode.IsPlayer then 0.4f else 0.0f) |]
+
+                        newState.Actions <-
+                            [| CustomWait(fun () -> if ShootMode.isPlayer shootMode then 0.4f else 0.0f) |]
+
                         antic.Transitions[0].ToState <- "Pre-Shoot Delay"
                         antic.Transitions[0].ToFsmState <- newState
 
@@ -1014,7 +1026,7 @@ type public Patches() =
                         shoot.Actions[fireN] <-
                             CustomFire(
                                 shoot.Actions[fireN] :?> Actions.FireAtTarget,
-                                fun _ -> if shootMode.IsPlayer then 0.4f else 1.0f
+                                fun _ -> if ShootMode.isPlayer shootMode then 0.4f else 1.0f
                             )
 
                         (shoot.Actions[fireN - 1] :?> Actions.SetFsmInt).setValue <- null
