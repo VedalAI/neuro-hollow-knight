@@ -2,7 +2,6 @@ namespace HollowNeuro
 
 open System
 open System.Reflection
-open System.Runtime.InteropServices
 open System.Text.RegularExpressions
 open BepInEx
 open BepInEx.Logging
@@ -19,7 +18,10 @@ type Tactic =
 
 type Actions =
     | [<Action("map",
-               "Show a list of points of interest. You can then use the `pathfind_room` action to find the shortest path to the room that contains them. Alternatively, you can skip using the map and use the `pathfind_pin` action if you know the name of the point of interest you are interested in.")>] ShowMap (*of
+               "Show a list of map pins. You can then use the `pathfind_room` action to find the shortest path to the room that contains them. Alternatively, you can skip using the map and use the `pathfind_pin` action if you know the name of the pin you are interested in. If you are getting too much data, you can pass excludePinNames to exclude some of the most common pins, or set the radius to only search within a given range.")>] ShowMap of
+        excludePinNames: string list option *
+        radius: int option
+    (*of
         local: bool*)
     //| [<Action("pathfind_area", "Find the shortest path to an area.")>] PathfindArea of name: string
     | [<Action("pathfind_room",
@@ -27,7 +29,7 @@ type Actions =
         roomId: int *
         showToPlayer: bool
     | [<Action("pathfind_pin",
-               "Find a path to the nearest point of interest with a given name (example: Bench). Setting showToPlayer to true will light an in-game beacon to help the player navigate to the target. Passing an empty name will list all available pins to target.")>] PathfindPin of
+               "Find a path to the nearest map pin with a given name (example: Bench). Setting showToPlayer to true will light an in-game beacon to help the player navigate to the target. Passing an empty name will list all available pins to target.")>] PathfindPin of
         name: string *
         showToPlayer: bool
     | [<Action("unexplored_exits", "Find a list of unexplored rooms.")>] UnexploredRooms (*of
@@ -41,30 +43,32 @@ type Actions =
                "Set the enemy targeting tactic used for autofire, i.e. which enemies to prioritize when shooting.")>] SetTactic of
         tactic: Tactic
 
-type PointOfInterest =
+type Pin =
     { name: string
       [<SkipSerializingIfNone>]
-      roomId: int option
-      distanceMeters: int
-      direction: Dir
+      distanceMeters: int option
+      [<SkipSerializingIfNone>]
+      direction: Dir option
       [<SkipSerializingIfEquals false>]
       userCreated: bool }
 
-type CurrentAreaMap =
-    { currentAreaName: string
-      [<SkipSerializingIfEquals true>]
-      currentAreaMapped: bool
+type Room =
+    { roomId: int
       [<SkipSerializingIfNone>]
-      pointsOfInterest: PointOfInterest list option }
+      distanceMeters: int option
+      [<SkipSerializingIfNone>]
+      direction: Dir option
+      pins: Pin list }
 
 type Area =
     { areaName: string
-      pointsOfInterest: PointOfInterest list }
+      playerBoughtMap: bool
+      rooms: Room list }
 
 type WorldMap =
     { currentAreaName: string
       [<SkipSerializingIfNone>]
-      mappedAreas: Area list }
+      areas: Area list }
 
 type Entity =
     { name: string
@@ -177,7 +181,7 @@ module Context =
 
         let nextArea =
             mkPin
-                (getComp<MapNextAreaDisplay> >> fun d -> false)
+                (getComp<MapNextAreaDisplay> >> fun _ -> false)
                 //d.visitedString <> "" && not (PlayerData.instance.GetBool d.visitedString)
                 //|| dumpingLocal && areaMap d.visitedString <> "")
                 (getComp<MapNextAreaDisplay>
@@ -450,7 +454,7 @@ module Context =
 
         px, py
 
-    let customWaypoint (userCreated: bool) (px, py) name (x, y) roomId =
+    let customWaypoint (userCreated: bool) (px, py) name (x, y) addDir =
         let dx = x - px
         let dy = y - py
         let dist = sqrt (dx * dx + dy * dy)
@@ -458,8 +462,7 @@ module Context =
         let angle = atan2 dy dx
 
         { name = name
-          roomId = roomId
-          distanceMeters = int (dist * 10.0f)
+          distanceMeters = if addDir then Some(int (dist * 10.0f)) else None
           direction =
             // separate circle into 8 sectors
             // 15.5-0.5 = E
@@ -468,7 +471,10 @@ module Context =
             // 14.5-15.5 = SEE
             // (add 16.5 to (16) account for atan2 returning negative values and (0.5) round)
             // (could add 16 and use round instead but thats one more function call wow so slow)
-            enum<Dir> (int (angle * float32 (8. / Math.PI) + 16.5f) % 16)
+            if addDir then
+                Some(enum<Dir> (int (angle * float32 (8. / Math.PI) + 16.5f) % 16))
+            else
+                None
           userCreated = userCreated }
 
     let waypoint
@@ -477,6 +483,7 @@ module Context =
         (scene: UnityEngine.GameObject)
         name
         (object: UnityEngine.GameObject)
+        currentSceneName
         =
         let x =
             area.transform.localPosition.x
@@ -489,11 +496,10 @@ module Context =
             + object.transform.localPosition.y
 
         let sceneName = if scene.name = "Grub Pins" then object.name else scene.name
-        let roomId = Generated.sceneIdx sceneName
 
-        customWaypoint false (px, py) name (x, y) (if roomId = 0 then None else Some roomId)
+        customWaypoint false (px, py) name (x, y) (sceneName = currentSceneName)
 
-    let pointsOfInterest playerPos (area: UnityEngine.GameObject) =
+    let pointsOfInterest playerPos (area: UnityEngine.GameObject) currentSceneName =
         let pd = PlayerData.instance
 
         // printfn "scenes mapped {]}"
@@ -523,10 +529,12 @@ module Context =
                         logger.LogError $"unknown pin type {pin.name}"
                         None)
                 |> Option.bind (fun (allow, name) ->
+                    let sceneName = if scene.name = "Grub Pins" then pin.name else scene.name
+                    let roomId = Generated.sceneIdx sceneName
                     logger.LogWarning $"allowed {name pin} ({scene.name}/{pin.name})? {allow pin}"
 
                     if allow pin then
-                        Some(waypoint playerPos area scene (name pin) pin)
+                        Some(roomId, waypoint playerPos area scene (name pin) pin currentSceneName)
                     else
                         None)
                 |> Option.toList)
@@ -534,36 +542,21 @@ module Context =
                 if PlayerData.instance.shadeScene = scene.name then
                     let roomId = Generated.sceneIdx scene.name
 
-                    [ customWaypoint
+                    [ roomId,
+                      customWaypoint
                           false
                           playerPos
                           "Shade"
                           (PlayerData.instance.shadeMapPos.x, PlayerData.instance.shadeMapPos.y)
-                          (if roomId = 0 then None else Some roomId) ]
+                          (scene.name = currentSceneName) ]
                 else
                     []
             ))
         |> List.ofSeq
 
-    let currentArea () =
-        let zone, _sceneName = zoneScene ()
-        let area, mapped = mapArea ()
-
-        let name =
-            match Language.Language.Get(zone, "Map Zones") with
-            | "#!#DIRTMOUTH#!#" -> "Dirtmouth"
-            | x -> stripHtml x
-
-        { currentAreaName = name
-          currentAreaMapped = mapped
-          pointsOfInterest =
-            if mapped then
-                Some(pointsOfInterest (playerPos ()) area)
-            else
-                None }
-
-    let allAreas (extra: UnityEngine.GameObject -> PointOfInterest list) =
-        let zone, _sceneName = zoneScene ()
+    let allAreas (roomFilter: Room -> bool) (pinFilter: Pin -> bool) (extra: (string * int * float32 * float32) list) =
+        let zone, currentSceneName = zoneScene ()
+        let currentSceneId = Generated.sceneIdx (SceneManager.GetActiveScene().name)
 
         let name =
             match Language.Language.Get(zone, "Map Zones") with
@@ -571,18 +564,61 @@ module Context =
             | x -> stripHtml x
 
         let pos = playerPos ()
+        let extraRooms = extra |> List.map (fun (_name, room, _x, _y) -> room) |> Set.ofList
 
         { currentAreaName = name
-          mappedAreas =
-            mappedAreas (fun x _ -> extra x <> [])
+          areas =
+            mappedAreas (fun area _ ->
+                Seq.init area.transform.childCount area.transform.GetChild
+                |> Seq.exists (fun scene ->
+                    let id = scene.gameObject.name |> Generated.sceneIdx
+                    extraRooms.Contains id || currentSceneId = id))
             |> Array.map (fun (area, mapped, zone) ->
+                let areaIds =
+                    Seq.init area.transform.childCount area.transform.GetChild
+                    |> Seq.map (fun scene -> scene.gameObject.name |> Generated.sceneIdx)
+                    |> Seq.filter ((<>) 0)
+                    |> Set.ofSeq
+
                 let name =
                     match Language.Language.Get(zone, "Map Zones") with
                     | "#!#DIRTMOUTH#!#" -> "Dirtmouth"
                     | x -> stripHtml x
 
+                let poi =
+                    List.append
+                        (pointsOfInterest pos area currentSceneName)
+                        (extra
+                         |> List.filter (fun (name, room, x, y) -> areaIds.Contains room)
+                         |> List.map (fun (name, room, x, y) ->
+                             room, customWaypoint true pos name (x, y) (room = currentSceneId)))
+                    |> List.filter (snd >> pinFilter)
+                    |> List.groupBy fst
+                    |> List.map (fun (a, b) ->
+                        let px, py = pos
+                        let x, y = Generated.scenePos (Pathfinding.mapSceneName a)
+                        let dx = float32 x - px
+                        let dy = float32 y - py
+                        let dist = sqrt (dx * dx + dy * dy)
+
+                        let angle = atan2 dy dx
+
+                        { roomId = a
+                          distanceMeters = if (x, y) = (0, 0) then None else Some(int (dist * 10.0f))
+                          direction =
+                            if (x, y) = (0, 0) then
+                                None
+                            else
+                                Some(enum<Dir> (int (angle * float32 (8. / Math.PI) + 16.5f) % 16))
+                          pins = List.map snd b |> List.sortBy _.distanceMeters })
+
                 { areaName = name
-                  pointsOfInterest = List.append (extra area) (if mapped then pointsOfInterest pos area else []) })
+                  playerBoughtMap = mapped
+                  rooms = poi |> List.filter roomFilter |> List.sortBy _.distanceMeters })
+            |> Array.filter (_.rooms >> List.isEmpty >> not)
+            |> Array.sortBy (fun x ->
+                let ds = x.rooms |> List.collect (_.distanceMeters >> Option.toList)
+                if List.isEmpty ds then 999999 else List.min ds)
             |> Array.toList }
 
 
@@ -604,22 +640,22 @@ type SaveData =
       waypoints: Map<string, WaypointPos> option }
 
 type UnloadAssets() =
-    interface System.Collections.IEnumerator with
-        override this.MoveNext() = false
-        override this.Current: obj = UnityEngine.Resources.UnloadUnusedAssets()
-        override this.Reset() : unit = ()
+    interface Collections.IEnumerator with
+        override _.MoveNext() = false
+        override _.Current: obj = UnityEngine.Resources.UnloadUnusedAssets()
+        override _.Reset() : unit = ()
 
 type Game(plugin: MainClass) =
     inherit Game<Actions>()
 
     let saveDataType = TypeInfo.fromSystemType typeof<SaveData>
-    let mutable tactic = Tactic.DontShoot
+    let mutable tactic = DontShoot
     let mutable playerShots = []
     let saveData0: SaveData = { waypoints = None }
     let mutable _saveData: SaveData = saveData0
     let mutable hasMap = false
-    let mutable showFm = false
-    (* let mutable animOffset = 0
+    (* let mutable showFm = false
+    let mutable animOffset = 0
 
     let mutable healths: UnityEngine.GameObject array =
         [| null; null; null; null; null; null; null; null; null; null; null |]
@@ -722,7 +758,7 @@ type Game(plugin: MainClass) =
 
         let showPath show path =
             if show then
-                PathfindingBall.InitWith(path |> List.map fst |> List.filter (fun (s, x, y) -> s > 0))
+                PathfindingBall.InitWith(path |> List.map fst |> List.filter (fun (s, _x, _y) -> s > 0))
 
         match action with
         | UnexploredRooms ->
@@ -736,8 +772,8 @@ type Game(plugin: MainClass) =
                 sA
                 (fun i m ->
                     match Generated.reachability i with
-                    | Reachability.Always
-                    | Reachability.Visited when Pathfinding.mapSceneName i |> visMap.Contains |> not ->
+                    | Always
+                    | Visited when Pathfinding.mapSceneName i |> visMap.Contains |> not ->
                         ans <- (i, List.rev m) :: ans
                     | _ -> ()
 
@@ -765,38 +801,42 @@ type Game(plugin: MainClass) =
             let px, py = Context.playerPos ()
             let pin' = pin.ToLower()
 
-            let mkExtra (area: UnityEngine.GameObject) =
-                let extra =
-                    this.SaveData.waypoints
-                    |> Option.defaultValue Map.empty
-                    |> Seq.filter (_.Value >> _.zone >> Context.areaFromZone >> fst >> (=) area)
-                    |> Seq.map (fun x -> Context.customWaypoint true (px, py) x.Key (x.Value.x, x.Value.y) x.Value.room)
-                    |> List.ofSeq
-
-                extra
-
-            let ctx = Context.allAreas mkExtra
+            let ctx =
+                Context.allAreas
+                    (fun _ -> true)
+                    (fun _ -> true)
+                    (Option.defaultValue Map.empty this.SaveData.waypoints
+                     |> Seq.collect (fun x ->
+                         x.Value.room
+                         |> Option.map (fun room -> x.Key, room, x.Value.x, x.Value.y)
+                         |> Option.toList)
+                     |> List.ofSeq)
 
             let pins =
-                ctx.mappedAreas
-                |> List.collect (fun area -> area.pointsOfInterest |> List.filter (_.name.ToLower() >> (=) pin'))
+                ctx.areas
+                |> List.collect (fun area -> area.rooms)
+                |> List.collect (fun room ->
+                    room.pins
+                    |> List.filter (_.name.ToLower() >> (=) pin')
+                    |> List.map (fun x -> room.roomId, x))
 
             if List.isEmpty pins then
-                let uniq = System.Collections.Generic.HashSet<String>()
+                let uniq = Collections.Generic.HashSet<String>()
 
                 let names =
-                    ctx.mappedAreas
-                    |> List.collect (fun area -> area.pointsOfInterest |> List.map _.name)
+                    ctx.areas
+                    |> List.collect (fun area -> area.rooms)
+                    |> List.collect (fun area -> area.pins |> List.map _.name)
                     |> List.filter uniq.Add
 
                 Error(Some $"Pins with the given name were not found. Available names: {this.Serialize names}")
             else
                 let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
 
-                match pins |> List.tryFind (_.roomId >> (=) (Some sA)) with
+                match pins |> List.tryFind (fst >> (=) sA) with
                 | Some x -> Ok(Some $"Pin found in the current room: {this.Serialize x}")
                 | None ->
-                    let rooms = pins |> List.collect (_.roomId >> Option.toList) |> Set.ofList
+                    let rooms = pins |> List.map fst |> Set.ofList
 
                     match Pathfinding.pathfind sA (fun x _ -> rooms.Contains x) (Some(px, py)) with
                     | None ->
@@ -828,47 +868,34 @@ type Game(plugin: MainClass) =
                 Ok(Some $"The path is: {desc}\n{pathfindHelp show}\n{roomIdHelp}")
 
 
-        | ShowMap ->
+        | ShowMap(excludePins, radius) ->
             let local = false
             Context.dumpingLocal <- local
 
+            let excl =
+                excludePins |> Option.defaultValue [] |> List.map _.ToLower() |> Set.ofList
+
             Context.checkMap ()
             |> Result.bind (fun () ->
-                let px, py = Context.playerPos ()
+                let ctx =
+                    Context.allAreas
+                        (fun x ->
+                            radius
+                            |> Option.bind (fun r -> x.distanceMeters |> Option.map ((>=) r))
+                            |> Option.defaultValue true)
+                        (fun x ->
+                            radius
+                            |> Option.bind (fun r -> x.distanceMeters |> Option.map ((>=) r))
+                            |> Option.defaultValue true
+                            && not (Set.contains (x.name.ToLower()) excl))
+                        (Option.defaultValue Map.empty this.SaveData.waypoints
+                         |> Seq.collect (fun x ->
+                             x.Value.room
+                             |> Option.map (fun room -> x.Key, room, x.Value.x, x.Value.y)
+                             |> Option.toList)
+                         |> List.ofSeq)
 
-                let mkExtra (area: UnityEngine.GameObject) =
-                    let extra =
-                        this.SaveData.waypoints
-                        |> Option.defaultValue Map.empty
-                        |> Seq.filter (_.Value >> _.zone >> Context.areaFromZone >> fst >> (=) area)
-                        |> Seq.map (fun x ->
-                            Context.customWaypoint true (px, py) x.Key (x.Value.x, x.Value.y) x.Value.room)
-                        |> List.ofSeq
-
-                    extra
-
-                if local then
-                    let ctx = Context.currentArea ()
-                    let zone, _sceneName = Context.zoneScene ()
-                    let area, _ = Context.areaFromZone zone
-                    let extra = mkExtra area
-
-                    let ctx =
-                        if List.isEmpty extra then
-                            ctx
-                        else
-                            { ctx with
-                                pointsOfInterest =
-                                    Some(ctx.pointsOfInterest |> Option.defaultValue [] |> List.append extra) }
-
-                    let ctx =
-                        { ctx with
-                            pointsOfInterest = ctx.pointsOfInterest |> Option.map (List.sortBy _.distanceMeters) }
-
-                    Ok(Some $"Map data: {this.Serialize ctx}\n{roomIdHelp}")
-                else
-                    let ctx = Context.allAreas mkExtra
-                    Ok(Some $"Map data: {this.Serialize ctx}\n{roomIdHelp}"))
+                Ok(Some $"Map data: {this.Serialize ctx}\n{roomIdHelp}"))
         | CreateWaypoint name ->
             Context.checkMap ()
             |> Result.bind (fun () ->
@@ -1103,13 +1130,13 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
                 let asm = Assembly.GetExecutingAssembly()
                 let st = asm.GetManifestResourceStream "HollowNeuro.Resources.texture.png"
 
-                using (new System.IO.MemoryStream()) (fun ms ->
+                using (new IO.MemoryStream()) (fun ms ->
                     st.CopyTo ms
                     UnityEngine.ImageConversion.LoadImage(tex, ms.ToArray()) |> ignore)
 
                 Seq.init 5 (fun i -> asm.GetManifestResourceStream $"HollowNeuro.Resources.hp{i}.png")
                 |> Seq.map (fun st ->
-                    using (new System.IO.MemoryStream()) (fun ms ->
+                    using (new IO.MemoryStream()) (fun ms ->
                         st.CopyTo ms
                         ms.ToArray()))
                 |> Seq.iteri (fun i data -> UnityEngine.ImageConversion.LoadImage(pieces[i], data) |> ignore)
