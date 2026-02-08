@@ -4,6 +4,7 @@ open HarmonyLib
 open HutongGames.PlayMaker
 open System
 open System.Reflection
+open TeamCherry.Localization
 
 type ShootMode =
     | Player of dmg: int
@@ -71,7 +72,7 @@ type CustomFire(fire: Actions.FireAtTarget, getSpeedScale: CustomFire -> float32
             let x = fire.speed.Value * speedScale * cos rad
             let y = fire.speed.Value * speedScale * sin rad
 
-            this.rb2d.velocity <- UnityEngine.Vector2(x, y)
+            this.rb2d.linearVelocity <- UnityEngine.Vector2(x, y)
 
 type CustomWait(time: unit -> float32) =
     inherit FsmStateAction()
@@ -107,15 +108,15 @@ type FsmLambda(f: Fsm -> unit) =
 [<AutoOpen>]
 module Stuff =
     let areaTitle ev =
-        if Language.Language.Has(ev, "Titles") then
-            Language.Language.Get(ev, "Titles")
-        else if Language.Language.Has(ev + "_MAIN", "Titles") then
+        if Language.Has(ev, "Titles") then
+            Language.Get(ev, "Titles")
+        else if Language.Has(ev + "_MAIN", "Titles") then
             [ ev + "_SUPER"; ev + "_MAIN"; ev + "_SUB" ]
-            |> List.filter (fun x -> Language.Language.Has(x, "Titles"))
-            |> List.map (fun x -> Language.Language.Get(x, "Titles"))
+            |> List.filter (fun x -> Language.Has(x, "Titles"))
+            |> List.map (fun x -> Language.Get(x, "Titles"))
             |> String.concat " "
-        else if Language.Language.Has(ev, "Map Zones") then
-            Language.Language.Get(ev, "Map Zones")
+        else if Language.Has(ev, "Map Zones") then
+            Language.Get(ev, "Map Zones")
         else
             ""
 
@@ -434,7 +435,7 @@ type public Patches() =
     [<HarmonyPostfix>]
     static member public RememberDialogueSheet(__instance: DialogueBox, sheetName: string) =
         // pages use some weird character indices, couldn't get it to work, show unpaginated
-        let mesh = __instance.gameObject.GetComponent<TMPro.TextMeshPro>()
+        let mesh = __instance.gameObject.GetComponent<TMProOld.TextMeshPro>()
         MainClass.Instance.Game.ShowDialogue sheetName mesh.text
 
     [<HarmonyPatch(typeof<Actions.ListenForQuickMap>, nameof (Unchecked.defaultof<Actions.ListenForQuickMap>.OnUpdate))>]
@@ -478,7 +479,13 @@ type public Patches() =
 
                 if __instance.cState.wallSliding then
                     __instance.cState.wallSliding <- false
-                    __instance.wallSlideVibrationPlayer.Stop() |> ignore
+
+                    (typeof<HeroController>
+                        .GetField("vibrationCtrl", BindingFlags.NonPublic ||| BindingFlags.Instance)
+                        .GetValue
+                        __instance
+                    :?> HeroVibrationController)
+                        .StopWallSlide()
 
                 if __instance.cState.touchingWall then
                     __instance.cState.touchingWall <- false
@@ -495,7 +502,7 @@ type public Patches() =
                     |> ignore
 
                     let rb2d = __instance.GetComponent<UnityEngine.Rigidbody2D>()
-                    rb2d.velocity <- UnityEngine.Vector2(rb2d.velocity.x, 0f)
+                    rb2d.linearVelocity <- UnityEngine.Vector2(rb2d.linearVelocity.x, 0f)
 
                 __instance.GetComponent<HeroAudioController>().PlaySound GlobalEnums.HeroSounds.TAKE_HIT
 
@@ -655,8 +662,8 @@ type public Patches() =
     [<HarmonyPostfix>]
     static member public DebugProxy(__instance: PlayMakerUnity2DProxy) = () // __instance.debug <- true
 
-    (*[<HarmonyPatch(typeof<global.Language.Language>,
-                   nameof (global.Language.Language.Get: (string * string) -> string),
+    (*[<HarmonyPatch(typeof<Language>,
+                   nameof (Language.Get: (string * string) -> string),
                    [| typeof<string>; typeof<string> |])>]
     [<HarmonyPrefix>]*)
     static member public LanguageGet(key: string, sheetTitle: string, __result: string byref) =
@@ -720,9 +727,9 @@ type public Patches() =
                 l10nPatched <- true
 
                 MainClass.Instance.Harmony.Patch(
-                    typeof<Language.Language>
+                    typeof<Language>
                         .GetMethod(
-                            nameof (global.Language.Language.Get: (string * string) -> string),
+                            nameof (Language.Get: (string * string) -> string),
                             [| typeof<string>; typeof<string> |]
                         ),
                     prefix = HarmonyMethod(typeof<Patches>.GetMethod "LanguageGet")
@@ -1167,7 +1174,8 @@ type public Patches() =
             let sendAnyway = (System.DateTime.Now - lastSent).TotalSeconds >= 5.
 
             if sendAnyway || names |> List.exists (fun x -> not (List.contains x lastNamesCtx)) then
-                let atcs = UnityEngine.Object.FindObjectsOfType<AreaTitleController>()
+                let atcs =
+                    UnityEngine.Object.FindObjectsByType<AreaTitleController> UnityEngine.FindObjectsSortMode.None
 
                 let aNameSet = System.Collections.Generic.HashSet<string>()
 

@@ -8,6 +8,7 @@ open BepInEx.Logging
 open HarmonyLib
 open NeuroFSharp
 open UnityEngine.SceneManagement
+open TeamCherry.Localization
 
 type Tactic =
     | ShootNearestFirst
@@ -195,7 +196,7 @@ module Context =
                              "Area transition"
                          else
                              $"Area transition: "
-                             + match Language.Language.Get(n, "Map Zones") with
+                             + match Language.Get(n, "Map Zones") with
                                | "#!#DIRTMOUTH#!#" -> "Dirtmouth"
                                | "#!#RUINS#!#" -> "Ruins"
                                | "#!#FUNGUS#!#" -> "Fungal Wastes (subarea)"
@@ -208,9 +209,9 @@ module Context =
             let st = x.GetComponent<SetTextMeshProGameText>()
 
             if st = null then
-                x.GetComponent<TMPro.TMP_Text>().text
+                x.GetComponent<TMProOld.TMP_Text>().text
             else
-                Language.Language.Get(st.convName, st.sheetName)
+                Language.Get(st.convName, st.sheetName)
 
         let text = mkPin (cnst true) (getTmproText >> stripHtml)
 
@@ -559,7 +560,7 @@ module Context =
         let currentSceneId = Generated.sceneIdx (SceneManager.GetActiveScene().name)
 
         let name =
-            match Language.Language.Get(zone, "Map Zones") with
+            match Language.Get(zone, "Map Zones") with
             | "#!#DIRTMOUTH#!#" -> "Dirtmouth"
             | x -> stripHtml x
 
@@ -581,7 +582,7 @@ module Context =
                     |> Set.ofSeq
 
                 let name =
-                    match Language.Language.Get(zone, "Map Zones") with
+                    match Language.Get(zone, "Map Zones") with
                     | "#!#DIRTMOUTH#!#" -> "Dirtmouth"
                     | x -> stripHtml x
 
@@ -986,12 +987,13 @@ type Game(plugin: MainClass) =
         plugin.Logger.LogInfo $"{DateTime.UtcNow}.{DateTime.UtcNow.ToString fff} {error}"
 
     member this.Update() =
-        (*try
+        do
+            (*try
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F1 then
                 Native.profiler_reset ()
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F2 then
-                Native.profiler_save ()
+                Native.profiler_save ()*)
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F10 then
                 let json = UnityEngine.JsonUtility.ToJson(HeroController.instance.playerData, true)
@@ -1004,6 +1006,8 @@ type Game(plugin: MainClass) =
                 )
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F6 then
+                SceneManager.LoadScene(System.IO.File.ReadAllText "scene.txt" |> _.Trim() |> int)
+        (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F6 then
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex)
 
                 plugin.StartCoroutine(UnloadAssets()) |> ignore

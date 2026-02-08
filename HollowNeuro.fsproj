@@ -19,17 +19,20 @@
   <ItemGroup>
     <PackageReference Include="BepInEx.Core" Version="5.4.21" IncludeAssets="compile" />
     <!--<PackageReference Include="BepInEx.Unity.Mono" Version="6.0.0-be.*" IncludeAssets="compile" />-->
-    <PackageReference Include="UnityEngine.Modules" Version="2021.3.43" IncludeAssets="compile" />
+    <!--<PackageReference Include="UnityEngine.Modules" Version="2021.3.43" IncludeAssets="compile" />-->
     <PackageReference Update="FSharp.Core" Version="8.0.301" />
-    <Reference Include="Assembly-CSharp">
-      <HintPath>lib\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="PlayMaker">
-      <HintPath>lib\PlayMaker.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>lib\UnityEngine.UI.dll</HintPath>
-    </Reference>
+    <Reference Include="Assembly-CSharp"><HintPath>lib\Assembly-CSharp.dll</HintPath></Reference>
+    <Reference Include="PlayMaker"><HintPath>lib\PlayMaker.dll</HintPath></Reference>
+    <Reference Include="TeamCherry.Localization"><HintPath>lib\TeamCherry.Localization.dll</HintPath></Reference>
+    <Reference Include="TeamCherry.TK2D"><HintPath>lib\TeamCherry.TK2D.dll</HintPath></Reference>
+    <Reference Include="UnityEngine"><HintPath>lib\UnityEngine.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>lib\UnityEngine.CoreModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.ImageConversionModule"><HintPath>lib\UnityEngine.ImageConversionModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.InputLegacyModule"><HintPath>lib\UnityEngine.InputLegacyModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule"><HintPath>lib\UnityEngine.JSONSerializeModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.PhysicsModule"><HintPath>lib\UnityEngine.PhysicsModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.Physics2DModule"><HintPath>lib\UnityEngine.Physics2DModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.UI"><HintPath>lib\UnityEngine.UI.dll</HintPath></Reference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">

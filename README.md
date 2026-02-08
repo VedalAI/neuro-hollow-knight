@@ -10,7 +10,7 @@
 ## Installation
 
 1. Install [BepInEx 5](https://github.com/BepInEx/BepInEx) (more comfortable using it than the HK-specific mod loader).
-2. Copy `Assembly-CSharp.dll`, `PlayMaker.dll`, `UnityEngine.UI.dll` from your Hollow Knight installation to `./lib`.
+2. Copy `dll` files from your Hollow Knight installation to `./lib`.
 3. Run `dotnet build` from the root of this repository.
 4. Copy `./bin/Debug/netstandard2.1/FSharp.Core.dll` to `Hollow Knight/BepInEx/core`.
 5. Copy `./bin/Debug/netstandard2.1/HollowNeuro.dll` to `Hollow Knight/BepInEx/plugins`.
