@@ -367,22 +367,69 @@ module Pathfinding =
         else
             None
 
-type PathfindingBall() =
+[<AllowNullLiteral>]
+type PathfindingBall() as this =
     inherit UnityEngine.MonoBehaviour()
     static let mutable path: (int * float32 * float32) list = List.empty
-    static let mutable object: UnityEngine.GameObject = null
+    static let mutable inst: PathfindingBall = null
 
-    do object <- base.gameObject
-    static member Waiting = object <> null && not object.activeSelf && path |> List.isEmpty |> not
-    static member Object = object
+    static let mat: UnityEngine.Material =
+        UnityEngine.Material(UnityEngine.Shader.Find "Sprites/Default")
 
-    static member InitWith p =
-        UnityEngine.Debug.LogError $"ball init {p}"
-        path <- p
-        let h = HeroController.instance.gameObject.transform
-        let t = object.transform
-        t.localScale <- UnityEngine.Vector3(1f, 1f, 0f)
-        t.parent <- h.parent
+    static do
+        let tex = new UnityEngine.Texture2D(1, 1, UnityEngine.TextureFormat.RGBA32, false)
+        tex.SetPixel(0, 0, UnityEngine.Color.white)
+        tex.Apply()
+        mat.mainTexture <- tex
+
+    let mutable time = 0.0f
+
+    let ring = UnityEngine.GameObject.CreatePrimitive UnityEngine.PrimitiveType.Quad
+    let mpb = UnityEngine.MaterialPropertyBlock()
+    let mr = ring.GetComponent<UnityEngine.MeshRenderer>()
+
+    do
+        inst <- this
+        //let mats = System.Collections.Generic.HashSet()
+        let rec addSortingOrder (x: UnityEngine.Transform) =
+            x.gameObject.GetComponent<UnityEngine.MeshRenderer>()
+            |> Option.ofObj
+            |> Option.iter (fun x -> x.sortingOrder <- x.sortingOrder + 1)
+            //|> Option.iter (fun x -> mats.Add x.material |> ignore)
+
+            Seq.init x.childCount x.GetChild |> Seq.iter addSortingOrder
+
+        addSortingOrder base.gameObject.transform
+        //mats |> Seq.iter (fun x -> x.renderQueue <- x.renderQueue - 1)
+        (*let t = base.gameObject.transform
+        t.localPosition <- UnityEngine.Vector3(t.localPosition.x, t.localPosition.y, t.localPosition.z - 10f)*)
+        ring.transform.localScale <- UnityEngine.Vector3(32f, 32f, 1f)
+        ring.transform.localPosition <- UnityEngine.Vector3(0f, 0f, 0.0001f)
+
+        ring.GetComponent<UnityEngine.Collider>()
+        |> Option.ofObj
+        |> Option.iter UnityEngine.Object.DestroyImmediate
+
+        mr.sharedMaterial <- mat
+        let mr0 = base.gameObject.GetComponent<UnityEngine.MeshRenderer>()
+        mr.sortingLayerID <- mr0.sortingLayerID
+        mr.sortingOrder <- mr0.sortingOrder
+        mat.renderQueue <- mr0.material.renderQueue // - 1
+        ring.transform.SetParent(base.gameObject.transform, worldPositionStays = false)
+
+    static member InitMat(x: UnityEngine.Shader) =
+        mat.shader <- x
+        mat.SetColor("_Color", UnityEngine.Color(1f, 1f, 1f, 1f))
+        mat.SetFloat("_Feather", 0.001f)
+        mat.SetFloat("_Size", 0.1f)
+        mat.SetFloat("_Width", 0.004f)
+
+    static member Mat = mat
+
+    static member Waiting =
+        inst <> null && not inst.gameObject.activeSelf && path |> List.isEmpty |> not
+
+    static member Inst = inst
 
     static member Target =
         let scene =
@@ -416,7 +463,29 @@ type PathfindingBall() =
 
         update ()
 
+    member this.InitWith p =
+        UnityEngine.Debug.LogError $"ball init {p}"
+        path <- p
+        let h = HeroController.instance.gameObject.transform
+        let t = this.gameObject.transform
+        t.localScale <- UnityEngine.Vector3(1f, 1f, 1f)
+        t.parent <- h.parent
+        time <- 0f
+
     member this.Update() =
+        let th = 0.5f
+        let p0 = time / 2.5f % 1.0f
+        let p1 = 1f - (1f - p0) ** 5f
+        let p2 = sqrt p0
+        //let p3 = min 1.0f (exp (-0.5f * p1) ** 0.9f)
+        //let p3 = (1f - max th p2) / (1f - th)
+        let p3 = max 0.0f ((1f - (p0 * 2.5f) ** 3f) / 2f)
+        mpb.SetFloat("_Size", 0.07f * p1)
+        mpb.SetFloat("_Width", 0.5f) // 0.002f + 0.008f * (1f - p2))
+        mpb.SetColor("_Color", UnityEngine.Color(1f, 0.8f, 0.8f, p3))
+        mr.SetPropertyBlock mpb
+        time <- time + UnityEngine.Time.deltaTime
+
         match PathfindingBall.Target with
         | None ->
             let fadeStep = UnityEngine.Time.deltaTime / 0.5f

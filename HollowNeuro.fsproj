@@ -26,6 +26,9 @@
     <Reference Include="TeamCherry.Localization"><HintPath>lib\TeamCherry.Localization.dll</HintPath></Reference>
     <Reference Include="TeamCherry.TK2D"><HintPath>lib\TeamCherry.TK2D.dll</HintPath></Reference>
     <Reference Include="UnityEngine"><HintPath>lib\UnityEngine.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.AnimationModule"><HintPath>lib\UnityEngine.AnimationModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.AssetBundleModule"><HintPath>lib\UnityEngine.AssetBundleModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.AudioModule"><HintPath>lib\UnityEngine.AudioModule.dll</HintPath></Reference>
     <Reference Include="UnityEngine.CoreModule"><HintPath>lib\UnityEngine.CoreModule.dll</HintPath></Reference>
     <Reference Include="UnityEngine.ImageConversionModule"><HintPath>lib\UnityEngine.ImageConversionModule.dll</HintPath></Reference>
     <Reference Include="UnityEngine.InputLegacyModule"><HintPath>lib\UnityEngine.InputLegacyModule.dll</HintPath></Reference>
@@ -41,6 +44,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\*.png" />
+    <EmbeddedResource Include="Resources\*.bundle" />
   </ItemGroup>
 
   <ItemGroup>

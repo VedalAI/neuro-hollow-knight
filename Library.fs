@@ -655,8 +655,8 @@ type Game(plugin: MainClass) =
     let saveData0: SaveData = { waypoints = None }
     let mutable _saveData: SaveData = saveData0
     let mutable hasMap = false
-    (* let mutable showFm = false
     let mutable animOffset = 0
+    (* let mutable showFm = false
 
     let mutable healths: UnityEngine.GameObject array =
         [| null; null; null; null; null; null; null; null; null; null; null |]
@@ -759,7 +759,7 @@ type Game(plugin: MainClass) =
 
         let showPath show path =
             if show then
-                PathfindingBall.InitWith(path |> List.map fst |> List.filter (fun (s, _x, _y) -> s > 0))
+                PathfindingBall.Inst.InitWith(path |> List.map fst |> List.filter (fun (s, _x, _y) -> s > 0))
 
         match action with
         | UnexploredRooms ->
@@ -1016,6 +1016,39 @@ type Game(plugin: MainClass) =
                 showFm <- not showFm
                 PlayMakerFSM.BroadcastEvent(if showFm then "FIRST MAP UP" else "FIRST MAP DOWN")*)
 
+        (*try
+            if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F8 then
+                animOffset <- animOffset + 1
+            if animOffset > 0 then
+                let anims =
+                    [| "Idle 3"
+                       "Antic 3"
+                       "Fly 3"
+                       "Shoot 3"
+                       "Sleep 3"
+                       "Tele In 3"
+                       "Tele Out 3"
+                       "TurnToIdle 3"
+                       "Wake 3"
+                       "Antic 4"
+                       "Fly 4"
+                       "Idle 4"
+                       "Shoot 4"
+                       "Sleep 4"
+                       "Tele In 4"
+                       "Tele Out 4"
+                       "TurnToIdle 4"
+                       "Wake 4" |]
+
+                let n = anims[animOffset % anims.Length]
+
+                UnityEngine.Object.FindObjectsByType<GrimmEnemyRange> UnityEngine.FindObjectsSortMode.None
+                |> Array.iter (fun x ->
+                    let a = x.transform.parent.gameObject.GetComponent<tk2dSpriteAnimator>()
+
+                    if  a.CurrentClip = null || a.CurrentClip.name <> n then
+                        a.Play n
+                        a.CurrentClip.wrapMode <- tk2dSpriteAnimationClip.WrapMode.Loop)*)
         (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F8 then
                 animOffset <- animOffset + 1
 
@@ -1077,7 +1110,8 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
     inherit BaseUnityPlugin()
     let mutable harmony = null
     let mutable game = None
-    let mutable tex: UnityEngine.Texture2D = UnityEngine.Texture2D(2, 2)
+    let mutable texHealth: UnityEngine.Texture2D = UnityEngine.Texture2D(2, 2)
+    let mutable texGrimmchild: UnityEngine.Texture2D = UnityEngine.Texture2D(2, 2)
 
     let mutable pieces: UnityEngine.Texture2D array =
         Array.init 5 (fun _ -> UnityEngine.Texture2D(2, 2))
@@ -1092,7 +1126,8 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
 
     static member Instance = MainClass.instance
     member _.Game = game.Value
-    member _.Tex = tex
+    member _.TexHealth = texHealth
+    member _.TexGrimmchild = texGrimmchild
     member _.Pieces = pieces
     member _.Harmony = harmony
 
@@ -1132,11 +1167,28 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
 
             do
                 let asm = Assembly.GetExecutingAssembly()
-                let st = asm.GetManifestResourceStream "HollowNeuro.Resources.texture.png"
 
-                using (new IO.MemoryStream()) (fun ms ->
-                    st.CopyTo ms
-                    UnityEngine.ImageConversion.LoadImage(tex, ms.ToArray()) |> ignore)
+                PathfindingBall.InitMat (
+                    let os =
+                        if
+                            Runtime.InteropServices.RuntimeInformation.IsOSPlatform
+                                Runtime.InteropServices.OSPlatform.Windows
+                        then
+                            "windows"
+                        else
+                            "linux"
+
+                    let st = asm.GetManifestResourceStream $"HollowNeuro.Resources.{os}.bundle"
+                    let ab = UnityEngine.AssetBundle.LoadFromStream st
+                    ab.LoadAllAssets<UnityEngine.Shader>()[0])
+
+                [ texHealth, "texture"; texGrimmchild, "texture1" ]
+                |> List.iter (fun (tex, name) ->
+                    let st = asm.GetManifestResourceStream $"HollowNeuro.Resources.{name}.png"
+
+                    using (new IO.MemoryStream()) (fun ms ->
+                        st.CopyTo ms
+                        UnityEngine.ImageConversion.LoadImage(tex, ms.ToArray()) |> ignore))
 
                 Seq.init 5 (fun i -> asm.GetManifestResourceStream $"HollowNeuro.Resources.hp{i}.png")
                 |> Seq.map (fun st ->

@@ -186,6 +186,7 @@ module Stuff =
     let mutable lastCtx = Option.None, ""
     let charmsToHide = [ 2; 40 ]
 
+    [<AllowNullLiteral>]
     type SpriteSwitch() =
         inherit UnityEngine.MonoBehaviour()
 
@@ -197,9 +198,8 @@ module Stuff =
 
     let pickSpriteLib (orig: tk2dSpriteAnimation) =
         let sw =
-            orig.GetComponent<SpriteSwitch>() :> obj
+            orig.GetComponent<SpriteSwitch>()
             |> Option.ofObj
-            |> Option.map (fun x -> x :?> SpriteSwitch)
             |> Option.defaultWith (fun () ->
                 Context.logger.LogError $"creating new sprite for {orig.name}"
                 let origS = orig.gameObject.AddComponent<SpriteSwitch>()
@@ -268,6 +268,7 @@ module Stuff =
                 $"neuro{slotIndex}.dat"
         )
 
+    let quickLoad = false
     let disableMap = true
     let disableBallTint = true
     let grimmRange = 7.81f * 1.2f
@@ -308,18 +309,17 @@ module Stuff =
         let v3 =
             UnityEngine.Vector2((uvRegion.x + uvRegion.width - eps.x) / texX, 1.0f - (uvRegion.y - eps.y) / texY)
 
-        let offset =
-            UnityEngine.Vector2(trimRect.x - anchor.x, 0.0f - trimRect.y + anchor.y)
+        let offset = UnityEngine.Vector2(trimRect.x - anchor.x, anchor.y - trimRect.y)
 
         let offset = offset * scale
 
-        let pos0 = UnityEngine.Vector3((0.0f - anchor.x) * scale, anchor.y * scale, 0.0f)
+        let pos0 = UnityEngine.Vector3(-anchor.x * scale, anchor.y * scale, 0.0f)
 
         let pos1 =
             pos0
-            + UnityEngine.Vector3(trimRect.width * scale, (0.0f - trimRect.height) * scale, 0.0f)
+            + UnityEngine.Vector3(trimRect.width * scale, -trimRect.height * scale, 0.0f)
 
-        let r0 = UnityEngine.Vector3(0.0f, (0.0f - height) * scale, 0.0f)
+        let r0 = UnityEngine.Vector3(0.0f, -height * scale, 0.0f)
         let r1 = r0 + UnityEngine.Vector3(width * scale, height * scale, 0.0f)
 
         def.positions <-
@@ -354,10 +354,14 @@ type public Patches() =
     [<HarmonyPatch(typeof<tk2dSpriteCollectionData>, "Init")>]
     [<HarmonyPrefix>]
     static member public InitCln(__instance: tk2dSpriteCollectionData) =
-        if __instance.gameObject.name = "HUD Cln" then
+        match __instance.gameObject.name with
+        | "HUD Cln" -> Some MainClass.Instance.TexHealth
+        | "Grimmchild Cln" -> Some MainClass.Instance.TexGrimmchild
+        | _ -> Option.None
+        |> Option.iter (fun x ->
             __instance.materials <- [| __instance.materials[0]; UnityEngine.Material __instance.materials[0] |]
-            __instance.textures <- [| __instance.textures[0]; MainClass.Instance.Tex |]
-            __instance.materials[1].mainTexture <- MainClass.Instance.Tex
+            __instance.textures <- [| __instance.textures[0]; x |]
+            __instance.materials[1].mainTexture <- x)
 
     [<HarmonyPatch(typeof<tk2dSpriteAnimator>,
                    nameof (Unchecked.defaultof<tk2dSpriteAnimator>.Play: string -> unit),
@@ -365,71 +369,88 @@ type public Patches() =
     [<HarmonyPrefix>]
     static member public PlayTk2dAnim(__instance: tk2dSpriteAnimator, name: string) =
         if __instance.Library <> null then
-            if __instance.Library.gameObject.name = "HUD Anim" then
-                if Array.length __instance.Library.clips = 64 then
-                    __instance.Library.clips <- Array.append __instance.Library.clips [| __instance.Library.clips[0] |]
-                    let sc = __instance.Library.clips[0].frames[0].spriteCollection
+            match __instance.Library.gameObject.name with
+            | "HUD Anim" -> Some(64, Generated.healthAnims, false)
+            | "Grimmchild Anim" -> Some(38, Generated.grimmchildAnims, true)
+            | _ -> Option.None
+            |> Option.filter (fun (len, _, _) -> len = Array.length __instance.Library.clips)
+            |> Option.iter (fun (_, anims, adjust) ->
+                MainClass.Instance.Logger.LogInfo $"{__instance.Library.gameObject.name}: init"
 
-                    let ts =
-                        UnityEngine.Vector2(float32 sc.textures[1].width, float32 sc.textures[1].height)
+                __instance.Library.clips <- Array.append __instance.Library.clips [| __instance.Library.clips[0] |]
+                let sc = __instance.Library.clips[0].frames[0].spriteCollection
 
-                    Generated.anims
-                    |> Array.iter (fun (cname, cdata) ->
-                        //let hi = __instance.Library.clips |> Array.find (_.name >> (=) "Health Idle")
-                        //let hiLen = 45
-                        let c = __instance.Library.clips |> Array.find (_.name >> (=) cname)
-                        let b = Array.length sc.spriteDefinitions
+                let ts =
+                    UnityEngine.Vector2(float32 sc.textures[1].width, float32 sc.textures[1].height)
 
-                        let cdefs =
-                            cdata
-                            |> Array.mapi (fun i (x, y, w, h) ->
-                                let ox, oy =
-                                    if cname = "Blue Idle" then
-                                        0, -23
-                                    else if cname = "Health Max Up" then
-                                        let x, y =
-                                            [| 4, 16
-                                               2, 4
-                                               0, 2
-                                               -4, 16
-                                               0, 4
-                                               0, 3
-                                               0, 12
-                                               0, 4
-                                               0, 2
-                                               0, 12
-                                               0, 4
-                                               0, 2
-                                               0, 11
-                                               -1, 13 |][i]
+                anims
+                |> Array.iter (fun (cname, cdata) ->
+                    //let hi = __instance.Library.clips |> Array.find (_.name >> (=) "Health Idle")
+                    //let hiLen = 45
+                    let c = __instance.Library.clips |> Array.find (_.name >> (=) cname)
+                    let b = Array.length sc.spriteDefinitions
 
-                                        x, y - 14
-                                    else
-                                        0, 0
+                    MainClass.Instance.Logger.LogInfo
+                        $"{__instance.Library.gameObject.name}: init {cname} (old {c.frames.Length}, new {cdata.Length})"
 
-                                let def =
-                                    createDefinitionForRegionInTexture
-                                        $"{cname}_{i}"
-                                        ts
-                                        // uv
-                                        (UnityEngine.Rect(float32 x, float32 y, float32 w, float32 h))
-                                        // trim rect
-                                        (UnityEngine.Rect(0f, 0f, float32 w, float32 h))
-                                        // anchor
-                                        (UnityEngine.Vector2(float32 w / 2f + float32 ox, float32 h / 2f + float32 oy))
+                    let cdefs =
+                        cdata
+                        |> Array.mapi (fun i (x, y, w, h) ->
+                            let ox, oy =
+                                if cname = "Blue Idle" then
+                                    0f, -23f
+                                else if cname = "Health Max Up" then
+                                    let x, y =
+                                        [| 4, 16
+                                           2, 4
+                                           0, 2
+                                           -4, 16
+                                           0, 4
+                                           0, 3
+                                           0, 12
+                                           0, 4
+                                           0, 2
+                                           0, 12
+                                           0, 4
+                                           0, 2
+                                           0, 11
+                                           -1, 13 |][i]
 
+                                    float32 x, float32 (y - 14)
+                                else if adjust then
+                                    let s = sc.spriteDefinitions[c.frames[i].spriteId]
+                                    //let x = s.untrimmedBoundsData.x - s.boundsData.x
+                                    //let y = s.untrimmedBoundsData.y - s.boundsData.y
+                                    let xy (v: UnityEngine.Vector3) = UnityEngine.Vector2(v.x, v.y)
+                                    let v = xy s.boundsData[0] / s.texelSize
+                                    -v.x, v.y
+                                else
+                                    0f, 0f
+
+                            let def =
+                                createDefinitionForRegionInTexture
+                                    $"{cname}_{i}"
+                                    ts
+                                    // uv
+                                    (UnityEngine.Rect(float32 x, float32 y, float32 w, float32 h))
+                                    // trim rect
+                                    (UnityEngine.Rect(0f, 0f, float32 w, float32 h))
+                                    // anchor
+                                    (UnityEngine.Vector2(float32 w / 2f + ox, float32 h / 2f + oy))
+
+                            if adjust then
                                 def.untrimmedBoundsData <-
-                                    [| UnityEngine.Vector3(0f, -0.5f, 0f); UnityEngine.Vector3(126f, 167f, 0f) |]
+                                    sc.spriteDefinitions[c.frames[i].spriteId].untrimmedBoundsData
 
-                                def.materialId <- 1
-                                def.material <- sc.materials[def.materialId]
-                                def.materialInst <- sc.materialInsts[def.materialId]
+                            def.materialId <- 1
+                            def.material <- sc.materials[def.materialId]
+                            def.materialInst <- sc.materialInsts[def.materialId]
 
-                                def)
+                            def)
 
-                        sc.spriteDefinitions <- Array.append sc.spriteDefinitions cdefs
+                    sc.spriteDefinitions <- Array.append sc.spriteDefinitions cdefs
 
-                        c.frames |> Seq.iteri (fun i fr -> fr.spriteId <- b + i))
+                    c.frames |> Seq.iteri (fun i fr -> fr.spriteId <- b + i)))
 
     [<HarmonyPatch(typeof<DialogueBox>, nameof (Unchecked.defaultof<DialogueBox>.SetConversation))>]
     [<HarmonyPostfix>]
@@ -1012,7 +1033,14 @@ type public Patches() =
 
                         UnityEngine.Object.DontDestroyOnLoad pathBall
                         pathBall.AddComponent<PathfindingBall>() |> ignore
-                        pathBall.SetActive false
+
+                        if quickLoad then
+                            PathfindingBall.Inst.InitWith
+                                [ Generated.sceneIdx (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name),
+                                  0f,
+                                  0f ]
+                        else
+                            pathBall.SetActive false
 
                         shoot.Actions[spawnI] <-
                             FsmLambda(fun _ ->
@@ -1020,8 +1048,8 @@ type public Patches() =
                                 | Path ->
                                     let pos = sp.spawnPoint.Value.transform.position
 
-                                    PathfindingBall.Object.SetActive true
-                                    PathfindingBall.Object.transform.position <- pos
+                                    PathfindingBall.Inst.gameObject.SetActive true
+                                    PathfindingBall.Inst.gameObject.transform.position <- pos
                                 | _ -> sp.OnEnter())
 
                         shoot.Actions[spawnI].Init shoot
@@ -1140,11 +1168,11 @@ type public Patches() =
             then
                 MainClass.Instance.Logger.LogInfo "path shot"
                 shootMode <- Path
-                let t = PathfindingBall.Object.transform
+                let t = PathfindingBall.Inst.gameObject.transform
                 let p = t.localPosition
                 t.parent <- HeroController.instance.transform.parent
                 t.localPosition <- UnityEngine.Vector3(target.Value.x, target.Value.y, p.z)
-                __result <- PathfindingBall.Object
+                __result <- PathfindingBall.Inst.gameObject
             else if
                 inRange HeroController.instance.gameObject
                 && (shot <- MainClass.Instance.Game.DequeuePlayerShot()
@@ -1241,3 +1269,42 @@ type public Patches() =
                 lastSent <- System.DateTime.Now
         with exc ->
             MainClass.Instance.Logger.LogError $"grimm range exception: {exc}"
+
+    [<HarmonyPatch(typeof<StartManager>, "Awake")>]
+    [<HarmonyPostfix>]
+    static member public DisableSplash(___startManagerAnimator: UnityEngine.Animator) =
+        if quickLoad then ___startManagerAnimator.speed <- 9999f
+
+    [<HarmonyPatch(typeof<UIManager>, "Awake")>]
+    [<HarmonyPostfix>]
+    static member public InstaLoadSave() =
+        let rec loadFirstSave is =
+            match is with
+            | i :: is ->
+                Platform.Current.IsSaveSlotInUse(
+                    i,
+                    fun inUse ->
+                        if inUse then
+                            GameManager.instance.LoadGameFromUI i
+                        else
+                            loadFirstSave is
+                )
+            | [] ->
+                GameManager.instance.profileID <- 1
+                UIManager.instance.StartNewGame()
+
+        if quickLoad then
+            loadFirstSave [ 4; 3; 2; 1 ]
+
+    (*[<HarmonyPatch(typeof<PlayMakerFSM>, "Update")>]
+    [<HarmonyPrefix>]
+    static member public FsmUpdate(__instance: PlayMakerFSM) =
+        try
+            let fsm = __instance.Fsm
+
+            if not fsm.Finished && not fsm.ManualUpdate then
+                fsm.Update()
+        with exc ->
+            MainClass.Instance.Logger.LogError $"fsm update exception: {exc}"
+
+        false*)
