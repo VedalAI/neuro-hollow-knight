@@ -1016,7 +1016,7 @@ type Game(plugin: MainClass) =
                 showFm <- not showFm
                 PlayMakerFSM.BroadcastEvent(if showFm then "FIRST MAP UP" else "FIRST MAP DOWN")*)
 
-        (*try
+        try
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F8 then
                 animOffset <- animOffset + 1
             if animOffset > 0 then
@@ -1048,7 +1048,7 @@ type Game(plugin: MainClass) =
 
                     if  a.CurrentClip = null || a.CurrentClip.name <> n then
                         a.Play n
-                        a.CurrentClip.wrapMode <- tk2dSpriteAnimationClip.WrapMode.Loop)*)
+                        a.CurrentClip.wrapMode <- tk2dSpriteAnimationClip.WrapMode.Loop)
         (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F8 then
                 animOffset <- animOffset + 1
 
@@ -1073,8 +1073,8 @@ type Game(plugin: MainClass) =
                 if a.CurrentClip = null || a.CurrentClip.name <> n then
                     a.Play n
                     a.CurrentClip.wrapMode <- tk2dSpriteAnimationClip.WrapMode.Loop)*)
-        (*with exc ->
-            this.Context true $"Exception while handling player input: {exc}"*)
+        with exc ->
+            this.Context true $"Exception while handling player input: {exc}"
 
         if PlayerData.instance <> null then
             let gcLevel = Math.Min(4, 2 + Context.countBosses PlayerData.instance / 8)
