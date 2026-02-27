@@ -469,10 +469,6 @@ type public Patches() =
         if disableMap then
             __result <- false
 
-    [<HarmonyPatch(typeof<CheatManager>, "IsCheatsEnabled", MethodType.Getter)>]
-    [<HarmonyPostfix>]
-    static member public EnableCheats(__result: bool byref) = __result <- true
-
     [<HarmonyPatch(typeof<HeroController>, nameof (Unchecked.defaultof<HeroController>.TakeDamage))>]
     [<HarmonyPrefix>]
     static member public Take0Damage
