@@ -368,10 +368,11 @@ module Pathfinding =
             None
 
 [<AllowNullLiteral>]
-type PathfindingBall() as this =
+type PathfindingBall() =
     inherit UnityEngine.MonoBehaviour()
     static let mutable path: (int * float32 * float32) list = List.empty
     static let mutable inst: PathfindingBall = null
+    static let mutable sp: UnityEngine.GameObject = null
 
     static let mat: UnityEngine.Material =
         UnityEngine.Material(UnityEngine.Shader.Find "Sprites/Default")
@@ -389,7 +390,6 @@ type PathfindingBall() as this =
     let mr = ring.GetComponent<UnityEngine.MeshRenderer>()
 
     do
-        inst <- this
         //let mats = System.Collections.Generic.HashSet()
         let rec addSortingOrder (x: UnityEngine.Transform) =
             x.gameObject.GetComponent<UnityEngine.MeshRenderer>()
@@ -429,7 +429,45 @@ type PathfindingBall() as this =
     static member Waiting =
         inst <> null && not inst.gameObject.activeSelf && path |> List.isEmpty |> not
 
-    static member Inst = inst
+    static member Sp
+        with set x =
+            sp <- UnityEngine.Object.Instantiate<UnityEngine.GameObject> x
+            sp.SetActive false
+            sp.transform.parent <- null
+
+    static member Inst =
+        try
+            ignore inst.enabled
+            inst
+        with _ ->
+            if sp = null then
+                null
+            else
+                let pathBall = UnityEngine.Object.Instantiate<UnityEngine.GameObject> sp
+
+                pathBall.GetComponentsInChildren<tk2dSprite> true |> Array.iter _.ForceBuild()
+
+                [| pathBall.GetComponent<PlayMakerFixedUpdate>() :> UnityEngine.MonoBehaviour
+                   pathBall.GetComponent<PlayMakerCollisionEnter2D>()
+                   pathBall.GetComponent<PlayMakerFSM>() |]
+                |> Array.iter UnityEngine.Object.Destroy
+
+                UnityEngine.Object.Destroy(pathBall.GetComponent<UnityEngine.CircleCollider2D>())
+                UnityEngine.Object.Destroy(pathBall.GetComponent<UnityEngine.Rigidbody2D>())
+
+                Array.init pathBall.transform.childCount (pathBall.transform.GetChild >> _.gameObject)
+                |> Array.filter (_.name >> (=) "Enemy Damager")
+                |> Array.iter UnityEngine.Object.Destroy
+
+                Array.init pathBall.transform.childCount (pathBall.transform.GetChild >> _.gameObject)
+                |> Array.filter (_.name >> (=) "Impact")
+                |> Array.iter (fun x -> x.SetActive false)
+
+                UnityEngine.Object.DontDestroyOnLoad pathBall
+                inst <- pathBall.AddComponent<PathfindingBall>()
+                pathBall.SetActive false
+                inst
+
 
     static member Target =
         let scene =
@@ -502,8 +540,9 @@ type PathfindingBall() as this =
                         this.gameObject.transform.localScale.z
                     )
         | Some target ->
+            let step = min 1f (UnityEngine.Time.deltaTime * 4f)
             let t = this.gameObject.transform
             t.parent <- HeroController.instance.transform.parent
             let current = UnityEngine.Vector2(t.localPosition.x, t.localPosition.y)
-            let interpolated = (target * 1f + current * 29f) / 30f
+            let interpolated = target * step + current * (1f - step)
             t.localPosition <- UnityEngine.Vector3(interpolated.x, interpolated.y, t.localPosition.z)

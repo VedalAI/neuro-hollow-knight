@@ -1005,38 +1005,13 @@ type public Patches() =
                             |> Array.findIndex (fun x -> x :? Actions.SpawnObjectFromGlobalPool)
 
                         let sp = shoot.Actions[spawnI] :?> Actions.SpawnObjectFromGlobalPool
-
-                        let pathBall =
-                            UnityEngine.Object.Instantiate<UnityEngine.GameObject> sp.gameObject.Value
-
-                        pathBall.GetComponentsInChildren<tk2dSprite> true |> Array.iter _.ForceBuild()
-
-                        [| pathBall.GetComponent<PlayMakerFixedUpdate>() :> UnityEngine.MonoBehaviour
-                           pathBall.GetComponent<PlayMakerCollisionEnter2D>()
-                           pathBall.GetComponent<PlayMakerFSM>() |]
-                        |> Array.iter UnityEngine.Object.Destroy
-
-                        UnityEngine.Object.Destroy(pathBall.GetComponent<UnityEngine.CircleCollider2D>())
-                        UnityEngine.Object.Destroy(pathBall.GetComponent<UnityEngine.Rigidbody2D>())
-
-                        Array.init pathBall.transform.childCount (pathBall.transform.GetChild >> _.gameObject)
-                        |> Array.filter (_.name >> (=) "Enemy Damager")
-                        |> Array.iter UnityEngine.Object.Destroy
-
-                        Array.init pathBall.transform.childCount (pathBall.transform.GetChild >> _.gameObject)
-                        |> Array.filter (_.name >> (=) "Impact")
-                        |> Array.iter (fun x -> x.SetActive false)
-
-                        UnityEngine.Object.DontDestroyOnLoad pathBall
-                        pathBall.AddComponent<PathfindingBall>() |> ignore
+                        PathfindingBall.Sp <- sp.gameObject.Value
 
                         if quickLoad then
                             PathfindingBall.Inst.InitWith
                                 [ Generated.sceneIdx (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name),
                                   0f,
                                   0f ]
-                        else
-                            pathBall.SetActive false
 
                         shoot.Actions[spawnI] <-
                             FsmLambda(fun _ ->
@@ -1269,7 +1244,8 @@ type public Patches() =
     [<HarmonyPatch(typeof<StartManager>, "Awake")>]
     [<HarmonyPostfix>]
     static member public DisableSplash(___startManagerAnimator: UnityEngine.Animator) =
-        if quickLoad then ___startManagerAnimator.speed <- 9999f
+        if quickLoad then
+            ___startManagerAnimator.speed <- 9999f
 
     [<HarmonyPatch(typeof<UIManager>, "Awake")>]
     [<HarmonyPostfix>]
@@ -1292,7 +1268,7 @@ type public Patches() =
         if quickLoad then
             loadFirstSave [ 4; 3; 2; 1 ]
 
-    (*[<HarmonyPatch(typeof<PlayMakerFSM>, "Update")>]
+(*[<HarmonyPatch(typeof<PlayMakerFSM>, "Update")>]
     [<HarmonyPrefix>]
     static member public FsmUpdate(__instance: PlayMakerFSM) =
         try

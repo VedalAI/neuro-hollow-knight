@@ -987,7 +987,7 @@ type Game(plugin: MainClass) =
         plugin.Logger.LogInfo $"{DateTime.UtcNow}.{DateTime.UtcNow.ToString fff} {error}"
 
     member this.Update() =
-        do
+        (*do
             (*try
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F1 then
                 Native.profiler_reset ()
@@ -1006,7 +1006,7 @@ type Game(plugin: MainClass) =
                 )
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F6 then
-                SceneManager.LoadScene(System.IO.File.ReadAllText "scene.txt" |> _.Trim() |> int)
+                SceneManager.LoadScene(System.IO.File.ReadAllText "scene.txt" |> _.Trim() |> int)*)
         (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F6 then
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex)
 
@@ -1019,6 +1019,7 @@ type Game(plugin: MainClass) =
         try
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F8 then
                 animOffset <- animOffset + 1
+
             if animOffset > 0 then
                 let anims =
                     [| "Idle 3"
@@ -1046,7 +1047,7 @@ type Game(plugin: MainClass) =
                 |> Array.iter (fun x ->
                     let a = x.transform.parent.gameObject.GetComponent<tk2dSpriteAnimator>()
 
-                    if  a.CurrentClip = null || a.CurrentClip.name <> n then
+                    if a.CurrentClip = null || a.CurrentClip.name <> n then
                         a.Play n
                         a.CurrentClip.wrapMode <- tk2dSpriteAnimationClip.WrapMode.Loop)
         (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F8 then
@@ -1168,7 +1169,7 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
             do
                 let asm = Assembly.GetExecutingAssembly()
 
-                PathfindingBall.InitMat (
+                PathfindingBall.InitMat(
                     let os =
                         if
                             Runtime.InteropServices.RuntimeInformation.IsOSPlatform
@@ -1180,7 +1181,8 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
 
                     let st = asm.GetManifestResourceStream $"HollowNeuro.Resources.{os}.bundle"
                     let ab = UnityEngine.AssetBundle.LoadFromStream st
-                    ab.LoadAllAssets<UnityEngine.Shader>()[0])
+                    ab.LoadAllAssets<UnityEngine.Shader>()[0]
+                )
 
                 [ texHealth, "texture"; texGrimmchild, "texture1" ]
                 |> List.iter (fun (tex, name) ->
