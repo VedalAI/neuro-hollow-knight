@@ -388,34 +388,21 @@ type PathfindingBall() =
     let ring = UnityEngine.GameObject.CreatePrimitive UnityEngine.PrimitiveType.Quad
     let mpb = UnityEngine.MaterialPropertyBlock()
     let mr = ring.GetComponent<UnityEngine.MeshRenderer>()
+    let mr0 = base.gameObject.GetComponent<UnityEngine.MeshRenderer>()
 
     do
-        //let mats = System.Collections.Generic.HashSet()
-        let rec addSortingOrder (x: UnityEngine.Transform) =
-            x.gameObject.GetComponent<UnityEngine.MeshRenderer>()
-            |> Option.ofObj
-            |> Option.iter (fun x -> x.sortingOrder <- x.sortingOrder + 1)
-            //|> Option.iter (fun x -> mats.Add x.material |> ignore)
-
-            Seq.init x.childCount x.GetChild |> Seq.iter addSortingOrder
-
-        addSortingOrder base.gameObject.transform
-        //mats |> Seq.iter (fun x -> x.renderQueue <- x.renderQueue - 1)
-        (*let t = base.gameObject.transform
-        t.localPosition <- UnityEngine.Vector3(t.localPosition.x, t.localPosition.y, t.localPosition.z - 10f)*)
         ring.transform.localScale <- UnityEngine.Vector3(32f, 32f, 1f)
         ring.transform.localPosition <- UnityEngine.Vector3(0f, 0f, 0.0001f)
 
         ring.GetComponent<UnityEngine.Collider>()
         |> Option.ofObj
         |> Option.iter UnityEngine.Object.DestroyImmediate
+        ring.transform.SetParent(base.gameObject.transform, worldPositionStays = false)
 
         mr.sharedMaterial <- mat
-        let mr0 = base.gameObject.GetComponent<UnityEngine.MeshRenderer>()
         mr.sortingLayerID <- mr0.sortingLayerID
         mr.sortingOrder <- mr0.sortingOrder
         mat.renderQueue <- mr0.material.renderQueue // - 1
-        ring.transform.SetParent(base.gameObject.transform, worldPositionStays = false)
 
     static member InitMat(x: UnityEngine.Shader) =
         mat.shader <- x
@@ -433,7 +420,7 @@ type PathfindingBall() =
         with set x =
             sp <- UnityEngine.Object.Instantiate<UnityEngine.GameObject> x
             sp.SetActive false
-            sp.transform.parent <- null
+            sp.transform.SetParent(null, worldPositionStays = false)
             UnityEngine.Object.DontDestroyOnLoad sp
 
     static member Inst =
@@ -465,6 +452,12 @@ type PathfindingBall() =
                 |> Array.iter (fun x -> x.SetActive false)
 
                 UnityEngine.Object.DontDestroyOnLoad pathBall
+                let rec addSortingOrder (x: UnityEngine.Transform) =
+                    x.gameObject.GetComponent<UnityEngine.MeshRenderer>()
+                    |> Option.ofObj
+                    |> Option.iter (fun x -> x.sortingOrder <- x.sortingOrder + 1)
+                    Seq.init x.childCount x.GetChild |> Seq.iter addSortingOrder
+                addSortingOrder pathBall.transform
                 inst <- pathBall.AddComponent<PathfindingBall>()
                 pathBall.SetActive false
                 inst
@@ -523,6 +516,7 @@ type PathfindingBall() =
         mpb.SetFloat("_Width", 0.5f) // 0.002f + 0.008f * (1f - p2))
         mpb.SetColor("_Color", UnityEngine.Color(1f, 0.8f, 0.8f, p3))
         mr.SetPropertyBlock mpb
+        mr0.sortingOrder <- mr.sortingOrder
         time <- time + UnityEngine.Time.deltaTime
 
         match PathfindingBall.Target with
