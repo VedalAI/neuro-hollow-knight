@@ -434,6 +434,7 @@ type PathfindingBall() =
             sp <- UnityEngine.Object.Instantiate<UnityEngine.GameObject> x
             sp.SetActive false
             sp.transform.parent <- null
+            UnityEngine.Object.DontDestroyOnLoad sp
 
     static member Inst =
         try
