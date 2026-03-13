@@ -1111,11 +1111,10 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
     inherit BaseUnityPlugin()
     let mutable harmony = null
     let mutable game = None
-    let mutable texHealth: UnityEngine.Texture2D = UnityEngine.Texture2D(2, 2)
-    let mutable texGrimmchild: UnityEngine.Texture2D = UnityEngine.Texture2D(2, 2)
-
-    let mutable pieces: UnityEngine.Texture2D array =
-        Array.init 5 (fun _ -> UnityEngine.Texture2D(2, 2))
+    let mutable hpMenu: UnityEngine.Sprite = null
+    let texHealth = UnityEngine.Texture2D(2, 2)
+    let texGrimmchild = UnityEngine.Texture2D(2, 2)
+    let pieces = Array.init 5 (fun _ -> UnityEngine.Texture2D(2, 2))
 
     let cts = new Threading.CancellationTokenSource()
 
@@ -1129,6 +1128,7 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
     member _.Game = game.Value
     member _.TexHealth = texHealth
     member _.TexGrimmchild = texGrimmchild
+    member _.HpMenu = hpMenu
     member _.Pieces = pieces
     member _.Harmony = harmony
 
@@ -1184,13 +1184,23 @@ and [<BepInPlugin("org.chayleaf.hollowneur", "HollowNeuro", "1.0.0")>] MainClass
                     ab.LoadAllAssets<UnityEngine.Shader>()[0]
                 )
 
-                [ texHealth, "texture"; texGrimmchild, "texture1" ]
+                let hpMenuTex = UnityEngine.Texture2D(2, 2)
+
+                [ texHealth, "texture"; texGrimmchild, "texture1"; hpMenuTex, "hpmenu" ]
                 |> List.iter (fun (tex, name) ->
                     let st = asm.GetManifestResourceStream $"HollowNeuro.Resources.{name}.png"
 
                     using (new IO.MemoryStream()) (fun ms ->
                         st.CopyTo ms
                         UnityEngine.ImageConversion.LoadImage(tex, ms.ToArray()) |> ignore))
+
+                hpMenu <-
+                    UnityEngine.Sprite.Create(
+                        hpMenuTex,
+                        UnityEngine.Rect(0f, 0f, 38f, 41f),
+                        UnityEngine.Vector2(0.5f, 0.5f),
+                        100f
+                    )
 
                 Seq.init 5 (fun i -> asm.GetManifestResourceStream $"HollowNeuro.Resources.hp{i}.png")
                 |> Seq.map (fun st ->

@@ -1267,6 +1267,10 @@ type public Patches() =
 
         if quickLoad then
             loadFirstSave [ 4; 3; 2; 1 ]
+    [<HarmonyPatch(typeof<SaveProfileHealthBar>, nameof Unchecked.defaultof<SaveProfileHealthBar>.Awake)>]
+    [<HarmonyPrefix>]
+    static member public ChangeMenuHpTexture(__instance: SaveProfileHealthBar) =
+        __instance.normalHealth <- MainClass.Instance.HpMenu
 
 (*[<HarmonyPatch(typeof<PlayMakerFSM>, "Update")>]
     [<HarmonyPrefix>]
