@@ -757,9 +757,9 @@ type Game(plugin: MainClass) =
                     (if desc = "" then [] else [ desc ]))
             |> String.concat "; "
 
-        let showPath show path =
+        let showPath show path resetCb =
             if show then
-                PathfindingBall.Inst.InitWith(path |> List.map fst |> List.filter (fun (s, _x, _y) -> s > 0))
+                PathfindingBall.Inst.InitWith resetCb (path |> List.map fst |> List.filter (fun (s, _x, _y) -> s > 0))
 
         match action with
         | UnexploredRooms ->
@@ -845,10 +845,21 @@ type Game(plugin: MainClass) =
                             Some
                                 "Path not found! Perhaps the target pin isn't reachable, or the map is incomplete, or pathfinding doesn't work in this room."
                         )
-                    | Some path ->
-                        showPath show path
+                    | Some(target, path) ->
+                        showPath show path (fun () ->
+                            let s = Generated.sceneIdx (SceneManager.GetActiveScene().name)
+
+                            if s <> target then
+                                this.Context
+                                    true
+                                    $"Pathing to pin `{pin}` (in room {target}) aborted (player went off course). If you want to keep guiding the player towards that goal, try calling the `pathfind_pin` action again.")
+
                         let desc = pathDesc path
-                        Ok(Some $"The path to pin `{pin}` is: {desc}\n{pathfindHelp' show}\n{roomIdHelp}")
+
+                        Ok(
+                            Some
+                                $"The path to pin `{pin}` (in room {target}) is: {desc}\n{pathfindHelp' show}\n{roomIdHelp}"
+                        )
 
         | PathfindRoom(sB, show) ->
             let sA = Generated.sceneIdx (SceneManager.GetActiveScene().name)
@@ -861,12 +872,18 @@ type Game(plugin: MainClass) =
                     Some
                         "Path not found! Perhaps the target area isn't reachable, or the map is incomplete, or pathfinding doesn't work in this room."
                 )
-            | Some [] -> Ok(Some "The player is already in the target room!")
-            | Some path ->
+            | Some(_, []) -> Ok(Some "The player is already in the target room!")
+            | Some(target, path) ->
                 this.LogDebug $"path: {path}"
-                showPath show path
+                showPath show path (fun () ->
+                    let s = Generated.sceneIdx (SceneManager.GetActiveScene().name)
+
+                    if s <> target then
+                        this.Context
+                            true
+                            $"Pathing to room {target} aborted (player went off course). If you want to keep guiding the player towards that goal, try calling the `pathfind_room` action again.")
                 let desc = pathDesc path
-                Ok(Some $"The path is: {desc}\n{pathfindHelp show}\n{roomIdHelp}")
+                Ok(Some $"The path to room {target} is: {desc}\n{pathfindHelp show}\n{roomIdHelp}")
 
 
         | ShowMap(excludePins, radius) ->
@@ -987,15 +1004,15 @@ type Game(plugin: MainClass) =
         plugin.Logger.LogInfo $"{DateTime.UtcNow}.{DateTime.UtcNow.ToString fff} {error}"
 
     member this.Update() =
-        (*do
-            (*try
-            if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F1 then
+        try
+            ()
+            (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F1 then
                 Native.profiler_reset ()
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F2 then
                 Native.profiler_save ()*)
 
-            if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F10 then
+            (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F10 then
                 let json = UnityEngine.JsonUtility.ToJson(HeroController.instance.playerData, true)
                 System.IO.File.WriteAllText("hero.json", json)
 
@@ -1007,7 +1024,8 @@ type Game(plugin: MainClass) =
 
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F6 then
                 SceneManager.LoadScene(System.IO.File.ReadAllText "scene.txt" |> _.Trim() |> int)*)
-        (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F6 then
+
+            (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F6 then
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex)
 
                 plugin.StartCoroutine(UnloadAssets()) |> ignore
@@ -1016,7 +1034,12 @@ type Game(plugin: MainClass) =
                 showFm <- not showFm
                 PlayMakerFSM.BroadcastEvent(if showFm then "FIRST MAP UP" else "FIRST MAP DOWN")*)
 
-        try
+            (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F9 then
+                UnityEngine.GameObject.DestroyImmediate PathfindingBall.Inst.gameObject
+                GC.Collect()
+                plugin.StartCoroutine(UnloadAssets()) |> ignore
+                ()
+
             if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F8 then
                 animOffset <- animOffset + 1
 
@@ -1049,7 +1072,7 @@ type Game(plugin: MainClass) =
 
                     if a.CurrentClip = null || a.CurrentClip.name <> n then
                         a.Play n
-                        a.CurrentClip.wrapMode <- tk2dSpriteAnimationClip.WrapMode.Loop)
+                        a.CurrentClip.wrapMode <- tk2dSpriteAnimationClip.WrapMode.Loop)*)
         (*if UnityEngine.Input.GetKeyDown UnityEngine.KeyCode.F8 then
                 animOffset <- animOffset + 1
 

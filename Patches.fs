@@ -1009,6 +1009,7 @@ type public Patches() =
 
                         if quickLoad then
                             PathfindingBall.Inst.InitWith
+                                id
                                 [ Generated.sceneIdx (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name),
                                   0f,
                                   0f ]

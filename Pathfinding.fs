@@ -152,6 +152,7 @@ module Pathfinding =
         (target: int -> ((int * float32 * float32) * PathSeg) list -> bool)
         (pos: (float32 * float32) option)
         =
+        UnityEngine.Debug.Log $"current scene: {sA}/{UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}"
         // find shortest path to target scene
         //let mutable q = Map.empty
         let mutable i = 0
@@ -303,7 +304,7 @@ module Pathfinding =
                     let added = visS.Add s
 
                     if added && target s m then
-                        Some(List.rev m)
+                        Some(s, List.rev m)
                     else
                         let dirDist =
                             fun x y ->
@@ -357,9 +358,9 @@ module Pathfinding =
 
                         iter ()
 
-        if reachable[sA] then
+        if sA <> 23 && sA <> 24 && reachable[sA] then
             if target sA [] then
-                Some []
+                Some(sA, [])
             else
                 visS.Add sA |> ignore
                 visScene sA x0 y0 [] 0f
@@ -371,6 +372,7 @@ module Pathfinding =
 type PathfindingBall() =
     inherit UnityEngine.MonoBehaviour()
     static let mutable path: (int * float32 * float32) list = List.empty
+    static let mutable resetCb: unit -> unit = id
     static let mutable inst: PathfindingBall = null
     static let mutable sp: UnityEngine.GameObject = null
 
@@ -397,6 +399,7 @@ type PathfindingBall() =
         ring.GetComponent<UnityEngine.Collider>()
         |> Option.ofObj
         |> Option.iter UnityEngine.Object.DestroyImmediate
+
         ring.transform.SetParent(base.gameObject.transform, worldPositionStays = false)
 
         mr.sharedMaterial <- mat
@@ -406,15 +409,12 @@ type PathfindingBall() =
 
     static member InitMat(x: UnityEngine.Shader) =
         mat.shader <- x
-        mat.SetColor("_Color", UnityEngine.Color(1f, 1f, 1f, 1f))
+        mat.SetColor("_Color", UnityEngine.Color(1f, 1f, 1f, 0f))
         mat.SetFloat("_Feather", 0.001f)
         mat.SetFloat("_Size", 0.1f)
         mat.SetFloat("_Width", 0.004f)
 
     static member Mat = mat
-
-    static member Waiting =
-        inst <> null && not inst.gameObject.activeSelf && path |> List.isEmpty |> not
 
     static member Sp
         with set x =
@@ -425,7 +425,7 @@ type PathfindingBall() =
 
     static member Inst =
         try
-            ignore inst.enabled
+            ignore inst.gameObject.activeSelf
             inst
         with _ ->
             if sp = null then
@@ -452,24 +452,36 @@ type PathfindingBall() =
                 |> Array.iter (fun x -> x.SetActive false)
 
                 UnityEngine.Object.DontDestroyOnLoad pathBall
+
                 let rec addSortingOrder (x: UnityEngine.Transform) =
                     x.gameObject.GetComponent<UnityEngine.MeshRenderer>()
                     |> Option.ofObj
                     |> Option.iter (fun x -> x.sortingOrder <- x.sortingOrder + 1)
+
                     Seq.init x.childCount x.GetChild |> Seq.iter addSortingOrder
+
                 addSortingOrder pathBall.transform
                 inst <- pathBall.AddComponent<PathfindingBall>()
                 pathBall.SetActive false
                 inst
 
+    static member Waiting =
+        inst <> null
+        && path |> List.isEmpty |> not
+        && not PathfindingBall.Inst.gameObject.activeSelf
 
     static member Target =
         let scene =
             Generated.sceneIdx (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name)
 
-        let rec update () =
-            match path with
-            | [] -> None
+        let rec update p reset =
+            match p with
+            | [] ->
+                if reset then
+                    resetCb ()
+                    resetCb <- id
+
+                None
             | (s, x, y) :: r when
                 s = scene
                 && (GameManager.instance.sm.darknessLevel = 0 || PlayerData.instance.hasLantern)
@@ -490,14 +502,25 @@ type PathfindingBall() =
 
                 Some(UnityEngine.Vector2(h.localPosition.x + path.x, h.localPosition.y + path.y))
             | _ :: r ->
-                path <- r
-                update ()
+                let reset =
+                    reset
+                    && match scene with
+                       // Cinematic_Stag_travel
+                       | 8 -> false
+                       | x when Generated.reachability x = Reachability.Passthru -> false
+                       | _ -> true
 
-        update ()
+                if reset then
+                    path <- r
 
-    member this.InitWith p =
+                update r reset
+
+        update path (not <| List.isEmpty path)
+
+    member this.InitWith cb p =
         UnityEngine.Debug.LogError $"ball init {p}"
         path <- p
+        resetCb <- cb
         let h = HeroController.instance.gameObject.transform
         let t = this.gameObject.transform
         t.localScale <- UnityEngine.Vector3(1f, 1f, 1f)
